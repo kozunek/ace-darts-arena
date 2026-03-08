@@ -196,24 +196,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "matches_player1_id_fkey"
-            columns: ["player1_id"]
-            isOneToOne: false
-            referencedRelation: "players_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "matches_player2_id_fkey"
             columns: ["player2_id"]
             isOneToOne: false
             referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_player2_id_fkey"
-            columns: ["player2_id"]
-            isOneToOne: false
-            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -280,13 +266,6 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "player_leagues_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -371,52 +350,9 @@ export type Database = {
       }
     }
     Views: {
-      players_public: {
-        Row: {
-          approved: boolean | null
-          avatar: string | null
-          avatar_url: string | null
-          created_at: string | null
-          id: string | null
-          name: string | null
-        }
-        Insert: {
-          approved?: boolean | null
-          avatar?: string | null
-          avatar_url?: string | null
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-        }
-        Update: {
-          approved?: boolean | null
-          avatar?: string | null
-          avatar_url?: string | null
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      get_public_players: {
-        Args: never
-        Returns: {
-          approved: boolean | null
-          avatar: string | null
-          avatar_url: string | null
-          created_at: string | null
-          id: string | null
-          name: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "players_public"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
