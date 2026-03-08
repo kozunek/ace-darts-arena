@@ -25,9 +25,10 @@ const SettingsPage = () => {
   })());
 
   // We need to get player by user_id from supabase directly
-  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string; avatar_url: string | null } | null>(null);
+  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string; avatar_url: string | null; autodarts_user_id: string } | null>(null);
   const [phone, setPhone] = useState("");
   const [discord, setDiscord] = useState("");
+  const [autodartsId, setAutodartsId] = useState("");
   const [savingContact, setSavingContact] = useState(false);
 
   useEffect(() => {
