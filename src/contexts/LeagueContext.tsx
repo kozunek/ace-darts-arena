@@ -391,6 +391,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       ton60_1: data.ton60_1 ?? 0, ton60_2: data.ton60_2 ?? 0,
       ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
       ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
+      ton40_1: data.ton40_1 ?? 0, ton40_2: data.ton40_2 ?? 0,
       darts_thrown1: data.dartsThrown1 ?? 0, darts_thrown2: data.dartsThrown2 ?? 0,
       checkout_attempts1: data.checkoutAttempts1 ?? 0, checkout_attempts2: data.checkoutAttempts2 ?? 0,
       checkout_hits1: data.checkoutHits1 ?? 0, checkout_hits2: data.checkoutHits2 ?? 0,
