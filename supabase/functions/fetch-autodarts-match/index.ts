@@ -419,7 +419,7 @@ async function fetchMatchData(matchId: string, token: string) {
   const a170_1 = s1.until170Darts > 0 ? Math.round((s1.until170Score / s1.until170Darts) * 3 * 100) / 100 : null;
   const a170_2 = s2.until170Darts > 0 ? Math.round((s2.until170Score / s2.until170Darts) * 3 * 100) / 100 : null;
 
-  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, matchId);
+  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
 }
 
 function buildResult(
@@ -427,7 +427,9 @@ function buildResult(
   avg1: number | null, avg2: number | null,
   f9a1: number | null, f9a2: number | null,
   a170_1: number | null, a170_2: number | null,
-  p1Name: string, p2Name: string, matchId: string
+  p1Name: string, p2Name: string,
+  p1AutoId: string | null, p2AutoId: string | null,
+  matchId: string
 ) {
   const result = {
     score1: s1.legsWon,
