@@ -263,7 +263,7 @@ const SubmitMatchPage = () => {
         });
       }
     },
-    [autoSubmitFromExtension, populateForm, submitMatchResult, toast, upcomingMatches],
+    [autoSubmitFromExtension, populateForm, selectedMatch, submitMatchResult, toast, upcomingMatches],
   );
 
   const requestExtensionData = useCallback(() => {
