@@ -65,8 +65,6 @@ const SubmitMatchPage = () => {
     setOneEighties2("");
     setHc1("");
     setHc2("");
-    setTon40_1("");
-    setTon40_2("");
     setTon60_1("");
     setTon60_2("");
     setTon80_1("");
