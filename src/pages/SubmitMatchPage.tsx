@@ -293,16 +293,17 @@ const SubmitMatchPage = () => {
   }, [applyAutoPayload, requestExtensionData]);
 
   const getAutodartsToken = useCallback(async (): Promise<string | null> => {
-    if (extensionToken) return extensionToken;
+    if (extensionToken && tokenFresh) return extensionToken;
 
     return prompt(
       "🎯 Token Autodarts wymagany!\n\n" +
-        "Jak zdobyć:\n" +
-        "1. Zaloguj się na play.autodarts.io\n" +
+        "Token z rozszerzenia jest wygasły albo niedostępny.\n" +
+        "Jak zdobyć świeży token:\n" +
+        "1. Zaloguj się / odśwież play.autodarts.io\n" +
         "2. Kliknij ikonę rozszerzenia eDART\n" +
         "3. Skopiuj token i wklej tutaj"
     );
-  }, [extensionToken]);
+  }, [extensionToken, tokenFresh]);
 
   const handleFetchAutodarts = useCallback(async () => {
     if (!autodartsLink) return;
