@@ -663,6 +663,10 @@ const SubmitMatchPage = () => {
                 </div>
               </div>
 
+              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides}>
+                Zamień strony graczy ↔
+              </Button>
+
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io
