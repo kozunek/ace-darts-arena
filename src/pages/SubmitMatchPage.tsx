@@ -313,7 +313,7 @@ const SubmitMatchPage = () => {
         });
       }
     },
-    [autoSubmitFromExtension, populateForm, selectedMatch, submitMatchResult, toast, upcomingMatches],
+    [autoSubmitFromExtension, playerAutodartsMap, populateForm, selectedMatch, submitMatchResult, toast, upcomingMatches],
   );
 
   const requestExtensionData = useCallback(() => {
