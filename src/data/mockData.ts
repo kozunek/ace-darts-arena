@@ -26,11 +26,14 @@ export interface PlayerLeagueStats {
   losses: number;
   draws: number;
   points: number;
+  basePoints: number;
+  bonusPoints: number;
   legsWon: number;
   legsLost: number;
   avg: number;
   highestCheckout: number;
   oneEighties: number;
+  nineDarters: number;
   form: ("W" | "L" | "D")[];
   badges: string[];
   matchesPlayed: number;
