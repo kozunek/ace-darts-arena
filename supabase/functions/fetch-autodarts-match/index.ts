@@ -50,7 +50,16 @@ function emptyStats(): PlayerStats {
   };
 }
 
-async function fetchJson(url: string, token: string) {
+
+function readFirstNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
