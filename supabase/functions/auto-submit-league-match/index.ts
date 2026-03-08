@@ -280,10 +280,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── Step 2: Find upcoming match between them ───
+    // ─── Step 2: Find upcoming match between them (only status='upcoming' = not yet submitted) ───
     const { data: matches } = await supabase
       .from("matches")
-      .select("id, league_id, round, date, confirmed_date, player1_id, player2_id, leagues!inner(name)")
+      .select("id, league_id, round, date, confirmed_date, player1_id, player2_id, status, leagues!inner(name)")
       .eq("status", "upcoming")
       .or(
         `and(player1_id.eq.${p1Id},player2_id.eq.${p2Id}),and(player1_id.eq.${p2Id},player2_id.eq.${p1Id})`
@@ -291,6 +291,31 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (!matches || matches.length === 0) {
+      // Check if match was already submitted (duplicate prevention)
+      const { data: existingMatch } = await supabase
+        .from("matches")
+        .select("id, status")
+        .in("status", ["pending_approval", "completed"])
+        .or(
+          `and(player1_id.eq.${p1Id},player2_id.eq.${p2Id}),and(player1_id.eq.${p2Id},player2_id.eq.${p1Id})`
+        )
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (existingMatch && existingMatch.length > 0) {
+        console.log(`[auto-submit] Match already submitted (${existingMatch[0].status}), skipping duplicate`);
+        return new Response(
+          JSON.stringify({
+            is_league_match: true,
+            submitted: false,
+            already_submitted: true,
+            reason: "match already submitted by the other player",
+            match_id: existingMatch[0].id,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           is_league_match: false,
