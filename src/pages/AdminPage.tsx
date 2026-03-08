@@ -268,6 +268,20 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setSelectedPlayers(prev => prev.includes(pid) ? prev.filter(id => id !== pid) : [...prev, pid]);
   };
 
+  // Get existing rounds for a league
+  const { getLeagueMatches } = useLeague();
+  const getExistingRounds = (leagueId: string): number[] => {
+    const leagueMatches = getLeagueMatches(leagueId);
+    const rounds = new Set<number>();
+    leagueMatches.forEach(m => { if (m.round) rounds.add(m.round); });
+    return Array.from(rounds).sort((a, b) => a - b);
+  };
+
+  // Calculate total rounds for given player count
+  const getTotalRounds = (playerCount: number): number => {
+    return playerCount % 2 === 0 ? playerCount - 1 : playerCount;
+  };
+
   const handleGenerateSchedule = async (league: any) => {
     if (selectedPlayers.length < 2) {
       toast({ title: "Błąd", description: "Wybierz co najmniej 2 graczy.", variant: "destructive" });
@@ -288,19 +302,25 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
       if (lt === "league") {
         // Round-robin
         const schedule = generateRoundRobin(playerIds);
-        for (const m of schedule) {
-          const matchDate = new Date(startDate);
-          matchDate.setDate(matchDate.getDate() + (m.round - 1) * 7);
+        const existingRounds = getExistingRounds(league.id);
+        const roundsToGenerate = generateMode === "all"
+          ? [...new Set(schedule.map(m => m.round))].filter(r => !existingRounds.includes(r))
+          : selectedRounds.filter(r => !existingRounds.includes(r));
+
+        const matchesToInsert = schedule.filter(m => roundsToGenerate.includes(m.round));
+
+        for (const m of matchesToInsert) {
+          const deadline = roundDeadlines[m.round] || startDate;
           await supabase.from("matches").insert({
             league_id: league.id,
             player1_id: m.player1Id,
             player2_id: m.player2Id,
-            date: matchDate.toISOString().split("T")[0],
+            date: deadline,
             round: m.round,
             status: "upcoming",
           });
         }
-        toast({ title: "🎯 Harmonogram wygenerowany!", description: `${schedule.length} meczów round-robin.` });
+        toast({ title: "🎯 Harmonogram wygenerowany!", description: `${matchesToInsert.length} meczów w ${roundsToGenerate.length} kolejkach.` });
 
       } else if (lt === "bracket") {
         // Single elimination bracket
@@ -325,17 +345,18 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
         const { groups, matches: groupMatches } = generateGroupStage(playerIds, groupCount);
         
         for (const m of groupMatches) {
+          const deadline = roundDeadlines[m.round] || startDate;
           await supabase.from("matches").insert({
             league_id: league.id,
             player1_id: m.player1Id,
             player2_id: m.player2Id,
-            date: startDate,
+            date: deadline,
             round: m.round,
             status: "upcoming",
             group_name: m.groupName,
           });
         }
-        toast({ title: "🎪 Faza grupowa wygenerowana!", description: `${groupCount} grup, ${groupMatches.length} meczów. Drabinka zostanie wygenerowana po zakończeniu fazy grupowej.` });
+        toast({ title: "🎪 Faza grupowa wygenerowana!", description: `${groupCount} grup, ${groupMatches.length} meczów.` });
       }
 
       await refreshData();
@@ -346,6 +367,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setGenerating(false);
     setShowGenerate(null);
     setSelectedPlayers([]);
+    setSelectedRounds([]);
+    setRoundDeadlines({});
   };
 
   const approvedPlayers = players.filter((p: any) => p.approved);
