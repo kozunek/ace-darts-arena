@@ -107,6 +107,8 @@ const SubmitMatchPage = () => {
       avg2: payload.avg2 != null ? String(payload.avg2) : "",
       first9Avg1: payload.first_9_avg1 != null ? String(payload.first_9_avg1) : "",
       first9Avg2: payload.first_9_avg2 != null ? String(payload.first_9_avg2) : "",
+      avgUntil170_1: payload.avg_until_170_1 != null ? String(payload.avg_until_170_1) : "",
+      avgUntil170_2: payload.avg_until_170_2 != null ? String(payload.avg_until_170_2) : "",
       oneEighties1: String(asNumber(payload.one_eighties1)),
       oneEighties2: String(asNumber(payload.one_eighties2)),
       hc1: String(asNumber(payload.high_checkout1)),
@@ -151,6 +153,8 @@ const SubmitMatchPage = () => {
         checkoutHits2: asNumber(payload.checkout_hits2),
         first9Avg1: payload.first_9_avg1 ?? undefined,
         first9Avg2: payload.first_9_avg2 ?? undefined,
+        avgUntil170_1: payload.avg_until_170_1 ?? undefined,
+        avgUntil170_2: payload.avg_until_170_2 ?? undefined,
         autodartsLink: payload.autodarts_link || undefined,
       } as MatchResultData,
     };
@@ -162,9 +166,6 @@ const SubmitMatchPage = () => {
 
       const extMatchId = payload.match_id || payload.autodarts_link || `${payload.player1_name}-${payload.player2_name}`;
       if (allowAutoSubmit && processedAutoMatchRef.current === extMatchId) return;
-
-      if (payload.autodarts_link) setAutodartsLink(payload.autodarts_link);
-      const mapped = mapPayloadToStats(payload);
 
       const p1 = normalizeName(payload.player1_name);
       const p2 = normalizeName(payload.player2_name);
@@ -179,16 +180,58 @@ const SubmitMatchPage = () => {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
+      const targetMatch = matchedUpcoming || selectedMatch;
+      const isReversedOrder = Boolean(
+        targetMatch &&
+          normalizeName(targetMatch.player1Name) === p2 &&
+          normalizeName(targetMatch.player2Name) === p1
+      );
+
+      const alignedPayload = isReversedOrder
+        ? {
+            ...payload,
+            score1: payload.score2,
+            score2: payload.score1,
+            avg1: payload.avg2,
+            avg2: payload.avg1,
+            first_9_avg1: payload.first_9_avg2,
+            first_9_avg2: payload.first_9_avg1,
+            avg_until_170_1: payload.avg_until_170_2,
+            avg_until_170_2: payload.avg_until_170_1,
+            one_eighties1: payload.one_eighties2,
+            one_eighties2: payload.one_eighties1,
+            high_checkout1: payload.high_checkout2,
+            high_checkout2: payload.high_checkout1,
+            ton60_1: payload.ton60_2,
+            ton60_2: payload.ton60_1,
+            ton80_1: payload.ton80_2,
+            ton80_2: payload.ton80_1,
+            ton_plus1: payload.ton_plus2,
+            ton_plus2: payload.ton_plus1,
+            darts_thrown1: payload.darts_thrown2,
+            darts_thrown2: payload.darts_thrown1,
+            checkout_attempts1: payload.checkout_attempts2,
+            checkout_attempts2: payload.checkout_attempts1,
+            checkout_hits1: payload.checkout_hits2,
+            checkout_hits2: payload.checkout_hits1,
+            player1_name: payload.player2_name,
+            player2_name: payload.player1_name,
+          }
+        : payload;
+
+      if (alignedPayload.autodarts_link) setAutodartsLink(alignedPayload.autodarts_link);
+      const mapped = mapPayloadToStats(alignedPayload);
+
       if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
         submitMatchResult(matchedUpcoming.id, mapped.data);
         processedAutoMatchRef.current = extMatchId;
         toast({
           title: "✅ Auto-zgłoszenie",
-          description: `Wynik ${payload.player1_name} vs ${payload.player2_name} został wysłany automatycznie.`,
+          description: `Wynik ${alignedPayload.player1_name} vs ${alignedPayload.player2_name} został wysłany automatycznie.`,
         });
       }
     },
-    [autoSubmitFromExtension, mapPayloadToStats, submitMatchResult, toast, upcomingMatches]
+    [autoSubmitFromExtension, mapPayloadToStats, selectedMatch, submitMatchResult, toast, upcomingMatches]
   );
 
   const requestExtensionData = useCallback(() => {

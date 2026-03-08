@@ -29,6 +29,8 @@ interface PlayerStats {
   totalDarts: number;
   first9Score: number;
   first9Darts: number;
+  until170Score: number;
+  until170Darts: number;
   oneEighties: number;
   highCheckout: number;
   ton60: number;
@@ -43,6 +45,7 @@ function emptyStats(): PlayerStats {
   return {
     totalScore: 0, totalDarts: 0,
     first9Score: 0, first9Darts: 0,
+    until170Score: 0, until170Darts: 0,
     oneEighties: 0, highCheckout: 0,
     ton60: 0, ton80: 0, tonPlus: 0,
     checkoutAttempts: 0, checkoutHits: 0,
@@ -214,8 +217,10 @@ async function fetchMatchData(matchId: string, token: string) {
     const avg2 = ps2.average ?? ps2.avg ?? (ps2.ppd ? ps2.ppd * 3 : null);
     const f9a1 = ps1.first9Average ?? ps1.firstNineAvg ?? ps1.first9Avg ?? null;
     const f9a2 = ps2.first9Average ?? ps2.firstNineAvg ?? ps2.first9Avg ?? null;
+    const a170_1 = ps1.avgUntil170 ?? ps1.averageUntil170 ?? ps1.avg_u170 ?? null;
+    const a170_2 = ps2.avgUntil170 ?? ps2.averageUntil170 ?? ps2.avg_u170 ?? null;
 
-    return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, p1Name, p2Name, matchId);
+    return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, matchId);
   }
 
   // No pre-calculated stats - parse from games array
@@ -310,8 +315,17 @@ async function fetchMatchData(matchId: string, token: string) {
         const st = pIdx === 0 ? s1 : s2;
         const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
 
+        // Avg until 170: count turns where score before throw is > 170
+        // In Autodarts, turn.score is remaining score AFTER the throw
+        const scoreBeforeTurn = typeof turn.score === "number" ? turn.score + points : null;
+
         st.totalScore += points;
         st.totalDarts += dartsCount;
+
+        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
+          st.until170Score += points;
+          st.until170Darts += dartsCount;
+        }
 
         if (tidx < 3) {
           st.first9Score += points;
@@ -374,12 +388,18 @@ async function fetchMatchData(matchId: string, token: string) {
       let turnIdx1 = 0, turnIdx2 = 0;
       for (const turn of turns) {
         const pIdx = turn.player ?? turn.playerIndex ?? 0;
-        const points = turn.points ?? turn.score ?? 0;
-        const darts = turn.darts?.length ?? turn.dartsThrown ?? 3;
+        const points = turn.points ?? 0;
+        const remaining = typeof turn.score === "number" ? turn.score : null;
+        const darts = turn.darts?.length ?? turn.throws?.length ?? turn.dartsThrown ?? 3;
         const st = pIdx === 0 ? s1 : s2;
         const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
         st.totalScore += points;
         st.totalDarts += darts;
+        const scoreBeforeTurn = remaining != null ? remaining + points : null;
+        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
+          st.until170Score += points;
+          st.until170Darts += darts;
+        }
         if (tidx < 3) { st.first9Score += points; st.first9Darts += darts; }
         if (points === 180) st.oneEighties++;
         if (points >= 100) st.tonPlus++;
@@ -394,14 +414,17 @@ async function fetchMatchData(matchId: string, token: string) {
   const avg2 = s2.totalDarts > 0 ? Math.round((s2.totalScore / s2.totalDarts) * 3 * 100) / 100 : null;
   const f9a1 = s1.first9Darts > 0 ? Math.round((s1.first9Score / s1.first9Darts) * 3 * 100) / 100 : null;
   const f9a2 = s2.first9Darts > 0 ? Math.round((s2.first9Score / s2.first9Darts) * 3 * 100) / 100 : null;
+  const a170_1 = s1.until170Darts > 0 ? Math.round((s1.until170Score / s1.until170Darts) * 3 * 100) / 100 : null;
+  const a170_2 = s2.until170Darts > 0 ? Math.round((s2.until170Score / s2.until170Darts) * 3 * 100) / 100 : null;
 
-  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, p1Name, p2Name, matchId);
+  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, matchId);
 }
 
 function buildResult(
   s1: PlayerStats, s2: PlayerStats,
   avg1: number | null, avg2: number | null,
   f9a1: number | null, f9a2: number | null,
+  a170_1: number | null, a170_2: number | null,
   p1Name: string, p2Name: string, matchId: string
 ) {
   const result = {
@@ -409,6 +432,7 @@ function buildResult(
     score2: s2.legsWon,
     avg1, avg2,
     first_9_avg1: f9a1, first_9_avg2: f9a2,
+    avg_until_170_1: a170_1, avg_until_170_2: a170_2,
     one_eighties1: s1.oneEighties, one_eighties2: s2.oneEighties,
     high_checkout1: s1.highCheckout, high_checkout2: s2.highCheckout,
     ton60_1: s1.ton60, ton60_2: s2.ton60,
