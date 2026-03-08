@@ -60,8 +60,31 @@ async function getAutodartsToken(): Promise<string> {
   // Step 2: Fall back to browser-simulated authorization_code flow
   console.log("Trying browser-simulated authorization_code flow...");
   
-  const redirectUri = "https://play.autodarts.io";
-  const clientId = "autodarts-app";
+  // Try multiple redirect URIs - one must match what's registered in Keycloak
+  const clientCandidates = [
+    { clientId: "autodarts-app", redirectUri: "https://play.autodarts.io/" },
+    { clientId: "autodarts-app", redirectUri: "https://play.autodarts.io" },
+    { clientId: "autodarts-app", redirectUri: "https://autodarts.io" },
+    { clientId: "autodarts-app", redirectUri: "https://app.autodarts.io" },
+    { clientId: "autodarts-desktop", redirectUri: "http://localhost" },
+    { clientId: "autodarts-desktop", redirectUri: "http://localhost:9191" },
+  ];
+
+  let lastFlowError = "";
+  for (const { clientId, redirectUri } of clientCandidates) {
+    try {
+      const result = await tryAuthCodeFlow(clientId, redirectUri, email, password);
+      if (result) return result;
+    } catch (e) {
+      lastFlowError = String(e);
+      console.log(`Auth code flow failed for ${clientId} + ${redirectUri}: ${lastFlowError.substring(0, 200)}`);
+    }
+  }
+
+  throw new Error(`All authentication methods failed. Last error: ${lastFlowError}`);
+}
+
+async function tryAuthCodeFlow(clientId: string, redirectUri: string, email: string, password: string): Promise<string | null> {
   const state = crypto.randomUUID();
   const nonce = crypto.randomUUID();
   
