@@ -1,6 +1,7 @@
 import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Medal, Award } from "lucide-react";
 import { DEFAULT_BONUS_RULES } from "@/data/mockData";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 const FormBadge = ({ result }: { result: "W" | "L" | "D" }) => {
   const styles = {
