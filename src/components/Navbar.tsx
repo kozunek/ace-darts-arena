@@ -50,15 +50,23 @@ const Navbar = () => {
               </Link>
             ))}
             {user && (
-              <Link to="/my-matches">
-                <Button
-                  variant={location.pathname === "/my-matches" ? "default" : "ghost"}
-                  size="sm"
-                  className="font-display uppercase tracking-wider text-xs"
-                >
-                  <Handshake className="h-3.5 w-3.5 mr-1" /> Moje Mecze
-                </Button>
-              </Link>
+              <>
+                <Link to="/my-matches">
+                  <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-xs">
+                    <Handshake className="h-3.5 w-3.5 mr-1" /> Moje Mecze
+                  </Button>
+                </Link>
+                <Link to="/chat">
+                  <Button variant={location.pathname === "/chat" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-xs">
+                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Czat
+                  </Button>
+                </Link>
+                <Link to="/announcements">
+                  <Button variant={location.pathname === "/announcements" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-xs">
+                    <Megaphone className="h-3.5 w-3.5 mr-1" /> Ogłoszenia
+                  </Button>
+                </Link>
+              </>
             )}
             {showAdminLink && (
               <Link to="/admin">
