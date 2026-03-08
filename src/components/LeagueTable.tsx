@@ -75,7 +75,14 @@ const LeagueTable = () => {
                     <td className="text-center px-3 py-3 text-sm font-body text-accent font-semibold">{entry.stats.draws}</td>
                     <td className="text-center px-3 py-3 text-sm font-body text-destructive font-semibold">{entry.stats.losses}</td>
                     <td className="text-center px-3 py-3">
-                      <span className="font-display font-bold text-foreground text-lg">{entry.stats.points}</span>
+                      <div className="flex flex-col items-center">
+                        <span className="font-display font-bold text-foreground text-lg">{entry.stats.points}</span>
+                        {entry.stats.bonusPoints > 0 && (
+                          <span className="text-[10px] text-accent font-display" title={`Bazowe: ${entry.stats.basePoints} + Bonus: ${entry.stats.bonusPoints}`}>
+                            ({entry.stats.basePoints}+{entry.stats.bonusPoints})
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.avg.toFixed(1)}</td>
                     <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.oneEighties}</td>
@@ -99,6 +106,23 @@ const LeagueTable = () => {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Bonus points legend */}
+      <div className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
+        <h3 className="text-xs font-display uppercase tracking-wider text-muted-foreground mb-2">System punktowy</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-body text-muted-foreground">
+          <span>🏆 Wygrana: <strong className="text-foreground">+3 pkt</strong></span>
+          <span>🤝 Remis: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>🎯 Za każde 180: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💎 9-darter: <strong className="text-foreground">+3 pkt</strong></span>
+          <span>✅ Checkout 100+: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💫 Checkout 150+: <strong className="text-foreground">+2 pkt</strong></span>
+          <span>📊 Średnia 90+: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>📈 Średnia 100+: <strong className="text-foreground">+2 pkt</strong></span>
+          <span>🥈 Bliska przegrana (1 leg): <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💪 Clean sweep (0 dla rywala): <strong className="text-foreground">+1 pkt</strong></span>
         </div>
       </div>
     </section>

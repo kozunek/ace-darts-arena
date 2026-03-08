@@ -181,7 +181,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, toast }: any)
             <div className="flex items-center justify-between mb-4">
               <div className="text-left flex-1">
                 <div className="font-body font-medium text-foreground">{m.player1Name}</div>
-                {m.avg1 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg1?.toFixed(1)} · 180: {m.oneEighties1 ?? 0} · HC: {m.highCheckout1 ?? 0}</div>}
+                {m.avg1 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg1?.toFixed(1)} · 180: {m.oneEighties1 ?? 0} · HC: {m.highCheckout1 ?? 0}{(m.nineDarters1 ?? 0) > 0 && ` · 9d: ${m.nineDarters1}`}</div>}
               </div>
               <div className="flex items-center gap-3 px-4">
                 <span className={`text-3xl font-display font-bold ${(m.score1 ?? 0) > (m.score2 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score1}</span>
@@ -190,7 +190,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, toast }: any)
               </div>
               <div className="text-right flex-1">
                 <div className="font-body font-medium text-foreground">{m.player2Name}</div>
-                {m.avg2 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg2?.toFixed(1)} · 180: {m.oneEighties2 ?? 0} · HC: {m.highCheckout2 ?? 0}</div>}
+                {m.avg2 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg2?.toFixed(1)} · 180: {m.oneEighties2 ?? 0} · HC: {m.highCheckout2 ?? 0}{(m.nineDarters2 ?? 0) > 0 && ` · 9d: ${m.nineDarters2}`}</div>}
               </div>
             </div>
             {m.autodartsLink && <div className="text-xs text-primary mb-4"><a href={m.autodartsLink} target="_blank" rel="noopener noreferrer" className="hover:underline">🔗 Link Autodarts</a></div>}

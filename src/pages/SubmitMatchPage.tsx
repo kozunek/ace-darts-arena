@@ -36,6 +36,8 @@ const SubmitMatchPage = () => {
   const [checkoutAttempts2, setCheckoutAttempts2] = useState("");
   const [checkoutHits1, setCheckoutHits1] = useState("");
   const [checkoutHits2, setCheckoutHits2] = useState("");
+  const [nineDarters1, setNineDarters1] = useState("");
+  const [nineDarters2, setNineDarters2] = useState("");
 
   if (loading) return null;
 
@@ -77,6 +79,8 @@ const SubmitMatchPage = () => {
     setCheckoutAttempts2("");
     setCheckoutHits1("");
     setCheckoutHits2("");
+    setNineDarters1("");
+    setNineDarters2("");
     setShowAdvanced(false);
   };
 
@@ -127,6 +131,8 @@ const SubmitMatchPage = () => {
       checkoutAttempts2: attemptsP2,
       checkoutHits1: hitsP1,
       checkoutHits2: hitsP2,
+      nineDarters1: optNum(nineDarters1),
+      nineDarters2: optNum(nineDarters2),
       autodartsLink: autodartsLink || undefined,
     };
 
@@ -232,6 +238,7 @@ const SubmitMatchPage = () => {
                   <StatRow label="Rzuty (darts)" v1={darts1} v2={darts2} s1={setDarts1} s2={setDarts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Checkouty rzucone" v1={checkoutAttempts1} v2={checkoutAttempts2} s1={setCheckoutAttempts1} s2={setCheckoutAttempts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Checkouty trafione" v1={checkoutHits1} v2={checkoutHits2} s1={setCheckoutHits1} s2={setCheckoutHits2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
+                  <StatRow label="9-dartery 🎯" v1={nineDarters1} v2={nineDarters2} s1={setNineDarters1} s2={setNineDarters2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                 </div>
               )}
 
