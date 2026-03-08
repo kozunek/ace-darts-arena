@@ -397,6 +397,37 @@ const SubmitMatchPage = () => {
     setFetchingAutodarts(false);
   }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
 
+  const handleSwapSides = useCallback(() => {
+    setScore1(score2);
+    setScore2(score1);
+    setStats((prev) => ({
+      ...prev,
+      avg1: prev.avg2 || "",
+      avg2: prev.avg1 || "",
+      first9Avg1: prev.first9Avg2 || "",
+      first9Avg2: prev.first9Avg1 || "",
+      avgUntil170_1: prev.avgUntil170_2 || "",
+      avgUntil170_2: prev.avgUntil170_1 || "",
+      oneEighties1: prev.oneEighties2 || "",
+      oneEighties2: prev.oneEighties1 || "",
+      hc1: prev.hc2 || "",
+      hc2: prev.hc1 || "",
+      ton60_1: prev.ton60_2 || "",
+      ton60_2: prev.ton60_1 || "",
+      ton80_1: prev.ton80_2 || "",
+      ton80_2: prev.ton80_1 || "",
+      tonPlus1: prev.tonPlus2 || "",
+      tonPlus2: prev.tonPlus1 || "",
+      darts1: prev.darts2 || "",
+      darts2: prev.darts1 || "",
+      checkoutAttempts1: prev.checkoutAttempts2 || "",
+      checkoutAttempts2: prev.checkoutAttempts1 || "",
+      checkoutHits1: prev.checkoutHits2 || "",
+      checkoutHits2: prev.checkoutHits1 || "",
+    }));
+    toast({ title: "Zamieniono strony", description: "Wynik i statystyki graczy zostały zamienione miejscami." });
+  }, [score1, score2, toast]);
+
   const resetForm = () => {
     setSelectedMatchId("");
     setScore1("");
