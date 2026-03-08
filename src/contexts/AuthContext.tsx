@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    await Promise.all([fetchProfile(currentUser.id), checkRoles(currentUser.id)]);
+    await Promise.allSettled([fetchProfile(currentUser.id), checkRoles(currentUser.id)]);
   }, [checkRoles, fetchProfile]);
 
   useEffect(() => {
@@ -67,17 +67,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initSession = async () => {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-      await syncUserState(session?.user ?? null);
-      if (mounted) setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        await syncUserState(session?.user ?? null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       setLoading(true);
-      await syncUserState(session?.user ?? null);
-      if (mounted) setLoading(false);
+      void syncUserState(session?.user ?? null).finally(() => {
+        if (mounted) setLoading(false);
+      });
     });
 
     initSession();
