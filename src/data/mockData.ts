@@ -63,6 +63,7 @@ export interface PlayerLeagueStats {
   ton60: number;
   ton80: number;
   tonPlus: number;
+  ton40: number;
   winRate: number;
   checkoutAttempts: number;
   checkoutHits: number;
