@@ -68,6 +68,65 @@ export type Database = {
         }
         Relationships: []
       }
+      extension_settings: {
+        Row: {
+          auto_approve: boolean
+          created_at: string
+          id: string
+          league_id: string | null
+          require_180s: boolean
+          require_autodarts_link: boolean
+          require_avg: boolean
+          require_checkout_stats: boolean
+          require_darts_thrown: boolean
+          require_high_checkout: boolean
+          require_nine_darters: boolean
+          require_ton_ranges: boolean
+          updated_at: string
+          webhook_enabled: boolean
+        }
+        Insert: {
+          auto_approve?: boolean
+          created_at?: string
+          id?: string
+          league_id?: string | null
+          require_180s?: boolean
+          require_autodarts_link?: boolean
+          require_avg?: boolean
+          require_checkout_stats?: boolean
+          require_darts_thrown?: boolean
+          require_high_checkout?: boolean
+          require_nine_darters?: boolean
+          require_ton_ranges?: boolean
+          updated_at?: string
+          webhook_enabled?: boolean
+        }
+        Update: {
+          auto_approve?: boolean
+          created_at?: string
+          id?: string
+          league_id?: string | null
+          require_180s?: boolean
+          require_autodarts_link?: boolean
+          require_avg?: boolean
+          require_checkout_stats?: boolean
+          require_darts_thrown?: boolean
+          require_high_checkout?: boolean
+          require_nine_darters?: boolean
+          require_ton_ranges?: boolean
+          updated_at?: string
+          webhook_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extension_settings_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: true
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leagues: {
         Row: {
           bonus_rules: Json | null
