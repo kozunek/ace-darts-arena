@@ -199,6 +199,10 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
     checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
     checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
+    const myFirst9 = isP1 ? (m.first9Avg1 ?? 0) : (m.first9Avg2 ?? 0);
+    if (myFirst9 > bestFirst9Avg) bestFirst9Avg = myFirst9;
+    const myAvgUntil170 = isP1 ? (m.avgUntil170_1 ?? 0) : (m.avgUntil170_2 ?? 0);
+    if (myAvgUntil170 > bestAvgUntil170) bestAvgUntil170 = myAvgUntil170;
 
     const isWinner = myScore > oppScore;
     if (isWinner) { wins++; form.push("W"); basePoints += rules.win; }
