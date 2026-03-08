@@ -106,15 +106,22 @@ const PlayerProfilePage = () => {
             {achiev.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                  <Zap className="h-4 w-4" /> Osiągnięcia ({achiev.length})
+                  <Zap className="h-4 w-4" /> Osiągnięcia ({achiev.length}/{achievements.length})
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {achiev.map((a) => (
-                    <div key={a.id} className="rounded-lg border border-border bg-muted/20 p-3 flex items-center gap-3">
+                  {achiev
+                    .sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity])
+                    .map((a) => (
+                    <div key={a.id} className={`rounded-lg border p-3 flex items-center gap-3 ${RARITY_STYLES[a.rarity]}`}>
                       <span className="text-2xl">{a.icon}</span>
-                      <div>
-                        <div className="font-body font-semibold text-foreground text-sm">{a.name}</div>
-                        <div className="text-xs text-muted-foreground">{a.description}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-body font-semibold text-foreground text-sm flex items-center gap-1.5">
+                          {a.name}
+                          <span className={`text-[9px] font-display uppercase tracking-widest px-1.5 py-0.5 rounded-full ${RARITY_BADGE[a.rarity]}`}>
+                            {RARITY_LABELS[a.rarity]}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{a.description}</div>
                       </div>
                     </div>
                   ))}
