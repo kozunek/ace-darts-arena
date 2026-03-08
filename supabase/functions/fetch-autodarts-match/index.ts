@@ -333,9 +333,27 @@ async function fetchMatchData(matchId: string, token: string) {
     processGameTurns(games[gi], playerIdMap, st, gi);
   }
 
+  const numOrNull = (...values: any[]): number | null => {
+    for (const v of values) {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+    }
+    return null;
+  };
+
+  const p1ApiStats = players[0]?.stats || {};
+  const p2ApiStats = players[1]?.stats || {};
+
+  const checkoutAttempts1 = numOrNull(p1ApiStats.checkoutAttempts, p1ApiStats.checkoutDarts) ?? st[0].checkoutAttempts;
+  const checkoutAttempts2 = numOrNull(p2ApiStats.checkoutAttempts, p2ApiStats.checkoutDarts) ?? st[1].checkoutAttempts;
+  const checkoutHits1 = numOrNull(p1ApiStats.checkoutHits, p1ApiStats.checkouts) ?? st[0].checkoutHits;
+  const checkoutHits2 = numOrNull(p2ApiStats.checkoutHits, p2ApiStats.checkouts) ?? st[1].checkoutHits;
+
   // Log stats for debugging
   for (let i = 0; i < 2; i++) {
-    console.log(`P${i + 1} (${i === 0 ? p1Name : p2Name}): darts=${st[i].totalDarts}, score=${st[i].totalScore}, co=${st[i].checkoutHits}/${st[i].checkoutAttempts}, hc=${st[i].highCheckout}, 60+=${st[i].ton60}, 100+=${st[i].ton100}, 140+=${st[i].ton140}, 180=${st[i].oneEighties}`);
+    const api = i === 0 ? p1ApiStats : p2ApiStats;
+    const effectiveAttempts = i === 0 ? checkoutAttempts1 : checkoutAttempts2;
+    const effectiveHits = i === 0 ? checkoutHits1 : checkoutHits2;
+    console.log(`P${i + 1} (${i === 0 ? p1Name : p2Name}): darts=${st[i].totalDarts}, score=${st[i].totalScore}, co=${effectiveHits}/${effectiveAttempts}, co_calc=${st[i].checkoutHits}/${st[i].checkoutAttempts}, co_api=${api?.checkoutHits ?? api?.checkouts ?? "-"}/${api?.checkoutAttempts ?? api?.checkoutDarts ?? "-"}, hc=${st[i].highCheckout}, 60+=${st[i].ton60}, 100+=${st[i].ton100}, 140+=${st[i].ton140}, 180=${st[i].oneEighties}`);
   }
 
   const avg = (s: PlayerStats) => s.totalDarts > 0 ? Math.round((s.totalScore / s.totalDarts) * 3 * 100) / 100 : null;
@@ -354,8 +372,8 @@ async function fetchMatchData(matchId: string, token: string) {
     ton_plus1: st[0].ton140, ton_plus2: st[1].ton140,
     ton40_1: st[0].ton170, ton40_2: st[1].ton170,
     darts_thrown1: st[0].totalDarts, darts_thrown2: st[1].totalDarts,
-    checkout_attempts1: st[0].checkoutAttempts, checkout_attempts2: st[1].checkoutAttempts,
-    checkout_hits1: st[0].checkoutHits, checkout_hits2: st[1].checkoutHits,
+    checkout_attempts1: checkoutAttempts1, checkout_attempts2: checkoutAttempts2,
+    checkout_hits1: checkoutHits1, checkout_hits2: checkoutHits2,
     player1_name: p1Name, player2_name: p2Name,
     player1_autodarts_id: p1AutoId, player2_autodarts_id: p2AutoId,
     autodarts_link: `https://play.autodarts.io/history/matches/${matchId}`,
