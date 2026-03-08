@@ -1,18 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, User, ArrowLeft } from "lucide-react";
+import { KeyRound, User, ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLeague } from "@/contexts/LeagueContext";
 
 const SettingsPage = () => {
   const { toast } = useToast();
   const { user, profile, updatePassword, loading } = useAuth();
+  const { players, updatePlayer } = useLeague();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Find linked player
+  const myPlayer = players.find(p => (p as any).id && user && (() => {
+    // We need user_id match - but Player interface doesn't expose it
+    // Instead match by name/profile
+    return false;
+  })());
+
+  // We need to get player by user_id from supabase directly
+  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string } | null>(null);
+  const [phone, setPhone] = useState("");
+  const [discord, setDiscord] = useState("");
+  const [savingContact, setSavingContact] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.from("players").select("id, phone, discord").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+        if (data) {
+          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "" });
+          setPhone(data.phone || "");
+          setDiscord(data.discord || "");
+        }
+      });
+    });
+  }, [user]);
 
   if (loading) return null;
 
@@ -47,6 +75,15 @@ const SettingsPage = () => {
     }
   };
 
+  const handleSaveContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!playerData) return;
+    setSavingContact(true);
+    await updatePlayer(playerData.id, { phone: phone.trim() || null, discord: discord.trim() || null });
+    setSavingContact(false);
+    toast({ title: "Zapisano!", description: "Dane kontaktowe zostały zaktualizowane." });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-lg">
       <Link to="/">
@@ -69,6 +106,35 @@ const SettingsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Contact info */}
+      {playerData && (
+        <div className="rounded-lg border border-border bg-card p-6 card-glow mb-6">
+          <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-primary" /> Dane kontaktowe
+          </h2>
+          <p className="text-sm text-muted-foreground font-body mb-4">
+            Podaj swoje dane kontaktowe, aby inni gracze mogli się z Tobą umówić na mecz.
+          </p>
+          <form onSubmit={handleSaveContact} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-1">
+                <Phone className="h-3 w-3" /> Telefon
+              </Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="np. +48 123 456 789" className="bg-muted/30 border-border" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-1">
+                <MessageCircle className="h-3 w-3" /> Discord
+              </Label>
+              <Input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="np. username#1234" className="bg-muted/30 border-border" />
+            </div>
+            <Button type="submit" variant="hero" disabled={savingContact}>
+              {savingContact ? "Zapisywanie..." : "Zapisz kontakt"}
+            </Button>
+          </form>
+        </div>
+      )}
 
       {/* Change password */}
       <div className="rounded-lg border border-border bg-card p-6 card-glow">
