@@ -176,6 +176,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
       ton60_1: String(m.ton60_1 ?? ""), ton60_2: String(m.ton60_2 ?? ""),
       ton80_1: String(m.ton80_1 ?? ""), ton80_2: String(m.ton80_2 ?? ""),
       tonPlus1: String(m.tonPlus1 ?? ""), tonPlus2: String(m.tonPlus2 ?? ""),
+      ton40_1: String(m.ton40_1 ?? ""), ton40_2: String(m.ton40_2 ?? ""),
       darts1: String(m.dartsThrown1 ?? ""), darts2: String(m.dartsThrown2 ?? ""),
       checkoutAttempts1: String(m.checkoutAttempts1 ?? ""), checkoutAttempts2: String(m.checkoutAttempts2 ?? ""),
       checkoutHits1: String(m.checkoutHits1 ?? ""), checkoutHits2: String(m.checkoutHits2 ?? ""),
