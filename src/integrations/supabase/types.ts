@@ -72,6 +72,8 @@ export type Database = {
           league_id: string
           legs_won1: number | null
           legs_won2: number | null
+          nine_darters1: number | null
+          nine_darters2: number | null
           one_eighties1: number | null
           one_eighties2: number | null
           player1_id: string
@@ -110,6 +112,8 @@ export type Database = {
           league_id: string
           legs_won1?: number | null
           legs_won2?: number | null
+          nine_darters1?: number | null
+          nine_darters2?: number | null
           one_eighties1?: number | null
           one_eighties2?: number | null
           player1_id: string
@@ -148,6 +152,8 @@ export type Database = {
           league_id?: string
           legs_won1?: number | null
           legs_won2?: number | null
+          nine_darters1?: number | null
+          nine_darters2?: number | null
           one_eighties1?: number | null
           one_eighties2?: number | null
           player1_id?: string
