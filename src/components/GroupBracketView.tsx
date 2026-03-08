@@ -2,11 +2,10 @@ import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Medal, Award, Users } from "lucide-react";
 import type { Match, PlayerLeagueStats } from "@/data/mockData";
 
-const FormBadge = ({ result }: { result: "W" | "L" | "D" }) => {
+const FormBadge = ({ result }: { result: "W" | "L" }) => {
   const styles = {
     W: "bg-secondary/20 text-secondary border-secondary/30",
     L: "bg-destructive/20 text-destructive border-destructive/30",
-    D: "bg-accent/20 text-accent border-accent/30",
   };
   return (
     <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold border ${styles[result]}`}>
