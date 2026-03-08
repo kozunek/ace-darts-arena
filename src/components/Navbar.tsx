@@ -25,6 +25,8 @@ const moreNavItems = [
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
+  { label: "Czat", href: "/chat", icon: <MessageCircle className="h-3.5 w-3.5" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
 ];
 
 const allMobileItems = [
@@ -36,6 +38,8 @@ const allMobileItems = [
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-4 w-4" /> },
   { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-4 w-4" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-4 w-4" /> },
+  { label: "Czat", href: "/chat", icon: <MessageCircle className="h-4 w-4" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit" },
 ];
 
@@ -95,23 +99,11 @@ const Navbar = () => {
             </DropdownMenu>
 
             {user && (
-              <>
-                <Link to="/my-matches">
-                  <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-2.5">
-                    <Handshake className="h-3.5 w-3.5 mr-1" /> Moje
-                  </Button>
-                </Link>
-                <Link to="/chat">
-                  <Button variant={location.pathname === "/chat" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-2.5">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-                <Link to="/announcements">
-                  <Button variant={location.pathname === "/announcements" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-2.5">
-                    <Megaphone className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </>
+              <Link to="/my-matches">
+                <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-2.5">
+                  <Handshake className="h-3.5 w-3.5 mr-1" /> Moje
+                </Button>
+              </Link>
             )}
             {showAdminLink && (
               <Link to="/admin">
@@ -167,16 +159,6 @@ const Navbar = () => {
                 <Link to="/my-matches" onClick={() => setMobileOpen(false)}>
                   <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
                     <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
-                  </Button>
-                </Link>
-                <Link to="/chat" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/chat" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <MessageCircle className="h-4 w-4 mr-1" /> Czat
-                  </Button>
-                </Link>
-                <Link to="/announcements" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/announcements" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <Megaphone className="h-4 w-4 mr-1" /> Ogłoszenia
                   </Button>
                 </Link>
               </>
