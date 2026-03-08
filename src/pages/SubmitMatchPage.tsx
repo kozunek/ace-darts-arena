@@ -33,6 +33,13 @@ const asNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const looseMatch = (left?: string | null, right?: string | null) => {
+  const a = normalizeIdentity(left);
+  const b = normalizeIdentity(right);
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+};
+
 const readScore = (scoreLike: unknown): number => {
   if (typeof scoreLike === "number") return scoreLike;
   if (scoreLike && typeof scoreLike === "object") {
@@ -106,8 +113,8 @@ const SubmitMatchPage = () => {
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
   const mapPayloadToStats = useCallback((payload: AutoPayload) => {
-    const scoreA = readScore(payload.score1);
-    const scoreB = readScore(payload.score2);
+    const scoreA = readScore(payload.score1 ?? payload.legs_won1);
+    const scoreB = readScore(payload.score2 ?? payload.legs_won2);
 
     setScore1(String(scoreA));
     setScore2(String(scoreB));
@@ -191,7 +198,7 @@ const SubmitMatchPage = () => {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
-      const targetMatch = matchedUpcoming || selectedMatch;
+      const targetMatch = selectedMatch || matchedUpcoming;
       const expectedP1AutoId = targetMatch ? playerAutodartsMap[targetMatch.player1Id] : undefined;
       const expectedP2AutoId = targetMatch ? playerAutodartsMap[targetMatch.player2Id] : undefined;
 
@@ -209,17 +216,34 @@ const SubmitMatchPage = () => {
         .map((v) => normalizeIdentity(String(v ?? "")))
         .filter(Boolean);
 
-      const overlaps = (a: string[], b: string[]) =>
-        a.some((left) => b.some((right) => left === right));
+      const overlapCount = (a: string[], b: string[]) => {
+        const left = new Set(a);
+        const right = new Set(b);
+        let count = 0;
+        left.forEach((v) => {
+          if (right.has(v)) count += 1;
+        });
+        return count;
+      };
 
-      const directScore =
-        Number(overlaps(p1Candidates, expectedP1Candidates)) +
-        Number(overlaps(p2Candidates, expectedP2Candidates));
-      const reversedScore =
-        Number(overlaps(p1Candidates, expectedP2Candidates)) +
-        Number(overlaps(p2Candidates, expectedP1Candidates));
+      const directScore = overlapCount(p1Candidates, expectedP1Candidates) + overlapCount(p2Candidates, expectedP2Candidates);
+      const reversedScore = overlapCount(p1Candidates, expectedP2Candidates) + overlapCount(p2Candidates, expectedP1Candidates);
 
-      const isReversedOrder = reversedScore > directScore;
+      const directLoose =
+        Number(looseMatch(payload.player1_name, targetMatch?.player1Name)) +
+        Number(looseMatch(payload.player2_name, targetMatch?.player2Name));
+      const reversedLoose =
+        Number(looseMatch(payload.player1_name, targetMatch?.player2Name)) +
+        Number(looseMatch(payload.player2_name, targetMatch?.player1Name));
+
+      const isReversedOrder =
+        reversedScore > directScore ||
+        (reversedScore === directScore && reversedLoose > directLoose);
+
+      const lowConfidence =
+        targetMatch != null &&
+        directScore === reversedScore &&
+        directLoose === reversedLoose;
 
       const alignedPayload = isReversedOrder
         ? {
@@ -258,7 +282,14 @@ const SubmitMatchPage = () => {
       if (alignedPayload.autodarts_link) setAutodartsLink(alignedPayload.autodarts_link);
       const mapped = mapPayloadToStats(alignedPayload);
 
-      if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
+      if (lowConfidence) {
+        toast({
+          title: "Uwaga: niepewne mapowanie",
+          description: "Nie udało się jednoznacznie dopasować graczy po nazwie/ID. Sprawdź kolumny i w razie potrzeby użyj 'Zamień strony'.",
+        });
+      }
+
+      if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming && !lowConfidence) {
         submitMatchResult(matchedUpcoming.id, mapped.data);
         processedAutoMatchRef.current = extMatchId;
         toast({
@@ -365,6 +396,37 @@ const SubmitMatchPage = () => {
 
     setFetchingAutodarts(false);
   }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
+
+  const handleSwapSides = useCallback(() => {
+    setScore1(score2);
+    setScore2(score1);
+    setStats((prev) => ({
+      ...prev,
+      avg1: prev.avg2 || "",
+      avg2: prev.avg1 || "",
+      first9Avg1: prev.first9Avg2 || "",
+      first9Avg2: prev.first9Avg1 || "",
+      avgUntil170_1: prev.avgUntil170_2 || "",
+      avgUntil170_2: prev.avgUntil170_1 || "",
+      oneEighties1: prev.oneEighties2 || "",
+      oneEighties2: prev.oneEighties1 || "",
+      hc1: prev.hc2 || "",
+      hc2: prev.hc1 || "",
+      ton60_1: prev.ton60_2 || "",
+      ton60_2: prev.ton60_1 || "",
+      ton80_1: prev.ton80_2 || "",
+      ton80_2: prev.ton80_1 || "",
+      tonPlus1: prev.tonPlus2 || "",
+      tonPlus2: prev.tonPlus1 || "",
+      darts1: prev.darts2 || "",
+      darts2: prev.darts1 || "",
+      checkoutAttempts1: prev.checkoutAttempts2 || "",
+      checkoutAttempts2: prev.checkoutAttempts1 || "",
+      checkoutHits1: prev.checkoutHits2 || "",
+      checkoutHits2: prev.checkoutHits1 || "",
+    }));
+    toast({ title: "Zamieniono strony", description: "Wynik i statystyki graczy zostały zamienione miejscami." });
+  }, [score1, score2, toast]);
 
   const resetForm = () => {
     setSelectedMatchId("");
@@ -600,6 +662,10 @@ const SubmitMatchPage = () => {
                   />
                 </div>
               </div>
+
+              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides}>
+                Zamień strony graczy ↔
+              </Button>
 
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-2">
