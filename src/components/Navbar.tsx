@@ -25,6 +25,8 @@ const moreNavItems = [
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
+  { label: "Czat", href: "/chat", icon: <MessageCircle className="h-3.5 w-3.5" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
 ];
 
 const allMobileItems = [
