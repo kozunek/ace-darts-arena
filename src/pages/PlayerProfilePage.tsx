@@ -92,7 +92,6 @@ const PlayerProfilePage = () => {
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
               <MiniStatBox label="Mecze" value={stats.matchesPlayed} />
               <MiniStatBox label="Wygrane" value={stats.wins} />
-              <MiniStatBox label="Remisy" value={stats.draws} />
               <MiniStatBox label="Przegrane" value={stats.losses} />
               <MiniStatBox label="Legi +" value={stats.legsWon} />
               <MiniStatBox label="Legi -" value={stats.legsLost} />
