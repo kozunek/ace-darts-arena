@@ -260,6 +260,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const allPlayers: Player[] = (playersData || []).map((p: any) => ({
       id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
       phone: p.phone ?? null, discord: p.discord ?? null,
+      avatar_url: p.avatar_url ?? null,
       leagueIds: playerLeagues.filter((pl: any) => pl.player_id === p.id).map((pl: any) => pl.league_id),
     }));
     const approved = allPlayers.filter(p => p.approved);
