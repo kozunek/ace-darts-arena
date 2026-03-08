@@ -21,6 +21,7 @@ const primaryNavItems = [
 ];
 
 const moreNavItems = [
+  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
   { label: "H2H", href: "/h2h", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
@@ -35,6 +36,7 @@ const allMobileItems = [
   { label: "Mecze", href: "/matches", icon: <Swords className="h-4 w-4" /> },
   { label: "Gracze", href: "/players", icon: <Trophy className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-4 w-4" /> },
+  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-4 w-4" />, authOnly: true },
   { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-4 w-4" /> },
   { label: "H2H", href: "/h2h", icon: <Swords className="h-4 w-4" /> },
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-4 w-4" /> },
@@ -90,7 +92,7 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-48">
-                {moreNavItems.map((item) => (
+                {moreNavItems.filter(item => !item.authOnly || user).map((item) => (
                   <Link key={item.href} to={item.href}>
                     <DropdownMenuItem className={`font-display uppercase tracking-wider text-xs cursor-pointer ${location.pathname === item.href ? "bg-accent" : ""}`}>
                       {item.icon && <span className="mr-2">{item.icon}</span>}
@@ -114,11 +116,6 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <Link to="/my-matches">
-                    <DropdownMenuItem className={`font-display uppercase tracking-wider text-xs cursor-pointer ${location.pathname === "/my-matches" ? "bg-accent" : ""}`}>
-                      <Handshake className="h-3.5 w-3.5 mr-2" /> Moje Mecze
-                    </DropdownMenuItem>
-                  </Link>
                   <Link to="/settings">
                     <DropdownMenuItem className={`font-display uppercase tracking-wider text-xs cursor-pointer ${location.pathname === "/settings" ? "bg-accent" : ""}`}>
                       <Settings className="h-3.5 w-3.5 mr-2" /> Ustawienia
@@ -160,7 +157,7 @@ const Navbar = () => {
 
         {mobileOpen && (
           <div className="lg:hidden pb-4 animate-fade-in">
-            {allMobileItems.map((item) => (
+            {allMobileItems.filter(item => !item.authOnly || user).map((item) => (
               <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}>
                 <Button
                   variant={location.pathname === item.href ? "default" : "ghost"}
@@ -174,11 +171,6 @@ const Navbar = () => {
             {user && (
               <>
                 <div className="my-2 border-t border-border" />
-                <Link to="/my-matches" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
-                  </Button>
-                </Link>
                 <Link to="/settings" onClick={() => setMobileOpen(false)}>
                   <Button variant={location.pathname === "/settings" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
                     <Settings className="h-4 w-4 mr-1" /> Ustawienia
