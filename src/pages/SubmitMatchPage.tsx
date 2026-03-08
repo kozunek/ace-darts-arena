@@ -1,14 +1,46 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link2, Send, Lock, ChevronDown, ChevronUp, Clock, Zap, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Link2,
+  Send,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Zap,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import MatchStatFields from "@/components/MatchStatFields";
+
+type AutoPayload = Record<string, any>;
+
+const normalizeName = (name?: string | null) => (name || "").trim().toLowerCase();
+
+const asNumber = (value: unknown, fallback = 0): number => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const readScore = (scoreLike: unknown): number => {
+  if (typeof scoreLike === "number") return scoreLike;
+  if (scoreLike && typeof scoreLike === "object") {
+    const item = scoreLike as Record<string, unknown>;
+    if (typeof item.legs === "number") return item.legs;
+    if (typeof item.sets === "number") return item.sets;
+    if (typeof item.value === "number") return item.value;
+  }
+  return asNumber(scoreLike, 0);
+};
 
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
@@ -27,125 +59,22 @@ const SubmitMatchPage = () => {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [extensionToken, setExtensionToken] = useState<string | null>(null);
   const [tokenFresh, setTokenFresh] = useState(false);
-
-  // Listen for extension messages
-  useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'EDART_EXTENSION_INSTALLED') {
-        setExtensionInstalled(true);
-        // Request token immediately
-        window.postMessage({ type: 'EDART_REQUEST_TOKEN' }, '*');
-      }
-      if (event.data?.type === 'EDART_TOKEN_RESPONSE') {
-        setExtensionToken(event.data.token || null);
-        setTokenFresh(event.data.fresh || false);
-      }
-    };
-    window.addEventListener('message', handler);
-
-    // Check if extension is already loaded
-    window.postMessage({ type: 'EDART_REQUEST_TOKEN' }, '*');
-
-    return () => window.removeEventListener('message', handler);
-  }, []);
+  const [autoSubmitFromExtension, setAutoSubmitFromExtension] = useState(true);
+  const processedAutoMatchRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user) { setLoadingPlayer(false); return; }
+    if (!user) {
+      setLoadingPlayer(false);
+      return;
+    }
     const fetchPlayerId = async () => {
       setLoadingPlayer(true);
-      const { data } = await supabase
-        .from("players")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data } = await supabase.from("players").select("id").eq("user_id", user.id).maybeSingle();
       setMyPlayerId(data?.id ?? null);
       setLoadingPlayer(false);
     };
     fetchPlayerId();
   }, [user]);
-
-  const getAutodartsToken = useCallback(async (): Promise<string | null> => {
-    // If extension provided a token, use it
-    if (extensionToken) return extensionToken;
-
-    // Otherwise ask user to paste it
-    const token = prompt(
-      "🎯 Token Autodarts wymagany!\n\n" +
-      "Aby pobrać statystyki, potrzebny jest token z Twojej sesji Autodarts.\n\n" +
-      "Jak go zdobyć:\n" +
-      "1. Zainstaluj rozszerzenie Chrome eDART Polska\n" +
-      "2. Otwórz play.autodarts.io i zaloguj się\n" +
-      "3. Kliknij ikonkę rozszerzenia → Kopiuj token\n" +
-      "4. Wklej tutaj\n\n" +
-      "Wklej token:"
-    );
-    return token;
-  }, [extensionToken]);
-
-  const handleFetchAutodarts = useCallback(async () => {
-    if (!autodartsLink) return;
-    setFetchingAutodarts(true);
-    try {
-      const adToken = await getAutodartsToken();
-      if (!adToken) {
-        toast({ title: "Anulowano", description: "Nie podano tokena Autodarts", variant: "destructive" });
-        setFetchingAutodarts(false);
-        return;
-      }
-
-      const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
-        body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
-      });
-      if (fnError || !fnData?.success) {
-        toast({ title: "Błąd", description: fnData?.error || fnError?.message || "Nie udało się pobrać danych", variant: "destructive" });
-        setFetchingAutodarts(false);
-        return;
-      }
-      const d = fnData.data;
-      setScore1(String(d.score1));
-      setScore2(String(d.score2));
-      setShowAdvanced(true);
-      setStats({
-        avg1: d.avg1 != null ? String(d.avg1) : "",
-        avg2: d.avg2 != null ? String(d.avg2) : "",
-        first9Avg1: d.first_9_avg1 != null ? String(d.first_9_avg1) : "",
-        first9Avg2: d.first_9_avg2 != null ? String(d.first_9_avg2) : "",
-        oneEighties1: String(d.one_eighties1 || 0),
-        oneEighties2: String(d.one_eighties2 || 0),
-        hc1: String(d.high_checkout1 || 0),
-        hc2: String(d.high_checkout2 || 0),
-        ton60_1: String(d.ton60_1 || 0),
-        ton60_2: String(d.ton60_2 || 0),
-        ton80_1: String(d.ton80_1 || 0),
-        ton80_2: String(d.ton80_2 || 0),
-        tonPlus1: String(d.ton_plus1 || 0),
-        tonPlus2: String(d.ton_plus2 || 0),
-        darts1: String(d.darts_thrown1 || 0),
-        darts2: String(d.darts_thrown2 || 0),
-        checkoutAttempts1: String(d.checkout_attempts1 || 0),
-        checkoutAttempts2: String(d.checkout_attempts2 || 0),
-        checkoutHits1: String(d.checkout_hits1 || 0),
-        checkoutHits2: String(d.checkout_hits2 || 0),
-      });
-      toast({ title: "✅ Pobrano!", description: `Statystyki z Autodarts: ${d.player1_name} vs ${d.player2_name}` });
-    } catch (err) {
-      toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
-    }
-    setFetchingAutodarts(false);
-  }, [autodartsLink, getAutodartsToken, toast]);
-
-  if (loading || loadingPlayer) return null;
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center max-w-md">
-        <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h1 className="text-2xl font-display font-bold text-foreground mb-2">Wymagane Logowanie</h1>
-        <p className="text-muted-foreground font-body mb-6">Aby zgłosić wynik meczu, musisz być zalogowany.</p>
-        <Link to="/login"><Button variant="hero" size="lg">Zaloguj się</Button></Link>
-      </div>
-    );
-  }
 
   const canSubmitAll = isAdmin || isModerator;
 
@@ -164,6 +93,185 @@ const SubmitMatchPage = () => {
   });
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
+
+  const mapPayloadToStats = useCallback((payload: AutoPayload) => {
+    const scoreA = readScore(payload.score1);
+    const scoreB = readScore(payload.score2);
+
+    setScore1(String(scoreA));
+    setScore2(String(scoreB));
+    setShowAdvanced(true);
+
+    setStats({
+      avg1: payload.avg1 != null ? String(payload.avg1) : "",
+      avg2: payload.avg2 != null ? String(payload.avg2) : "",
+      first9Avg1: payload.first_9_avg1 != null ? String(payload.first_9_avg1) : "",
+      first9Avg2: payload.first_9_avg2 != null ? String(payload.first_9_avg2) : "",
+      oneEighties1: String(asNumber(payload.one_eighties1)),
+      oneEighties2: String(asNumber(payload.one_eighties2)),
+      hc1: String(asNumber(payload.high_checkout1)),
+      hc2: String(asNumber(payload.high_checkout2)),
+      ton60_1: String(asNumber(payload.ton60_1)),
+      ton60_2: String(asNumber(payload.ton60_2)),
+      ton80_1: String(asNumber(payload.ton80_1)),
+      ton80_2: String(asNumber(payload.ton80_2)),
+      tonPlus1: String(asNumber(payload.ton_plus1)),
+      tonPlus2: String(asNumber(payload.ton_plus2)),
+      darts1: String(asNumber(payload.darts_thrown1)),
+      darts2: String(asNumber(payload.darts_thrown2)),
+      checkoutAttempts1: String(asNumber(payload.checkout_attempts1)),
+      checkoutAttempts2: String(asNumber(payload.checkout_attempts2)),
+      checkoutHits1: String(asNumber(payload.checkout_hits1)),
+      checkoutHits2: String(asNumber(payload.checkout_hits2)),
+    });
+
+    return {
+      scoreA,
+      scoreB,
+      data: {
+        score1: scoreA,
+        score2: scoreB,
+        avg1: payload.avg1 ?? undefined,
+        avg2: payload.avg2 ?? undefined,
+        oneEighties1: asNumber(payload.one_eighties1),
+        oneEighties2: asNumber(payload.one_eighties2),
+        highCheckout1: asNumber(payload.high_checkout1),
+        highCheckout2: asNumber(payload.high_checkout2),
+        ton60_1: asNumber(payload.ton60_1),
+        ton60_2: asNumber(payload.ton60_2),
+        ton80_1: asNumber(payload.ton80_1),
+        ton80_2: asNumber(payload.ton80_2),
+        tonPlus1: asNumber(payload.ton_plus1),
+        tonPlus2: asNumber(payload.ton_plus2),
+        dartsThrown1: asNumber(payload.darts_thrown1),
+        dartsThrown2: asNumber(payload.darts_thrown2),
+        checkoutAttempts1: asNumber(payload.checkout_attempts1),
+        checkoutAttempts2: asNumber(payload.checkout_attempts2),
+        checkoutHits1: asNumber(payload.checkout_hits1),
+        checkoutHits2: asNumber(payload.checkout_hits2),
+        first9Avg1: payload.first_9_avg1 ?? undefined,
+        first9Avg2: payload.first_9_avg2 ?? undefined,
+        autodartsLink: payload.autodarts_link || undefined,
+      } as MatchResultData,
+    };
+  }, []);
+
+  const applyAutoPayload = useCallback(
+    (payload: AutoPayload, allowAutoSubmit: boolean) => {
+      if (!payload) return;
+
+      const extMatchId = payload.match_id || payload.autodarts_link || `${payload.player1_name}-${payload.player2_name}`;
+      if (allowAutoSubmit && processedAutoMatchRef.current === extMatchId) return;
+
+      if (payload.autodarts_link) setAutodartsLink(payload.autodarts_link);
+      const mapped = mapPayloadToStats(payload);
+
+      const p1 = normalizeName(payload.player1_name);
+      const p2 = normalizeName(payload.player2_name);
+
+      const matchedUpcoming = upcomingMatches.find((m) => {
+        const m1 = normalizeName(m.player1Name);
+        const m2 = normalizeName(m.player2Name);
+        return (m1 === p1 && m2 === p2) || (m1 === p2 && m2 === p1);
+      });
+
+      if (matchedUpcoming) {
+        setSelectedMatchId(matchedUpcoming.id);
+      }
+
+      if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
+        submitMatchResult(matchedUpcoming.id, mapped.data);
+        processedAutoMatchRef.current = extMatchId;
+        toast({
+          title: "✅ Auto-zgłoszenie",
+          description: `Wynik ${payload.player1_name} vs ${payload.player2_name} został wysłany automatycznie.`,
+        });
+      }
+    },
+    [autoSubmitFromExtension, mapPayloadToStats, submitMatchResult, toast, upcomingMatches]
+  );
+
+  const requestExtensionData = useCallback(() => {
+    window.postMessage({ type: "EDART_REQUEST_TOKEN" }, "*");
+    window.postMessage({ type: "EDART_REQUEST_LAST_MATCH" }, "*");
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "EDART_EXTENSION_INSTALLED") {
+        setExtensionInstalled(true);
+      }
+      if (event.data?.type === "EDART_TOKEN_RESPONSE") {
+        setExtensionInstalled(true);
+        setExtensionToken(event.data.token || null);
+        setTokenFresh(Boolean(event.data.fresh));
+      }
+      if (event.data?.type === "EDART_LAST_MATCH_RESPONSE" && event.data.payload) {
+        setExtensionInstalled(true);
+        applyAutoPayload(event.data.payload, true);
+      }
+      if (event.data?.type === "EDART_LAST_MATCH_PUSH" && event.data.payload) {
+        setExtensionInstalled(true);
+        applyAutoPayload(event.data.payload, true);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    requestExtensionData();
+
+    const interval = window.setInterval(requestExtensionData, 8000);
+    return () => {
+      window.removeEventListener("message", handler);
+      window.clearInterval(interval);
+    };
+  }, [applyAutoPayload, requestExtensionData]);
+
+  const getAutodartsToken = useCallback(async (): Promise<string | null> => {
+    if (extensionToken) return extensionToken;
+
+    return prompt(
+      "🎯 Token Autodarts wymagany!\n\n" +
+        "Jak zdobyć:\n" +
+        "1. Zaloguj się na play.autodarts.io\n" +
+        "2. Kliknij ikonę rozszerzenia eDART\n" +
+        "3. Skopiuj token i wklej tutaj"
+    );
+  }, [extensionToken]);
+
+  const handleFetchAutodarts = useCallback(async () => {
+    if (!autodartsLink) return;
+    setFetchingAutodarts(true);
+
+    try {
+      const adToken = await getAutodartsToken();
+      if (!adToken) {
+        toast({ title: "Anulowano", description: "Nie podano tokena Autodarts", variant: "destructive" });
+        setFetchingAutodarts(false);
+        return;
+      }
+
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
+        body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
+      });
+
+      if (fnError || !fnData?.success) {
+        toast({
+          title: "Błąd",
+          description: fnData?.error || fnError?.message || "Nie udało się pobrać danych",
+          variant: "destructive",
+        });
+        setFetchingAutodarts(false);
+        return;
+      }
+
+      applyAutoPayload(fnData.data, false);
+      toast({ title: "✅ Pobrano!", description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}` });
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
+    }
+
+    setFetchingAutodarts(false);
+  }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
 
   const resetForm = () => {
     setSelectedMatchId("");
@@ -233,6 +341,23 @@ const SubmitMatchPage = () => {
     resetForm();
   };
 
+  if (loading || loadingPlayer) return null;
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center max-w-md">
+        <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h1 className="text-2xl font-display font-bold text-foreground mb-2">Wymagane Logowanie</h1>
+        <p className="text-muted-foreground font-body mb-6">Aby zgłosić wynik meczu, musisz być zalogowany.</p>
+        <Link to="/login">
+          <Button variant="hero" size="lg">
+            Zaloguj się
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   if (!canSubmitAll && !myPlayerId) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md">
@@ -256,30 +381,41 @@ const SubmitMatchPage = () => {
         <p className="text-xs text-accent font-body mt-1">⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.</p>
       </div>
 
-      {/* Extension status indicator */}
-      <div className={`rounded-lg border p-3 mb-6 flex items-center gap-3 text-sm ${
-        extensionInstalled && extensionToken
-          ? "border-green-500/30 bg-green-500/5 text-green-400"
-          : extensionInstalled
-          ? "border-yellow-500/30 bg-yellow-500/5 text-yellow-400"
-          : "border-border bg-muted/30 text-muted-foreground"
-      }`}>
+      <div
+        className={`rounded-lg border p-3 mb-4 flex items-center gap-3 text-sm ${
+          extensionInstalled && extensionToken
+            ? "border-primary/30 bg-primary/10 text-primary"
+            : extensionInstalled
+            ? "border-accent/30 bg-accent/10 text-accent"
+            : "border-border bg-muted/30 text-muted-foreground"
+        }`}
+      >
         {extensionInstalled && extensionToken ? (
           <>
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>Rozszerzenie Chrome aktywne — token Autodarts gotowy {tokenFresh ? "✅" : "(może wymagać odświeżenia)"}</span>
+            <span>Rozszerzenie aktywne — token Autodarts gotowy {tokenFresh ? "✅" : "(odśwież Autodarts)"}</span>
           </>
         ) : extensionInstalled ? (
           <>
             <XCircle className="h-4 w-4 shrink-0" />
-            <span>Rozszerzenie zainstalowane, ale brak tokena. Zaloguj się na <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">play.autodarts.io</a></span>
+            <span>
+              Rozszerzenie działa, ale brak tokena. Zaloguj się na {" "}
+              <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">
+                play.autodarts.io
+              </a>
+            </span>
           </>
         ) : (
           <>
             <Zap className="h-4 w-4 shrink-0" />
-            <span>Zainstaluj rozszerzenie Chrome eDART aby automatycznie pobierać statystyki z Autodarts</span>
+            <span>Zainstaluj rozszerzenie Chrome eDART, żeby pobierać i wysyłać wynik automatycznie.</span>
           </>
         )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-3 mb-6 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">Auto-zgłoszenie po zakończeniu meczu z Autodarts</div>
+        <Switch checked={autoSubmitFromExtension} onCheckedChange={setAutoSubmitFromExtension} />
       </div>
 
       {pendingMatches.length > 0 && (
@@ -290,8 +426,12 @@ const SubmitMatchPage = () => {
           <div className="space-y-2">
             {pendingMatches.map((m) => (
               <div key={m.id} className="flex items-center justify-between rounded-lg bg-card border border-border p-3">
-                <span className="font-body text-sm text-foreground">{m.player1Name} vs {m.player2Name}</span>
-                <span className="text-sm font-display text-accent">{m.score1}:{m.score2} ⏳</span>
+                <span className="font-body text-sm text-foreground">
+                  {m.player1Name} vs {m.player2Name}
+                </span>
+                <span className="text-sm font-display text-accent">
+                  {m.score1}:{m.score2} ⏳
+                </span>
               </div>
             ))}
           </div>
@@ -315,11 +455,15 @@ const SubmitMatchPage = () => {
                     key={match.id}
                     type="button"
                     onClick={() => setSelectedMatchId(match.id)}
-                    className={`w-full rounded-lg border p-4 text-left transition-all ${isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"}`}
+                    className={`w-full rounded-lg border p-4 text-left transition-all ${
+                      isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-body font-medium text-foreground">{match.player1Name} vs {match.player2Name}</span>
+                        <span className="font-body font-medium text-foreground">
+                          {match.player1Name} vs {match.player2Name}
+                        </span>
                         <div className="text-xs text-muted-foreground mt-1">
                           Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
                           {match.round && ` · Kolejka ${match.round}`}
@@ -338,11 +482,29 @@ const SubmitMatchPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player1Name}</Label>
-                  <Input type="number" min="0" max="20" value={score1} onChange={(e) => setScore1(e.target.value)} className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
+                  <Input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={score1}
+                    onChange={(e) => setScore1(e.target.value)}
+                    className="bg-muted/30 border-border text-center text-2xl font-display"
+                    placeholder="0"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player2Name}</Label>
-                  <Input type="number" min="0" max="20" value={score2} onChange={(e) => setScore2(e.target.value)} className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
+                  <Input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={score2}
+                    onChange={(e) => setScore2(e.target.value)}
+                    className="bg-muted/30 border-border text-center text-2xl font-display"
+                    placeholder="0"
+                    required
+                  />
                 </div>
               </div>
 
@@ -351,7 +513,13 @@ const SubmitMatchPage = () => {
                   <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io
                 </Label>
                 <div className="flex gap-2">
-                  <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://play.autodarts.io/history/matches/..." className="bg-muted/30 border-border" />
+                  <Input
+                    type="url"
+                    value={autodartsLink}
+                    onChange={(e) => setAutodartsLink(e.target.value)}
+                    placeholder="https://play.autodarts.io/history/matches/..."
+                    className="bg-muted/30 border-border"
+                  />
                   <Button
                     type="button"
                     variant="outline"
@@ -366,23 +534,22 @@ const SubmitMatchPage = () => {
                 </div>
                 <p className="text-xs text-muted-foreground font-body">
                   {extensionInstalled && extensionToken
-                    ? "✅ Token z rozszerzenia — wklej link i kliknij Pobierz"
-                    : "Wklej link i kliknij \"Pobierz\" — zostaniesz poproszony o token"}
+                    ? "✅ Rozszerzenie pobiera i może wysłać wynik automatycznie"
+                    : "Wklej link i kliknij Pobierz — zostaniesz poproszony o token"}
                 </p>
               </div>
 
-              <button type="button" onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors"
+              >
                 {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 {showAdvanced ? "Ukryj szczegółowe statystyki" : "Dodaj szczegółowe statystyki"}
               </button>
 
               {showAdvanced && (
-                <MatchStatFields
-                  stats={stats}
-                  setStats={setStats}
-                  p1={selectedMatch.player1Name}
-                  p2={selectedMatch.player2Name}
-                />
+                <MatchStatFields stats={stats} setStats={setStats} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
               )}
 
               <Button type="submit" variant="hero" size="lg" className="w-full">
