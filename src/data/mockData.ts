@@ -3,9 +3,9 @@ export interface League {
   name: string;
   season: string;
   description: string;
-  isActive: boolean;
-  format?: string; // e.g. "Best of 5", "Best of 7"
-  maxLegs?: number;
+  is_active: boolean;
+  format?: string;
+  max_legs?: number;
 }
 
 export interface Player {
@@ -13,7 +13,7 @@ export interface Player {
   name: string;
   avatar: string;
   approved: boolean;
-  leagueIds?: string[]; // leagues player is enrolled in
+  leagueIds?: string[];
 }
 
 export interface PlayerLeagueStats {
@@ -54,7 +54,6 @@ export interface Match {
   date: string;
   round?: number;
   autodartsLink?: string;
-  rawData?: object;
   oneEighties1?: number;
   oneEighties2?: number;
   highCheckout1?: number;
@@ -98,38 +97,4 @@ export const achievements: Achievement[] = [
   { id: "a13", name: "Rzucający Maszyna", description: "Rzuć ponad 500 dartsów w lidze", icon: "🤖", rarity: "rare", condition: (s) => s.totalDartsThrown >= 500 },
   { id: "a14", name: "Perfekcjonista", description: "Osiągnij najlepszą średnią powyżej 90", icon: "🌟", rarity: "legendary", condition: (s) => s.bestAvg >= 90 },
   { id: "a15", name: "Ton 80 Kolekcjoner", description: "Zbierz 15 wyników Ton 80 (80-99)", icon: "🃏", rarity: "rare", condition: (s) => s.ton80 >= 15 },
-];
-
-export const leagues: League[] = [
-  { id: "l1", name: "Liga Główna", season: "Wiosna 2026", description: "Główna liga darta — rywalizacja o mistrzostwo", isActive: true, format: "Best of 5", maxLegs: 5 },
-  { id: "l2", name: "Liga Amatorska", season: "Wiosna 2026", description: "Liga dla początkujących i średnio-zaawansowanych graczy", isActive: true, format: "Best of 3", maxLegs: 3 },
-  { id: "l3", name: "Puchar Zimowy", season: "Zima 2025/26", description: "Turniej pucharowy — faza grupowa", isActive: false, format: "Best of 5", maxLegs: 5 },
-];
-
-export const players: Player[] = [
-  { id: "1", name: "Krzysztof Nowak", avatar: "KN", approved: true, leagueIds: ["l1", "l3"] },
-  { id: "2", name: "Anna Wiśniewska", avatar: "AW", approved: true, leagueIds: ["l1", "l3"] },
-  { id: "3", name: "Tomasz Kowalski", avatar: "TK", approved: true, leagueIds: ["l1"] },
-  { id: "4", name: "Magdalena Zielińska", avatar: "MZ", approved: true, leagueIds: ["l1"] },
-  { id: "5", name: "Piotr Kamiński", avatar: "PK", approved: true, leagueIds: ["l1", "l2"] },
-  { id: "6", name: "Ewa Dąbrowska", avatar: "ED", approved: true, leagueIds: ["l1", "l2"] },
-  { id: "7", name: "Marek Lewandowski", avatar: "ML", approved: true, leagueIds: ["l2"] },
-  { id: "8", name: "Julia Wójcik", avatar: "JW", approved: true, leagueIds: ["l2"] },
-];
-
-export const matches: Match[] = [
-  // Liga Główna
-  { id: "m1", leagueId: "l1", player1Id: "1", player2Id: "2", player1Name: "Krzysztof Nowak", player2Name: "Anna Wiśniewska", score1: 3, score2: 1, legsWon1: 3, legsWon2: 1, status: "completed", date: "2026-03-05", round: 1, oneEighties1: 2, oneEighties2: 0, highCheckout1: 120, highCheckout2: 80, avg1: 78.2, avg2: 65.1, ton40_1: 5, ton40_2: 3, ton60_1: 3, ton60_2: 2, ton80_1: 2, ton80_2: 1, tonPlus1: 1, tonPlus2: 0, dartsThrown1: 72, dartsThrown2: 68, autodartsLink: "https://autodarts.io/matches/abc123" },
-  { id: "m2", leagueId: "l1", player1Id: "3", player2Id: "4", player1Name: "Tomasz Kowalski", player2Name: "Magdalena Zielińska", score1: 3, score2: 2, legsWon1: 3, legsWon2: 2, status: "completed", date: "2026-03-04", round: 1, oneEighties1: 3, oneEighties2: 1, highCheckout1: 132, highCheckout2: 98, avg1: 71.0, avg2: 62.5, ton40_1: 4, ton40_2: 3, ton60_1: 3, ton60_2: 2, ton80_1: 1, ton80_2: 0, tonPlus1: 0, tonPlus2: 1, dartsThrown1: 85, dartsThrown2: 90 },
-  { id: "m3", leagueId: "l1", player1Id: "5", player2Id: "6", player1Name: "Piotr Kamiński", player2Name: "Ewa Dąbrowska", score1: 2, score2: 3, legsWon1: 2, legsWon2: 3, status: "completed", date: "2026-03-03", round: 1, oneEighties1: 0, oneEighties2: 1, highCheckout1: 88, highCheckout2: 98, avg1: 55.3, avg2: 59.7, ton40_1: 2, ton40_2: 4, ton60_1: 1, ton60_2: 2, ton80_1: 0, ton80_2: 1, tonPlus1: 0, tonPlus2: 0, dartsThrown1: 95, dartsThrown2: 88 },
-  { id: "m4", leagueId: "l1", player1Id: "1", player2Id: "3", player1Name: "Krzysztof Nowak", player2Name: "Tomasz Kowalski", status: "upcoming", date: "2026-03-10", round: 2 },
-  { id: "m5", leagueId: "l1", player1Id: "2", player2Id: "5", player1Name: "Anna Wiśniewska", player2Name: "Piotr Kamiński", status: "upcoming", date: "2026-03-11", round: 2 },
-  { id: "m6", leagueId: "l1", player1Id: "4", player2Id: "6", player1Name: "Magdalena Zielińska", player2Name: "Ewa Dąbrowska", status: "upcoming", date: "2026-03-12", round: 2 },
-  { id: "m7", leagueId: "l1", player1Id: "7", player2Id: "8", player1Name: "Marek Lewandowski", player2Name: "Julia Wójcik", status: "upcoming", date: "2026-03-13", round: 2 },
-
-  // Liga Amatorska
-  { id: "m10", leagueId: "l2", player1Id: "5", player2Id: "7", player1Name: "Piotr Kamiński", player2Name: "Marek Lewandowski", score1: 3, score2: 0, legsWon1: 3, legsWon2: 0, status: "completed", date: "2026-03-02", round: 1, oneEighties1: 1, oneEighties2: 0, highCheckout1: 76, highCheckout2: 45, avg1: 52.1, avg2: 41.3, ton40_1: 3, ton40_2: 1, ton60_1: 1, ton60_2: 0, ton80_1: 0, ton80_2: 0, tonPlus1: 0, tonPlus2: 0, dartsThrown1: 60, dartsThrown2: 55 },
-  { id: "m11", leagueId: "l2", player1Id: "6", player2Id: "8", player1Name: "Ewa Dąbrowska", player2Name: "Julia Wójcik", score1: 2, score2: 3, legsWon1: 2, legsWon2: 3, status: "completed", date: "2026-03-02", round: 1, oneEighties1: 0, oneEighties2: 0, highCheckout1: 55, highCheckout2: 68, avg1: 43.2, avg2: 48.7, ton40_1: 2, ton40_2: 3, ton60_1: 0, ton60_2: 1, ton80_1: 0, ton80_2: 0, tonPlus1: 0, tonPlus2: 0, dartsThrown1: 92, dartsThrown2: 88 },
-  { id: "m12", leagueId: "l2", player1Id: "5", player2Id: "8", player1Name: "Piotr Kamiński", player2Name: "Julia Wójcik", status: "upcoming", date: "2026-03-14", round: 2 },
-  { id: "m13", leagueId: "l2", player1Id: "6", player2Id: "7", player1Name: "Ewa Dąbrowska", player2Name: "Marek Lewandowski", status: "upcoming", date: "2026-03-14", round: 2 },
 ];
