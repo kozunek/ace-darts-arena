@@ -124,7 +124,7 @@ const HallOfFamePage = () => {
   const streakEntries = Object.entries(streakMap)
     .map(([pid, val]) => {
       const p = players.find((pl) => pl.id === pid);
-      return p ? { pid, name: p.name, avatar: p.avatar, val } : null;
+      return p ? { pid, name: p.name, avatar: p.avatar, avatarUrl: p.avatar_url, val } : null;
     })
     .filter(Boolean)
     .sort((a, b) => b!.val - a!.val)
