@@ -175,44 +175,52 @@ export const achievements: Achievement[] = [
   { id: "a6", name: "Perfekcjonista", description: "Najlepsza średnia w meczu powyżej 90", icon: "✨", rarity: "epic", condition: (s) => s.bestAvg >= 90 },
   { id: "a7", name: "Maszyna do Punktów", description: "Najlepsza średnia w meczu powyżej 100", icon: "🤖", rarity: "legendary", condition: (s) => s.bestAvg >= 100 },
 
-  // ─── FIRST 9 AVERAGE ───
-  { id: "f1", name: "Szybki Start", description: "First 9 Average powyżej 60", icon: "⚡", rarity: "common", condition: (s) => s.bestFirst9Avg >= 60 },
-  { id: "f2", name: "Rakieta", description: "First 9 Average powyżej 80", icon: "🚀", rarity: "rare", condition: (s) => s.bestFirst9Avg >= 80 },
-  { id: "f3", name: "Błyskawica", description: "First 9 Average powyżej 100", icon: "⚡", rarity: "epic", condition: (s) => s.bestFirst9Avg >= 100 },
-  { id: "f4", name: "Perfekcyjny Start", description: "First 9 Average powyżej 120", icon: "💫", rarity: "legendary", condition: (s) => s.bestFirst9Avg >= 120 },
+  // ─── PIERWSZA 9 ŚREDNIA ───
+  { id: "f1", name: "Szybki Start", description: "Średnia z pierwszych 9 rzutów powyżej 60", icon: "⚡", rarity: "common", condition: (s) => s.bestFirst9Avg >= 60 },
+  { id: "f2", name: "Rakieta", description: "Średnia z pierwszych 9 rzutów powyżej 80", icon: "🚀", rarity: "rare", condition: (s) => s.bestFirst9Avg >= 80 },
+  { id: "f3", name: "Błyskawica", description: "Średnia z pierwszych 9 rzutów powyżej 100", icon: "⚡", rarity: "epic", condition: (s) => s.bestFirst9Avg >= 100 },
+  { id: "f4", name: "Perfekcyjny Start", description: "Średnia z pierwszych 9 rzutów powyżej 120", icon: "💫", rarity: "legendary", condition: (s) => s.bestFirst9Avg >= 120 },
 
-  // ─── AVERAGE UNTIL 170 ───
-  { id: "u1", name: "Scoring Machine", description: "Avg Until 170 powyżej 60", icon: "📊", rarity: "common", condition: (s) => s.bestAvgUntil170 >= 60 },
-  { id: "u2", name: "Heavy Scorer", description: "Avg Until 170 powyżej 80", icon: "💪", rarity: "rare", condition: (s) => s.bestAvgUntil170 >= 80 },
-  { id: "u3", name: "Power Scorer", description: "Avg Until 170 powyżej 100", icon: "🔥", rarity: "epic", condition: (s) => s.bestAvgUntil170 >= 100 },
-  { id: "u4", name: "Scoring Legend", description: "Avg Until 170 powyżej 120", icon: "👑", rarity: "legendary", condition: (s) => s.bestAvgUntil170 >= 120 },
+  // ─── ŚREDNIA DO 170 ───
+  { id: "u1", name: "Punktująca Maszyna", description: "Średnia do 170 powyżej 60", icon: "📊", rarity: "common", condition: (s) => s.bestAvgUntil170 >= 60 },
+  { id: "u2", name: "Ciężki Scorer", description: "Średnia do 170 powyżej 80", icon: "💪", rarity: "rare", condition: (s) => s.bestAvgUntil170 >= 80 },
+  { id: "u3", name: "Potęga Punktów", description: "Średnia do 170 powyżej 100", icon: "🔥", rarity: "epic", condition: (s) => s.bestAvgUntil170 >= 100 },
+  { id: "u4", name: "Legenda Scoringu", description: "Średnia do 170 powyżej 120", icon: "👑", rarity: "legendary", condition: (s) => s.bestAvgUntil170 >= 120 },
+
+  // ─── TONY (SCORING) ───
+  { id: "t1", name: "Ton 60 Początkujący", description: "Zbierz 10 wyników Ton 60", icon: "🎰", rarity: "common", condition: (s) => s.ton60 >= 10 },
   { id: "t2", name: "Ton 80 Kolekcjoner", description: "Zbierz 15 wyników Ton 80", icon: "🃏", rarity: "rare", condition: (s) => s.ton80 >= 15 },
-  { id: "t3", name: "Ton+ Hunter", description: "Rzuć 20 wyników powyżej 100", icon: "🎪", rarity: "epic", condition: (s) => s.tonPlus >= 20 },
-  { id: "t4", name: "Ton Kolekcjoner", description: "Zbierz łącznie 50 tonów (60+80+plus)", icon: "💰", rarity: "epic", condition: (s) => (s.ton60 + s.ton80 + s.tonPlus) >= 50 },
+  { id: "t3", name: "Ton+ Łowca", description: "Rzuć 20 wyników powyżej 100", icon: "🎪", rarity: "epic", condition: (s) => s.tonPlus >= 20 },
+  { id: "t4", name: "Ton Kolekcjoner", description: "Zbierz łącznie 50 tonów (60+80+100+)", icon: "💰", rarity: "epic", condition: (s) => (s.ton60 + s.ton80 + s.tonPlus) >= 50 },
   { id: "t5", name: "Ton Milioner", description: "Zbierz łącznie 100 tonów", icon: "💎", rarity: "legendary", condition: (s) => (s.ton60 + s.ton80 + s.tonPlus) >= 100 },
 
-  // ─── WIN RATE ───
-  { id: "r1", name: "Ponad Połowa", description: "Win rate powyżej 50% (min. 5 meczów)", icon: "📊", rarity: "common", condition: (s) => s.winRate > 50 && s.matchesPlayed >= 5 },
-  { id: "r2", name: "Wysoki Win Rate", description: "Win rate powyżej 75% (min. 5 meczów)", icon: "🏅", rarity: "epic", condition: (s) => s.winRate >= 75 && s.matchesPlayed >= 5 },
-  { id: "r3", name: "Absolutny Dominat", description: "Win rate powyżej 90% (min. 8 meczów)", icon: "👑", rarity: "legendary", condition: (s) => s.winRate >= 90 && s.matchesPlayed >= 8 },
+  // ─── PROCENT WYGRANYCH ───
+  { id: "r1", name: "Ponad Połowa", description: "Procent wygranych powyżej 50% (min. 5 meczów)", icon: "📊", rarity: "common", condition: (s) => s.winRate > 50 && s.matchesPlayed >= 5 },
+  { id: "r2", name: "Wysoki Procent", description: "Procent wygranych powyżej 75% (min. 5 meczów)", icon: "🏅", rarity: "epic", condition: (s) => s.winRate >= 75 && s.matchesPlayed >= 5 },
+  { id: "r3", name: "Absolutny Dominat", description: "Procent wygranych powyżej 90% (min. 8 meczów)", icon: "👑", rarity: "legendary", condition: (s) => s.winRate >= 90 && s.matchesPlayed >= 8 },
 
   // ─── LEGI ───
   { id: "l1", name: "10 Legów", description: "Wygraj 10 legów w lidze", icon: "🦵", rarity: "common", condition: (s) => s.legsWon >= 10 },
   { id: "l2", name: "50 Legów", description: "Wygraj 50 legów w lidze", icon: "🦿", rarity: "rare", condition: (s) => s.legsWon >= 50 },
   { id: "l3", name: "100 Legów", description: "Wygraj 100 legów w lidze", icon: "💪", rarity: "epic", condition: (s) => s.legsWon >= 100 },
-  { id: "l4", name: "Leg Machine", description: "Wygraj 200 legów w lidze", icon: "🦾", rarity: "legendary", condition: (s) => s.legsWon >= 200 },
+  { id: "l4", name: "Maszyna do Legów", description: "Wygraj 200 legów w lidze", icon: "🦾", rarity: "legendary", condition: (s) => s.legsWon >= 200 },
 
   // ─── DARTY ───
   { id: "d1", name: "Rzucający Gracz", description: "Rzuć ponad 200 dartsów", icon: "🎯", rarity: "common", condition: (s) => s.totalDartsThrown >= 200 },
-  { id: "d2", name: "Rzucający Maszyna", description: "Rzuć ponad 500 dartsów", icon: "🤖", rarity: "rare", condition: (s) => s.totalDartsThrown >= 500 },
+  { id: "d2", name: "Rzucająca Maszyna", description: "Rzuć ponad 500 dartsów", icon: "🤖", rarity: "rare", condition: (s) => s.totalDartsThrown >= 500 },
   { id: "d3", name: "Rzucający Fanatyk", description: "Rzuć ponad 1000 dartsów", icon: "🔨", rarity: "epic", condition: (s) => s.totalDartsThrown >= 1000 },
   { id: "d4", name: "Dart Maniak", description: "Rzuć ponad 2000 dartsów", icon: "🌪️", rarity: "legendary", condition: (s) => s.totalDartsThrown >= 2000 },
 
   // ─── SPECJALNE ───
-  { id: "x1", name: "Clean Sweep", description: "Wygraj mecz bez straty lega (i wygrałeś min. 3 legi)", icon: "🧹", rarity: "epic", condition: (s) => s.legsWon >= 3 && s.wins >= 1 },
+  { id: "x1", name: "Czyste Konto", description: "Wygraj mecz bez straty lega (min. 3 legi)", icon: "🧹", rarity: "epic", condition: (s) => s.legsWon >= 3 && s.wins >= 1 },
   { id: "x2", name: "Punktowy Potwór", description: "Zdobądź ponad 30 punktów w lidze", icon: "🐉", rarity: "epic", condition: (s) => s.points >= 30 },
   { id: "x3", name: "Punktowy Tyran", description: "Zdobądź ponad 50 punktów w lidze", icon: "👹", rarity: "legendary", condition: (s) => s.points >= 50 },
-  { id: "x4", name: "Bonus Hunter", description: "Zdobądź ponad 10 punktów bonusowych", icon: "💫", rarity: "rare", condition: (s) => s.bonusPoints >= 10 },
-  { id: "x5", name: "Bonus King", description: "Zdobądź ponad 25 punktów bonusowych", icon: "🌠", rarity: "epic", condition: (s) => s.bonusPoints >= 25 },
+  { id: "x4", name: "Łowca Bonusów", description: "Zdobądź ponad 10 punktów bonusowych", icon: "💫", rarity: "rare", condition: (s) => s.bonusPoints >= 10 },
+  { id: "x5", name: "Król Bonusów", description: "Zdobądź ponad 25 punktów bonusowych", icon: "🌠", rarity: "epic", condition: (s) => s.bonusPoints >= 25 },
+  { id: "x6", name: "Wieloligowiec", description: "Rozegraj mecze w 2 różnych ligach", icon: "🌍", rarity: "rare", condition: (s) => s.matchesPlayed >= 1 },
+  { id: "x7", name: "Pierwszy Checkout 80+", description: "Zamknij lega checkoutem 80+", icon: "🎯", rarity: "common", condition: (s) => s.highestCheckout >= 80 },
+  { id: "x8", name: "Podwójna Setka", description: "Średnia 100+ i checkout 100+ w jednej lidze", icon: "💯", rarity: "legendary", condition: (s) => s.avg >= 100 && s.highestCheckout >= 100 && s.matchesPlayed >= 3 },
+  { id: "x9", name: "Kompletny Gracz", description: "Średnia 70+, checkout 80+, min. 5 wygranych", icon: "🏅", rarity: "epic", condition: (s) => s.avg >= 70 && s.highestCheckout >= 80 && s.wins >= 5 },
+  { id: "x10", name: "Żelazna Forma", description: "5 meczów z rzędu bez porażki i średnia 60+", icon: "🛡️", rarity: "epic", condition: (s) => { const f = s.form; for (let i = 0; i <= f.length - 5; i++) { if (f.slice(i,i+5).every(x=>x!=="L") && s.avg >= 60) return true; } return false; }},
 
 ];
