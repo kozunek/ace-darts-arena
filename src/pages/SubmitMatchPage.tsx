@@ -17,6 +17,7 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -24,20 +25,9 @@ import MatchStatFields from "@/components/MatchStatFields";
 
 type AutoPayload = Record<string, any>;
 
-const normalizeName = (name?: string | null) => (name || "").trim().toLowerCase();
-const normalizeIdentity = (value?: string | null) =>
-  (value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-
 const asNumber = (value: unknown, fallback = 0): number => {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-};
-
-const looseMatch = (left?: string | null, right?: string | null) => {
-  const a = normalizeIdentity(left);
-  const b = normalizeIdentity(right);
-  if (!a || !b) return false;
-  return a === b || a.includes(b) || b.includes(a);
 };
 
 const readScore = (scoreLike: unknown): number => {
@@ -51,6 +41,20 @@ const readScore = (scoreLike: unknown): number => {
   return asNumber(scoreLike, 0);
 };
 
+const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
+  { key1: "avg1", key2: "avg2", label: "Średnia" },
+  { key1: "first_9_avg1", key2: "first_9_avg2", label: "Średnia z 9" },
+  { key1: "avg_until_170_1", key2: "avg_until_170_2", label: "Śr. do 170" },
+  { key1: "one_eighties1", key2: "one_eighties2", label: "180" },
+  { key1: "high_checkout1", key2: "high_checkout2", label: "Najw. checkout" },
+  { key1: "ton60_1", key2: "ton60_2", label: "60+" },
+  { key1: "ton80_1", key2: "ton80_2", label: "80+" },
+  { key1: "ton_plus1", key2: "ton_plus2", label: "100+" },
+  { key1: "darts_thrown1", key2: "darts_thrown2", label: "Rzuty" },
+  { key1: "checkout_attempts1", key2: "checkout_attempts2", label: "Checkout próby" },
+  { key1: "checkout_hits1", key2: "checkout_hits2", label: "Checkout traf." },
+];
+
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
   const { matches, submitMatchResult } = useLeague();
@@ -58,7 +62,6 @@ const SubmitMatchPage = () => {
 
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
-  const [playerAutodartsMap, setPlayerAutodartsMap] = useState<Record<string, string>>({});
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [autodartsLink, setAutodartsLink] = useState("");
   const [score1, setScore1] = useState("");
@@ -72,6 +75,9 @@ const SubmitMatchPage = () => {
   const [autoSubmitFromExtension, setAutoSubmitFromExtension] = useState(true);
   const processedAutoMatchRef = useRef<string | null>(null);
 
+  // Raw preview of fetched Autodarts data
+  const [rawPreview, setRawPreview] = useState<AutoPayload | null>(null);
+
   useEffect(() => {
     if (!user) {
       setLoadingPlayer(false);
@@ -79,16 +85,12 @@ const SubmitMatchPage = () => {
     }
     const fetchPlayerId = async () => {
       setLoadingPlayer(true);
-      const [{ data: me }, { data: allPlayers }] = await Promise.all([
-        supabase.from("players").select("id").eq("user_id", user.id).maybeSingle(),
-        supabase.from("players").select("id, autodarts_user_id").not("autodarts_user_id", "is", null),
-      ]);
+      const { data: me } = await supabase
+        .from("players")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
       setMyPlayerId(me?.id ?? null);
-      const map: Record<string, string> = {};
-      (allPlayers || []).forEach((p: any) => {
-        if (p.id && p.autodarts_user_id) map[p.id] = p.autodarts_user_id;
-      });
-      setPlayerAutodartsMap(map);
       setLoadingPlayer(false);
     };
     fetchPlayerId();
@@ -112,9 +114,10 @@ const SubmitMatchPage = () => {
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
-  const mapPayloadToStats = useCallback((payload: AutoPayload) => {
-    const scoreA = readScore(payload.score1 ?? payload.legs_won1);
-    const scoreB = readScore(payload.score2 ?? payload.legs_won2);
+  // Populate form fields from payload (no swapping — data goes in as-is)
+  const populateForm = useCallback((payload: AutoPayload) => {
+    const scoreA = readScore(payload.score1);
+    const scoreB = readScore(payload.score2);
 
     setScore1(String(scoreA));
     setScore2(String(scoreB));
@@ -145,52 +148,24 @@ const SubmitMatchPage = () => {
       checkoutHits2: String(asNumber(payload.checkout_hits2)),
     });
 
-    return {
-      scoreA,
-      scoreB,
-      data: {
-        score1: scoreA,
-        score2: scoreB,
-        avg1: payload.avg1 ?? undefined,
-        avg2: payload.avg2 ?? undefined,
-        oneEighties1: asNumber(payload.one_eighties1),
-        oneEighties2: asNumber(payload.one_eighties2),
-        highCheckout1: asNumber(payload.high_checkout1),
-        highCheckout2: asNumber(payload.high_checkout2),
-        ton60_1: asNumber(payload.ton60_1),
-        ton60_2: asNumber(payload.ton60_2),
-        ton80_1: asNumber(payload.ton80_1),
-        ton80_2: asNumber(payload.ton80_2),
-        tonPlus1: asNumber(payload.ton_plus1),
-        tonPlus2: asNumber(payload.ton_plus2),
-        dartsThrown1: asNumber(payload.darts_thrown1),
-        dartsThrown2: asNumber(payload.darts_thrown2),
-        checkoutAttempts1: asNumber(payload.checkout_attempts1),
-        checkoutAttempts2: asNumber(payload.checkout_attempts2),
-        checkoutHits1: asNumber(payload.checkout_hits1),
-        checkoutHits2: asNumber(payload.checkout_hits2),
-        first9Avg1: payload.first_9_avg1 ?? undefined,
-        first9Avg2: payload.first_9_avg2 ?? undefined,
-        avgUntil170_1: payload.avg_until_170_1 ?? undefined,
-        avgUntil170_2: payload.avg_until_170_2 ?? undefined,
-        autodartsLink: payload.autodarts_link || undefined,
-      } as MatchResultData,
-    };
+    if (payload.autodarts_link) setAutodartsLink(payload.autodarts_link);
+    setRawPreview(payload);
   }, []);
 
   const applyAutoPayload = useCallback(
     (payload: AutoPayload, allowAutoSubmit: boolean) => {
       if (!payload) return;
 
-      const extMatchId = payload.match_id || payload.autodarts_link || `${payload.player1_name}-${payload.player2_name}`;
+      const extMatchId =
+        payload.match_id || payload.autodarts_link || `${payload.player1_name}-${payload.player2_name}`;
       if (allowAutoSubmit && processedAutoMatchRef.current === extMatchId) return;
 
-      const p1 = normalizeName(payload.player1_name);
-      const p2 = normalizeName(payload.player2_name);
+      const p1 = (payload.player1_name || "").trim().toLowerCase();
+      const p2 = (payload.player2_name || "").trim().toLowerCase();
 
       const matchedUpcoming = upcomingMatches.find((m) => {
-        const m1 = normalizeName(m.player1Name);
-        const m2 = normalizeName(m.player2Name);
+        const m1 = m.player1Name.trim().toLowerCase();
+        const m2 = m.player2Name.trim().toLowerCase();
         return (m1 === p1 && m2 === p2) || (m1 === p2 && m2 === p1);
       });
 
@@ -198,107 +173,48 @@ const SubmitMatchPage = () => {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
-      const targetMatch = selectedMatch || matchedUpcoming;
-      const expectedP1AutoId = targetMatch ? playerAutodartsMap[targetMatch.player1Id] : undefined;
-      const expectedP2AutoId = targetMatch ? playerAutodartsMap[targetMatch.player2Id] : undefined;
+      // Just populate as-is — user can swap manually
+      populateForm(payload);
 
-      const p1Candidates = [payload.player1_autodarts_id, payload.player1_name]
-        .map((v) => normalizeIdentity(String(v ?? "")))
-        .filter(Boolean);
-      const p2Candidates = [payload.player2_autodarts_id, payload.player2_name]
-        .map((v) => normalizeIdentity(String(v ?? "")))
-        .filter(Boolean);
-
-      const expectedP1Candidates = [targetMatch?.player1Name, expectedP1AutoId]
-        .map((v) => normalizeIdentity(String(v ?? "")))
-        .filter(Boolean);
-      const expectedP2Candidates = [targetMatch?.player2Name, expectedP2AutoId]
-        .map((v) => normalizeIdentity(String(v ?? "")))
-        .filter(Boolean);
-
-      const overlapCount = (a: string[], b: string[]) => {
-        const left = new Set(a);
-        const right = new Set(b);
-        let count = 0;
-        left.forEach((v) => {
-          if (right.has(v)) count += 1;
-        });
-        return count;
-      };
-
-      const directScore = overlapCount(p1Candidates, expectedP1Candidates) + overlapCount(p2Candidates, expectedP2Candidates);
-      const reversedScore = overlapCount(p1Candidates, expectedP2Candidates) + overlapCount(p2Candidates, expectedP1Candidates);
-
-      const directLoose =
-        Number(looseMatch(payload.player1_name, targetMatch?.player1Name)) +
-        Number(looseMatch(payload.player2_name, targetMatch?.player2Name));
-      const reversedLoose =
-        Number(looseMatch(payload.player1_name, targetMatch?.player2Name)) +
-        Number(looseMatch(payload.player2_name, targetMatch?.player1Name));
-
-      const isReversedOrder =
-        reversedScore > directScore ||
-        (reversedScore === directScore && reversedLoose > directLoose);
-
-      const lowConfidence =
-        targetMatch != null &&
-        directScore === reversedScore &&
-        directLoose === reversedLoose;
-
-      const alignedPayload = isReversedOrder
-        ? {
-            ...payload,
-            score1: payload.score2,
-            score2: payload.score1,
-            avg1: payload.avg2,
-            avg2: payload.avg1,
-            first_9_avg1: payload.first_9_avg2,
-            first_9_avg2: payload.first_9_avg1,
-            avg_until_170_1: payload.avg_until_170_2,
-            avg_until_170_2: payload.avg_until_170_1,
-            one_eighties1: payload.one_eighties2,
-            one_eighties2: payload.one_eighties1,
-            high_checkout1: payload.high_checkout2,
-            high_checkout2: payload.high_checkout1,
-            ton60_1: payload.ton60_2,
-            ton60_2: payload.ton60_1,
-            ton80_1: payload.ton80_2,
-            ton80_2: payload.ton80_1,
-            ton_plus1: payload.ton_plus2,
-            ton_plus2: payload.ton_plus1,
-            darts_thrown1: payload.darts_thrown2,
-            darts_thrown2: payload.darts_thrown1,
-            checkout_attempts1: payload.checkout_attempts2,
-            checkout_attempts2: payload.checkout_attempts1,
-            checkout_hits1: payload.checkout_hits2,
-            checkout_hits2: payload.checkout_hits1,
-            player1_name: payload.player2_name,
-            player2_name: payload.player1_name,
-            player1_autodarts_id: payload.player2_autodarts_id,
-            player2_autodarts_id: payload.player1_autodarts_id,
-          }
-        : payload;
-
-      if (alignedPayload.autodarts_link) setAutodartsLink(alignedPayload.autodarts_link);
-      const mapped = mapPayloadToStats(alignedPayload);
-
-      if (lowConfidence) {
-        toast({
-          title: "Uwaga: niepewne mapowanie",
-          description: "Nie udało się jednoznacznie dopasować graczy po nazwie/ID. Sprawdź kolumny i w razie potrzeby użyj 'Zamień strony'.",
-        });
-      }
-
-      if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming && !lowConfidence) {
-        submitMatchResult(matchedUpcoming.id, mapped.data);
+      if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
+        const scoreA = readScore(payload.score1);
+        const scoreB = readScore(payload.score2);
+        const data: MatchResultData = {
+          score1: scoreA,
+          score2: scoreB,
+          avg1: payload.avg1 ?? undefined,
+          avg2: payload.avg2 ?? undefined,
+          oneEighties1: asNumber(payload.one_eighties1),
+          oneEighties2: asNumber(payload.one_eighties2),
+          highCheckout1: asNumber(payload.high_checkout1),
+          highCheckout2: asNumber(payload.high_checkout2),
+          ton60_1: asNumber(payload.ton60_1),
+          ton60_2: asNumber(payload.ton60_2),
+          ton80_1: asNumber(payload.ton80_1),
+          ton80_2: asNumber(payload.ton80_2),
+          tonPlus1: asNumber(payload.ton_plus1),
+          tonPlus2: asNumber(payload.ton_plus2),
+          dartsThrown1: asNumber(payload.darts_thrown1),
+          dartsThrown2: asNumber(payload.darts_thrown2),
+          checkoutAttempts1: asNumber(payload.checkout_attempts1),
+          checkoutAttempts2: asNumber(payload.checkout_attempts2),
+          checkoutHits1: asNumber(payload.checkout_hits1),
+          checkoutHits2: asNumber(payload.checkout_hits2),
+          first9Avg1: payload.first_9_avg1 ?? undefined,
+          first9Avg2: payload.first_9_avg2 ?? undefined,
+          avgUntil170_1: payload.avg_until_170_1 ?? undefined,
+          avgUntil170_2: payload.avg_until_170_2 ?? undefined,
+          autodartsLink: payload.autodarts_link || undefined,
+        };
+        submitMatchResult(matchedUpcoming.id, data);
         processedAutoMatchRef.current = extMatchId;
         toast({
           title: "✅ Auto-zgłoszenie",
-          description: `Wynik ${alignedPayload.player1_name} vs ${alignedPayload.player2_name} został wysłany automatycznie.`,
+          description: `Wynik ${payload.player1_name} vs ${payload.player2_name} został wysłany automatycznie.`,
         });
       }
     },
-    [autoSubmitFromExtension, mapPayloadToStats, playerAutodartsMap, selectedMatch, submitMatchResult, toast, upcomingMatches]
+    [autoSubmitFromExtension, populateForm, submitMatchResult, toast, upcomingMatches],
   );
 
   const requestExtensionData = useCallback(() => {
@@ -308,19 +224,17 @@ const SubmitMatchPage = () => {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === "EDART_EXTENSION_INSTALLED") {
-        setExtensionInstalled(true);
-      }
+      if (event.data?.type === "EDART_EXTENSION_INSTALLED") setExtensionInstalled(true);
       if (event.data?.type === "EDART_TOKEN_RESPONSE") {
         setExtensionInstalled(true);
         setExtensionToken(event.data.token || null);
         setTokenFresh(Boolean(event.data.fresh));
       }
-      if (event.data?.type === "EDART_LAST_MATCH_RESPONSE" && event.data.payload) {
-        setExtensionInstalled(true);
-        applyAutoPayload(event.data.payload, true);
-      }
-      if (event.data?.type === "EDART_LAST_MATCH_PUSH" && event.data.payload) {
+      if (
+        (event.data?.type === "EDART_LAST_MATCH_RESPONSE" ||
+          event.data?.type === "EDART_LAST_MATCH_PUSH") &&
+        event.data.payload
+      ) {
         setExtensionInstalled(true);
         applyAutoPayload(event.data.payload, true);
       }
@@ -328,7 +242,6 @@ const SubmitMatchPage = () => {
 
     window.addEventListener("message", handler);
     requestExtensionData();
-
     const interval = window.setInterval(requestExtensionData, 8000);
     return () => {
       window.removeEventListener("message", handler);
@@ -338,27 +251,25 @@ const SubmitMatchPage = () => {
 
   const getAutodartsToken = useCallback(async (): Promise<string | null> => {
     if (extensionToken && tokenFresh) return extensionToken;
-
     return prompt(
       "🎯 Token Autodarts wymagany!\n\n" +
         "Token z rozszerzenia jest wygasły albo niedostępny.\n" +
-        "Jak zdobyć świeży token:\n" +
         "1. Zaloguj się / odśwież play.autodarts.io\n" +
         "2. Kliknij ikonę rozszerzenia eDART\n" +
-        "3. Skopiuj token i wklej tutaj"
+        "3. Skopiuj token i wklej tutaj",
     );
   }, [extensionToken, tokenFresh]);
 
   const handleFetchAutodarts = useCallback(async () => {
     if (!autodartsLink) return;
 
-    // Validate that it's a match link/ID, not a JWT token
     const trimmedLink = autodartsLink.trim();
-    const isMatchLink = trimmedLink.includes("autodarts.io/") || /^[a-f0-9-]{20,}$/i.test(trimmedLink);
+    const isMatchLink =
+      trimmedLink.includes("autodarts.io/") || /^[a-f0-9-]{20,}$/i.test(trimmedLink);
     if (!isMatchLink) {
       toast({
         title: "Nieprawidłowy link",
-        description: "Wklej link do meczu z Autodarts (np. https://play.autodarts.io/history/matches/...) lub ID meczu, nie token.",
+        description: "Wklej link do meczu z Autodarts lub ID meczu, nie token.",
         variant: "destructive",
       });
       return;
@@ -374,9 +285,10 @@ const SubmitMatchPage = () => {
         return;
       }
 
-      const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
-        body: { autodarts_link: trimmedLink, autodarts_token: adToken.trim() },
-      });
+      const { data: fnData, error: fnError } = await supabase.functions.invoke(
+        "fetch-autodarts-match",
+        { body: { autodarts_link: trimmedLink, autodarts_token: adToken.trim() } },
+      );
 
       if (fnError || !fnData?.success) {
         toast({
@@ -389,7 +301,10 @@ const SubmitMatchPage = () => {
       }
 
       applyAutoPayload(fnData.data, false);
-      toast({ title: "✅ Pobrano!", description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}` });
+      toast({
+        title: "✅ Pobrano!",
+        description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}`,
+      });
     } catch {
       toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
     }
@@ -397,36 +312,51 @@ const SubmitMatchPage = () => {
     setFetchingAutodarts(false);
   }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
 
+  // Swap all stats between player columns
   const handleSwapSides = useCallback(() => {
-    setScore1(score2);
-    setScore2(score1);
+    setScore1((prev) => {
+      const old2 = score2;
+      setScore2(prev);
+      return old2;
+    });
     setStats((prev) => ({
       ...prev,
-      avg1: prev.avg2 || "",
-      avg2: prev.avg1 || "",
-      first9Avg1: prev.first9Avg2 || "",
-      first9Avg2: prev.first9Avg1 || "",
-      avgUntil170_1: prev.avgUntil170_2 || "",
-      avgUntil170_2: prev.avgUntil170_1 || "",
-      oneEighties1: prev.oneEighties2 || "",
-      oneEighties2: prev.oneEighties1 || "",
-      hc1: prev.hc2 || "",
-      hc2: prev.hc1 || "",
-      ton60_1: prev.ton60_2 || "",
-      ton60_2: prev.ton60_1 || "",
-      ton80_1: prev.ton80_2 || "",
-      ton80_2: prev.ton80_1 || "",
-      tonPlus1: prev.tonPlus2 || "",
-      tonPlus2: prev.tonPlus1 || "",
-      darts1: prev.darts2 || "",
-      darts2: prev.darts1 || "",
-      checkoutAttempts1: prev.checkoutAttempts2 || "",
-      checkoutAttempts2: prev.checkoutAttempts1 || "",
-      checkoutHits1: prev.checkoutHits2 || "",
-      checkoutHits2: prev.checkoutHits1 || "",
+      avg1: prev.avg2 || "", avg2: prev.avg1 || "",
+      first9Avg1: prev.first9Avg2 || "", first9Avg2: prev.first9Avg1 || "",
+      avgUntil170_1: prev.avgUntil170_2 || "", avgUntil170_2: prev.avgUntil170_1 || "",
+      oneEighties1: prev.oneEighties2 || "", oneEighties2: prev.oneEighties1 || "",
+      hc1: prev.hc2 || "", hc2: prev.hc1 || "",
+      ton60_1: prev.ton60_2 || "", ton60_2: prev.ton60_1 || "",
+      ton80_1: prev.ton80_2 || "", ton80_2: prev.ton80_1 || "",
+      tonPlus1: prev.tonPlus2 || "", tonPlus2: prev.tonPlus1 || "",
+      darts1: prev.darts2 || "", darts2: prev.darts1 || "",
+      checkoutAttempts1: prev.checkoutAttempts2 || "", checkoutAttempts2: prev.checkoutAttempts1 || "",
+      checkoutHits1: prev.checkoutHits2 || "", checkoutHits2: prev.checkoutHits1 || "",
     }));
-    toast({ title: "Zamieniono strony", description: "Wynik i statystyki graczy zostały zamienione miejscami." });
-  }, [score1, score2, toast]);
+    if (rawPreview) {
+      setRawPreview((prev) =>
+        prev
+          ? {
+              ...prev,
+              score1: prev.score2, score2: prev.score1,
+              avg1: prev.avg2, avg2: prev.avg1,
+              first_9_avg1: prev.first_9_avg2, first_9_avg2: prev.first_9_avg1,
+              avg_until_170_1: prev.avg_until_170_2, avg_until_170_2: prev.avg_until_170_1,
+              one_eighties1: prev.one_eighties2, one_eighties2: prev.one_eighties1,
+              high_checkout1: prev.high_checkout2, high_checkout2: prev.high_checkout1,
+              ton60_1: prev.ton60_2, ton60_2: prev.ton60_1,
+              ton80_1: prev.ton80_2, ton80_2: prev.ton80_1,
+              ton_plus1: prev.ton_plus2, ton_plus2: prev.ton_plus1,
+              darts_thrown1: prev.darts_thrown2, darts_thrown2: prev.darts_thrown1,
+              checkout_attempts1: prev.checkout_attempts2, checkout_attempts2: prev.checkout_attempts1,
+              checkout_hits1: prev.checkout_hits2, checkout_hits2: prev.checkout_hits1,
+              player1_name: prev.player2_name, player2_name: prev.player1_name,
+            }
+          : null,
+      );
+    }
+    toast({ title: "Zamieniono strony ↔", description: "Wynik i statystyki zostały zamienione." });
+  }, [score2, rawPreview, toast]);
 
   const resetForm = () => {
     setSelectedMatchId("");
@@ -435,6 +365,7 @@ const SubmitMatchPage = () => {
     setAutodartsLink("");
     setStats({});
     setShowAdvanced(false);
+    setRawPreview(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -459,7 +390,11 @@ const SubmitMatchPage = () => {
     const hitsP2 = optNum("checkoutHits2") ?? 0;
 
     if (hitsP1 > attemptsP1 || hitsP2 > attemptsP2) {
-      toast({ title: "Błąd", description: "Trafione checkouty nie mogą być większe niż rzucone.", variant: "destructive" });
+      toast({
+        title: "Błąd",
+        description: "Trafione checkouty nie mogą być większe niż rzucone.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -492,7 +427,10 @@ const SubmitMatchPage = () => {
     };
 
     submitMatchResult(selectedMatchId, data);
-    toast({ title: "📋 Wynik zgłoszony!", description: "Wynik został wysłany do zatwierdzenia przez admina/moderatora." });
+    toast({
+      title: "📋 Wynik zgłoszony!",
+      description: "Wynik został wysłany do zatwierdzenia przez admina/moderatora.",
+    });
     resetForm();
   };
 
@@ -505,9 +443,7 @@ const SubmitMatchPage = () => {
         <h1 className="text-2xl font-display font-bold text-foreground mb-2">Wymagane Logowanie</h1>
         <p className="text-muted-foreground font-body mb-6">Aby zgłosić wynik meczu, musisz być zalogowany.</p>
         <Link to="/login">
-          <Button variant="hero" size="lg">
-            Zaloguj się
-          </Button>
+          <Button variant="hero" size="lg">Zaloguj się</Button>
         </Link>
       </div>
     );
@@ -531,18 +467,23 @@ const SubmitMatchPage = () => {
         <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Dodaj Wynik</h1>
         <p className="text-muted-foreground font-body">
           Zalogowany jako <span className="text-foreground font-semibold">{profile?.name || user.email}</span>
-          {canSubmitAll && <span className="ml-2 text-xs text-primary">(Admin/Moderator — widoczne wszystkie mecze)</span>}
+          {canSubmitAll && (
+            <span className="ml-2 text-xs text-primary">(Admin/Moderator — widoczne wszystkie mecze)</span>
+          )}
         </p>
-        <p className="text-xs text-accent font-body mt-1">⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.</p>
+        <p className="text-xs text-accent font-body mt-1">
+          ⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.
+        </p>
       </div>
 
+      {/* Extension status */}
       <div
         className={`rounded-lg border p-3 mb-4 flex items-center gap-3 text-sm ${
           extensionInstalled && extensionToken
             ? "border-primary/30 bg-primary/10 text-primary"
             : extensionInstalled
-            ? "border-accent/30 bg-accent/10 text-accent"
-            : "border-border bg-muted/30 text-muted-foreground"
+              ? "border-accent/30 bg-accent/10 text-accent"
+              : "border-border bg-muted/30 text-muted-foreground"
         }`}
       >
         {extensionInstalled && extensionToken ? (
@@ -554,7 +495,7 @@ const SubmitMatchPage = () => {
           <>
             <XCircle className="h-4 w-4 shrink-0" />
             <span>
-              Rozszerzenie działa, ale brak tokena. Zaloguj się na {" "}
+              Rozszerzenie działa, ale brak tokena. Zaloguj się na{" "}
               <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">
                 play.autodarts.io
               </a>
@@ -573,6 +514,7 @@ const SubmitMatchPage = () => {
         <Switch checked={autoSubmitFromExtension} onCheckedChange={setAutoSubmitFromExtension} />
       </div>
 
+      {/* Pending matches */}
       {pendingMatches.length > 0 && (
         <div className="rounded-lg border border-accent/30 bg-accent/5 p-5 mb-6">
           <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
@@ -601,7 +543,9 @@ const SubmitMatchPage = () => {
       ) : (
         <>
           <div className="space-y-2 mb-6">
-            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Wybierz mecz</Label>
+            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
+              Wybierz mecz
+            </Label>
             <div className="space-y-2">
               {upcomingMatches.map((match) => {
                 const isSelected = selectedMatchId === match.id;
@@ -620,7 +564,11 @@ const SubmitMatchPage = () => {
                           {match.player1Name} vs {match.player2Name}
                         </span>
                         <div className="text-xs text-muted-foreground mt-1">
-                          Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
+                          Termin:{" "}
+                          {new Date(match.date).toLocaleDateString("pl-PL", {
+                            day: "numeric",
+                            month: "long",
+                          })}
                           {match.round && ` · Kolejka ${match.round}`}
                         </div>
                       </div>
@@ -634,9 +582,68 @@ const SubmitMatchPage = () => {
 
           {selectedMatch && (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Raw preview from Autodarts */}
+              {rawPreview && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display font-bold text-sm text-primary uppercase tracking-wider">
+                      📊 Dane z Autodarts
+                    </h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSwapSides}
+                      className="text-xs gap-1"
+                    >
+                      <ArrowLeftRight className="h-3 w-3" /> Zamień strony
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs font-body">
+                    <div className="font-display font-bold text-foreground text-sm truncate">
+                      {rawPreview.player1_name}
+                    </div>
+                    <div className="text-muted-foreground font-display text-xs">Wynik</div>
+                    <div className="font-display font-bold text-foreground text-sm truncate">
+                      {rawPreview.player2_name}
+                    </div>
+
+                    <div className="text-2xl font-display font-bold text-foreground">
+                      {readScore(rawPreview.score1)}
+                    </div>
+                    <div className="text-muted-foreground self-center">legs</div>
+                    <div className="text-2xl font-display font-bold text-foreground">
+                      {readScore(rawPreview.score2)}
+                    </div>
+
+                    {STAT_LABELS.map((row) => {
+                      const v1 = rawPreview[row.key1];
+                      const v2 = rawPreview[row.key2];
+                      if (v1 == null && v2 == null) return null;
+                      return (
+                        <div key={row.key1} className="contents">
+                          <div className="text-foreground font-display">{v1 ?? "-"}</div>
+                          <div className="text-muted-foreground text-[10px]">{row.label}</div>
+                          <div className="text-foreground font-display">{v2 ?? "-"}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Dane z Autodarts uzupełniły formularz. Jeśli kolejność graczy się nie zgadza, kliknij „Zamień
+                    strony".
+                  </p>
+                </div>
+              )}
+
+              {/* Score inputs */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player1Name}</Label>
+                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
+                    {selectedMatch.player1Name}
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -649,7 +656,9 @@ const SubmitMatchPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player2Name}</Label>
+                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
+                    {selectedMatch.player2Name}
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -663,10 +672,11 @@ const SubmitMatchPage = () => {
                 </div>
               </div>
 
-              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides}>
-                Zamień strony graczy ↔
+              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides} className="gap-1">
+                <ArrowLeftRight className="h-3.5 w-3.5" /> Zamień strony graczy
               </Button>
 
+              {/* Autodarts link */}
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io
@@ -708,7 +718,12 @@ const SubmitMatchPage = () => {
               </button>
 
               {showAdvanced && (
-                <MatchStatFields stats={stats} setStats={setStats} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
+                <MatchStatFields
+                  stats={stats}
+                  setStats={setStats}
+                  p1={selectedMatch.player1Name}
+                  p2={selectedMatch.player2Name}
+                />
               )}
 
               <Button type="submit" variant="hero" size="lg" className="w-full">
