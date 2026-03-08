@@ -145,10 +145,8 @@ const calcMatchBonusPoints = (
   const my180 = isP1 ? (m.oneEighties1 ?? 0) : (m.oneEighties2 ?? 0);
   const myHC = isP1 ? (m.highCheckout1 ?? 0) : (m.highCheckout2 ?? 0);
   const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
-  const my9d = isP1 ? (m.nineDarters1 ?? 0) : (m.nineDarters2 ?? 0);
 
   bonus += my180 * rules.per180;
-  bonus += my9d * rules.nineDarter;
   if (myHC >= 100) bonus += rules.checkout100;
   if (myHC >= 150) bonus += rules.checkout150;
   if (myAvg >= 90) bonus += rules.avg90;
