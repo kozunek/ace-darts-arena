@@ -14,16 +14,271 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leagues: {
+        Row: {
+          created_at: string
+          description: string
+          format: string | null
+          id: string
+          is_active: boolean
+          max_legs: number | null
+          name: string
+          season: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          format?: string | null
+          id?: string
+          is_active?: boolean
+          max_legs?: number | null
+          name: string
+          season: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          format?: string | null
+          id?: string
+          is_active?: boolean
+          max_legs?: number | null
+          name?: string
+          season?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          autodarts_link: string | null
+          avg1: number | null
+          avg2: number | null
+          created_at: string
+          darts_thrown1: number | null
+          darts_thrown2: number | null
+          date: string
+          high_checkout1: number | null
+          high_checkout2: number | null
+          id: string
+          league_id: string
+          legs_won1: number | null
+          legs_won2: number | null
+          one_eighties1: number | null
+          one_eighties2: number | null
+          player1_id: string
+          player2_id: string
+          round: number | null
+          score1: number | null
+          score2: number | null
+          status: string
+          ton_plus1: number | null
+          ton_plus2: number | null
+          ton40_1: number | null
+          ton40_2: number | null
+          ton60_1: number | null
+          ton60_2: number | null
+          ton80_1: number | null
+          ton80_2: number | null
+        }
+        Insert: {
+          autodarts_link?: string | null
+          avg1?: number | null
+          avg2?: number | null
+          created_at?: string
+          darts_thrown1?: number | null
+          darts_thrown2?: number | null
+          date: string
+          high_checkout1?: number | null
+          high_checkout2?: number | null
+          id?: string
+          league_id: string
+          legs_won1?: number | null
+          legs_won2?: number | null
+          one_eighties1?: number | null
+          one_eighties2?: number | null
+          player1_id: string
+          player2_id: string
+          round?: number | null
+          score1?: number | null
+          score2?: number | null
+          status?: string
+          ton_plus1?: number | null
+          ton_plus2?: number | null
+          ton40_1?: number | null
+          ton40_2?: number | null
+          ton60_1?: number | null
+          ton60_2?: number | null
+          ton80_1?: number | null
+          ton80_2?: number | null
+        }
+        Update: {
+          autodarts_link?: string | null
+          avg1?: number | null
+          avg2?: number | null
+          created_at?: string
+          darts_thrown1?: number | null
+          darts_thrown2?: number | null
+          date?: string
+          high_checkout1?: number | null
+          high_checkout2?: number | null
+          id?: string
+          league_id?: string
+          legs_won1?: number | null
+          legs_won2?: number | null
+          one_eighties1?: number | null
+          one_eighties2?: number | null
+          player1_id?: string
+          player2_id?: string
+          round?: number | null
+          score1?: number | null
+          score2?: number | null
+          status?: string
+          ton_plus1?: number | null
+          ton_plus2?: number | null
+          ton40_1?: number | null
+          ton40_2?: number | null
+          ton60_1?: number | null
+          ton60_2?: number | null
+          ton80_1?: number | null
+          ton80_2?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_leagues: {
+        Row: {
+          id: string
+          league_id: string
+          player_id: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          player_id: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_leagues_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_leagues_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          approved: boolean
+          avatar: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          approved?: boolean
+          avatar?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          approved?: boolean
+          avatar?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +405,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
