@@ -583,8 +583,7 @@ const SubmitMatchPage = () => {
                   </div>
 
                   <p className="text-[10px] text-muted-foreground text-center">
-                    Dane z Autodarts uzupełniły formularz. Jeśli kolejność graczy się nie zgadza, kliknij „Zamień
-                    strony".
+                    Dane z Autodarts uzupełniły formularz poniżej.
                   </p>
                 </div>
               )}
