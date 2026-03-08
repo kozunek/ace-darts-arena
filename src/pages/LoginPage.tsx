@@ -124,8 +124,8 @@ const LoginPage = () => {
           ) : mode === "register" ? (
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Imię i nazwisko</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jan Kowalski" className="bg-muted/30 border-border" required />
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Nazwa użytkownika</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="np. DartMaster123" className="bg-muted/30 border-border" required />
               </div>
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Email</Label>
