@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link2, Send, Lock, ChevronDown, ChevronUp, Clock, Zap, Loader2 } from "lucide-react";
+import { Link2, Send, Lock, ChevronDown, ChevronUp, Clock, Zap, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import MatchStatFields from "@/components/MatchStatFields";
@@ -24,6 +24,30 @@ const SubmitMatchPage = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [stats, setStats] = useState<Record<string, string>>({});
   const [fetchingAutodarts, setFetchingAutodarts] = useState(false);
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [extensionToken, setExtensionToken] = useState<string | null>(null);
+  const [tokenFresh, setTokenFresh] = useState(false);
+
+  // Listen for extension messages
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'EDART_EXTENSION_INSTALLED') {
+        setExtensionInstalled(true);
+        // Request token immediately
+        window.postMessage({ type: 'EDART_REQUEST_TOKEN' }, '*');
+      }
+      if (event.data?.type === 'EDART_TOKEN_RESPONSE') {
+        setExtensionToken(event.data.token || null);
+        setTokenFresh(event.data.fresh || false);
+      }
+    };
+    window.addEventListener('message', handler);
+
+    // Check if extension is already loaded
+    window.postMessage({ type: 'EDART_REQUEST_TOKEN' }, '*');
+
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   useEffect(() => {
     if (!user) { setLoadingPlayer(false); return; }
@@ -40,6 +64,76 @@ const SubmitMatchPage = () => {
     fetchPlayerId();
   }, [user]);
 
+  const getAutodartsToken = useCallback(async (): Promise<string | null> => {
+    // If extension provided a token, use it
+    if (extensionToken) return extensionToken;
+
+    // Otherwise ask user to paste it
+    const token = prompt(
+      "🎯 Token Autodarts wymagany!\n\n" +
+      "Aby pobrać statystyki, potrzebny jest token z Twojej sesji Autodarts.\n\n" +
+      "Jak go zdobyć:\n" +
+      "1. Zainstaluj rozszerzenie Chrome eDART Polska\n" +
+      "2. Otwórz play.autodarts.io i zaloguj się\n" +
+      "3. Kliknij ikonkę rozszerzenia → Kopiuj token\n" +
+      "4. Wklej tutaj\n\n" +
+      "Wklej token:"
+    );
+    return token;
+  }, [extensionToken]);
+
+  const handleFetchAutodarts = useCallback(async () => {
+    if (!autodartsLink) return;
+    setFetchingAutodarts(true);
+    try {
+      const adToken = await getAutodartsToken();
+      if (!adToken) {
+        toast({ title: "Anulowano", description: "Nie podano tokena Autodarts", variant: "destructive" });
+        setFetchingAutodarts(false);
+        return;
+      }
+
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
+        body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
+      });
+      if (fnError || !fnData?.success) {
+        toast({ title: "Błąd", description: fnData?.error || fnError?.message || "Nie udało się pobrać danych", variant: "destructive" });
+        setFetchingAutodarts(false);
+        return;
+      }
+      const d = fnData.data;
+      setScore1(String(d.score1));
+      setScore2(String(d.score2));
+      setShowAdvanced(true);
+      setStats({
+        avg1: d.avg1 != null ? String(d.avg1) : "",
+        avg2: d.avg2 != null ? String(d.avg2) : "",
+        first9Avg1: d.first_9_avg1 != null ? String(d.first_9_avg1) : "",
+        first9Avg2: d.first_9_avg2 != null ? String(d.first_9_avg2) : "",
+        oneEighties1: String(d.one_eighties1 || 0),
+        oneEighties2: String(d.one_eighties2 || 0),
+        hc1: String(d.high_checkout1 || 0),
+        hc2: String(d.high_checkout2 || 0),
+        ton60_1: String(d.ton60_1 || 0),
+        ton60_2: String(d.ton60_2 || 0),
+        ton80_1: String(d.ton80_1 || 0),
+        ton80_2: String(d.ton80_2 || 0),
+        tonPlus1: String(d.ton_plus1 || 0),
+        tonPlus2: String(d.ton_plus2 || 0),
+        darts1: String(d.darts_thrown1 || 0),
+        darts2: String(d.darts_thrown2 || 0),
+        checkoutAttempts1: String(d.checkout_attempts1 || 0),
+        checkoutAttempts2: String(d.checkout_attempts2 || 0),
+        checkoutHits1: String(d.checkout_hits1 || 0),
+        checkoutHits2: String(d.checkout_hits2 || 0),
+      });
+      toast({ title: "✅ Pobrano!", description: `Statystyki z Autodarts: ${d.player1_name} vs ${d.player2_name}` });
+    } catch (err) {
+      toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
+    }
+    setFetchingAutodarts(false);
+  }, [autodartsLink, getAutodartsToken, toast]);
+
   if (loading || loadingPlayer) return null;
 
   if (!user) {
@@ -55,7 +149,6 @@ const SubmitMatchPage = () => {
 
   const canSubmitAll = isAdmin || isModerator;
 
-  // Players see only their matches, admins/mods see all
   const upcomingMatches = matches.filter((m) => {
     if (m.status !== "upcoming") return false;
     if (canSubmitAll) return true;
@@ -163,6 +256,32 @@ const SubmitMatchPage = () => {
         <p className="text-xs text-accent font-body mt-1">⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.</p>
       </div>
 
+      {/* Extension status indicator */}
+      <div className={`rounded-lg border p-3 mb-6 flex items-center gap-3 text-sm ${
+        extensionInstalled && extensionToken
+          ? "border-green-500/30 bg-green-500/5 text-green-400"
+          : extensionInstalled
+          ? "border-yellow-500/30 bg-yellow-500/5 text-yellow-400"
+          : "border-border bg-muted/30 text-muted-foreground"
+      }`}>
+        {extensionInstalled && extensionToken ? (
+          <>
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>Rozszerzenie Chrome aktywne — token Autodarts gotowy {tokenFresh ? "✅" : "(może wymagać odświeżenia)"}</span>
+          </>
+        ) : extensionInstalled ? (
+          <>
+            <XCircle className="h-4 w-4 shrink-0" />
+            <span>Rozszerzenie zainstalowane, ale brak tokena. Zaloguj się na <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">play.autodarts.io</a></span>
+          </>
+        ) : (
+          <>
+            <Zap className="h-4 w-4 shrink-0" />
+            <span>Zainstaluj rozszerzenie Chrome eDART aby automatycznie pobierać statystyki z Autodarts</span>
+          </>
+        )}
+      </div>
+
       {pendingMatches.length > 0 && (
         <div className="rounded-lg border border-accent/30 bg-accent/5 p-5 mb-6">
           <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
@@ -232,93 +351,24 @@ const SubmitMatchPage = () => {
                   <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io
                 </Label>
                 <div className="flex gap-2">
-                  <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://autodarts.io/matches/..." className="bg-muted/30 border-border" />
+                  <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://play.autodarts.io/history/matches/..." className="bg-muted/30 border-border" />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     disabled={!autodartsLink || fetchingAutodarts}
-                    onClick={async () => {
-                      if (!autodartsLink) return;
-                      setFetchingAutodarts(true);
-                      try {
-                        // Try to get token from Chrome extension via window message
-                        let adToken: string | null = null;
-                        
-                        // Method 1: Check if extension injected token into page
-                        const extTokenEl = document.getElementById('edart-autodarts-token') as HTMLInputElement | null;
-                        if (extTokenEl?.value) {
-                          adToken = extTokenEl.value;
-                        }
-                        
-                        // Method 2: Prompt user to paste token manually if no extension
-                        if (!adToken) {
-                          adToken = prompt(
-                            "🎯 Token Autodarts wymagany!\n\n" +
-                            "Aby pobrać statystyki, potrzebny jest token z Twojej sesji Autodarts.\n\n" +
-                            "Jak go zdobyć:\n" +
-                            "1. Otwórz play.autodarts.io i zaloguj się\n" +
-                            "2. Naciśnij F12 → zakładka Network\n" +
-                            "3. Kliknij dowolny request do api.autodarts.io\n" +
-                            "4. Skopiuj wartość 'Authorization: Bearer ...' (sam token bez 'Bearer ')\n\n" +
-                            "Lub zainstaluj rozszerzenie Chrome eDART z zakładki Ustawienia.\n\n" +
-                            "Wklej token:"
-                          );
-                        }
-                        
-                        if (!adToken) {
-                          toast({ title: "Anulowano", description: "Nie podano tokena Autodarts", variant: "destructive" });
-                          setFetchingAutodarts(false);
-                          return;
-                        }
-
-                        const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
-                          body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
-                        });
-                        if (fnError || !fnData?.success) {
-                          toast({ title: "Błąd", description: fnData?.error || fnError?.message || "Nie udało się pobrać danych", variant: "destructive" });
-                          setFetchingAutodarts(false);
-                          return;
-                        }
-                        const d = fnData.data;
-                        setScore1(String(d.score1));
-                        setScore2(String(d.score2));
-                        setShowAdvanced(true);
-                        setStats({
-                          avg1: d.avg1 != null ? String(d.avg1) : "",
-                          avg2: d.avg2 != null ? String(d.avg2) : "",
-                          first9Avg1: d.first_9_avg1 != null ? String(d.first_9_avg1) : "",
-                          first9Avg2: d.first_9_avg2 != null ? String(d.first_9_avg2) : "",
-                          oneEighties1: String(d.one_eighties1 || 0),
-                          oneEighties2: String(d.one_eighties2 || 0),
-                          hc1: String(d.high_checkout1 || 0),
-                          hc2: String(d.high_checkout2 || 0),
-                          ton60_1: String(d.ton60_1 || 0),
-                          ton60_2: String(d.ton60_2 || 0),
-                          ton80_1: String(d.ton80_1 || 0),
-                          ton80_2: String(d.ton80_2 || 0),
-                          tonPlus1: String(d.ton_plus1 || 0),
-                          tonPlus2: String(d.ton_plus2 || 0),
-                          darts1: String(d.darts_thrown1 || 0),
-                          darts2: String(d.darts_thrown2 || 0),
-                          checkoutAttempts1: String(d.checkout_attempts1 || 0),
-                          checkoutAttempts2: String(d.checkout_attempts2 || 0),
-                          checkoutHits1: String(d.checkout_hits1 || 0),
-                          checkoutHits2: String(d.checkout_hits2 || 0),
-                        });
-                        toast({ title: "✅ Pobrano!", description: `Statystyki z Autodarts: ${d.player1_name} vs ${d.player2_name}` });
-                      } catch (err) {
-                        toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
-                      }
-                      setFetchingAutodarts(false);
-                    }}
+                    onClick={handleFetchAutodarts}
                     className="shrink-0 font-display uppercase tracking-wider text-xs"
                   >
                     {fetchingAutodarts ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                     {fetchingAutodarts ? "" : " Pobierz"}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground font-body">Wklej link i kliknij "Pobierz" — wynik i statystyki zostaną wypełnione automatycznie</p>
+                <p className="text-xs text-muted-foreground font-body">
+                  {extensionInstalled && extensionToken
+                    ? "✅ Token z rozszerzenia — wklej link i kliknij Pobierz"
+                    : "Wklej link i kliknij \"Pobierz\" — zostaniesz poproszony o token"}
+                </p>
               </div>
 
               <button type="button" onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors">

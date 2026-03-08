@@ -1,13 +1,16 @@
 {
   "manifest_version": 3,
   "name": "eDART Polska - Autodarts Stats",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Automatycznie pobiera token Autodarts i wysyła statystyki do eDART Polska",
   "permissions": ["cookies", "storage", "webRequest"],
   "host_permissions": [
     "https://login.autodarts.io/*",
     "https://play.autodarts.io/*",
-    "https://api.autodarts.io/*"
+    "https://api.autodarts.io/*",
+    "https://ace-darts-arena.lovable.app/*",
+    "https://*.lovableproject.com/*",
+    "https://*.lovable.app/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -16,6 +19,15 @@
     {
       "matches": ["https://play.autodarts.io/*"],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://ace-darts-arena.lovable.app/*",
+        "https://*.lovableproject.com/*",
+        "https://*.lovable.app/*"
+      ],
+      "js": ["inject-token.js"],
       "run_at": "document_idle"
     }
   ],
