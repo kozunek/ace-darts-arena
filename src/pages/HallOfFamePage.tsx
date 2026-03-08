@@ -33,7 +33,7 @@ const HallOfFamePage = () => {
     icon: <TrendingUp className="h-6 w-6 text-secondary" />,
     title: "Najlepsza średnia (mecz)",
     entries: avgRecords.slice(0, 5).map((r) => ({
-      playerId: r.pid, playerName: r.name, playerAvatar: r.avatar, value: r.val.toFixed(1),
+      playerId: r.pid, playerName: r.name, playerAvatar: r.avatar, playerAvatarUrl: r.avatarUrl, value: r.val.toFixed(1),
     })),
   });
 
