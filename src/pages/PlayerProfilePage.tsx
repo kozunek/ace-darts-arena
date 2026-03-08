@@ -102,9 +102,10 @@ const PlayerProfilePage = () => {
               <MiniStatBox label="Najl. Śr." value={stats.bestAvg > 0 ? stats.bestAvg.toFixed(1) : "—"} />
               <MiniStatBox label="First 9 Avg" value={stats.bestFirst9Avg > 0 ? stats.bestFirst9Avg.toFixed(1) : "—"} />
               <MiniStatBox label="Avg ≤170" value={stats.bestAvgUntil170 > 0 ? stats.bestAvgUntil170.toFixed(1) : "—"} />
-              <MiniStatBox label="Ton 60" value={stats.ton60} />
-              <MiniStatBox label="Ton 80" value={stats.ton80} />
-              <MiniStatBox label="Ton+" value={stats.tonPlus} />
+              <MiniStatBox label="60+" value={stats.ton60} />
+              <MiniStatBox label="100+" value={stats.ton80} />
+              <MiniStatBox label="140+" value={stats.tonPlus} />
+              <MiniStatBox label="170+" value={stats.ton40} />
             </div>
 
             {/* Form */}

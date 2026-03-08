@@ -57,6 +57,8 @@ export interface MatchResultData {
   ton80_2?: number;
   tonPlus1?: number;
   tonPlus2?: number;
+  ton40_1?: number;
+  ton40_2?: number;
   dartsThrown1?: number;
   dartsThrown2?: number;
   checkoutAttempts1?: number;
@@ -78,6 +80,7 @@ export interface TonLeaderEntry {
   ton60: number;
   ton80: number;
   tonPlus: number;
+  ton40: number;
   oneEighties: number;
   totalTons: number;
   highestCheckout: number;
@@ -123,6 +126,8 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
     ton80_2: m.ton80_2,
     tonPlus1: m.ton_plus1,
     tonPlus2: m.ton_plus2,
+    ton40_1: m.ton40_1,
+    ton40_2: m.ton40_2,
     dartsThrown1: m.darts_thrown1,
     dartsThrown2: m.darts_thrown2,
     checkoutAttempts1: m.checkout_attempts1,
@@ -173,7 +178,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
 
   let wins = 0, losses = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
-  let ton60 = 0, ton80 = 0, tonPlus = 0;
+  let ton60 = 0, ton80 = 0, tonPlus = 0, ton40 = 0;
   let checkoutAttempts = 0, checkoutHits = 0;
   let bestFirst9Avg = 0, bestAvgUntil170 = 0;
   let basePoints = 0, bonusPoints = 0;
@@ -198,6 +203,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+    ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
     checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
     checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
     const myFirst9 = isP1 ? (m.first9Avg1 ?? 0) : (m.first9Avg2 ?? 0);
@@ -229,7 +235,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
     matchesPlayed: completed.length,
     bestAvg: Math.round(bestAvg * 10) / 10,
     totalDartsThrown: totalDarts,
-    ton60, ton80, tonPlus,
+    ton60, ton80, tonPlus, ton40,
     winRate,
     checkoutAttempts,
     checkoutHits,
@@ -346,7 +352,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       avg1: data.avg1, avg2: data.avg2,
       one_eighties1: data.oneEighties1 ?? 0, one_eighties2: data.oneEighties2 ?? 0,
       high_checkout1: data.highCheckout1 ?? 0, high_checkout2: data.highCheckout2 ?? 0,
-      ton40_1: 0, ton40_2: 0,
+      ton40_1: data.ton40_1 ?? 0, ton40_2: data.ton40_2 ?? 0,
       ton60_1: data.ton60_1 ?? 0, ton60_2: data.ton60_2 ?? 0,
       ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
       ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
@@ -385,6 +391,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       ton60_1: data.ton60_1 ?? 0, ton60_2: data.ton60_2 ?? 0,
       ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
       ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
+      ton40_1: data.ton40_1 ?? 0, ton40_2: data.ton40_2 ?? 0,
       darts_thrown1: data.dartsThrown1 ?? 0, darts_thrown2: data.dartsThrown2 ?? 0,
       checkout_attempts1: data.checkoutAttempts1 ?? 0, checkout_attempts2: data.checkoutAttempts2 ?? 0,
       checkout_hits1: data.checkoutHits1 ?? 0, checkout_hits2: data.checkoutHits2 ?? 0,
@@ -569,16 +576,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     filtered.forEach((m) => {
       [
-      { id: m.player1Id, name: m.player1Name, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0, attempts: m.checkoutAttempts1 ?? 0, hits: m.checkoutHits1 ?? 0 },
-        { id: m.player2Id, name: m.player2Name, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0, attempts: m.checkoutAttempts2 ?? 0, hits: m.checkoutHits2 ?? 0 },
-      ].forEach(({ id, name, t60, t80, tp, e, hc, avg, score, oppScore, attempts, hits }) => {
+      { id: m.player1Id, name: m.player1Name, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, t40: m.ton40_1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0, attempts: m.checkoutAttempts1 ?? 0, hits: m.checkoutHits1 ?? 0 },
+        { id: m.player2Id, name: m.player2Name, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, t40: m.ton40_2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0, attempts: m.checkoutAttempts2 ?? 0, hits: m.checkoutHits2 ?? 0 },
+      ].forEach(({ id, name, t60, t80, tp, t40, e, hc, avg, score, oppScore, attempts, hits }) => {
         const existing = playerMap.get(id);
         const player = playerList.find(p => p.id === id);
         const won = score > oppScore ? 1 : 0;
         const lost = score < oppScore ? 1 : 0;
         if (existing) {
-          existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
-          existing.oneEighties += e; existing.totalTons += t60 + t80 + tp + e;
+          existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp; existing.ton40 += t40;
+          existing.oneEighties += e; existing.totalTons += t60 + t80 + tp + t40 + e;
           if (hc > existing.highestCheckout) existing.highestCheckout = hc;
           if (avg > existing.bestAvg) existing.bestAvg = avg;
           existing.wins += won; existing.losses += lost; existing.matchesPlayed += 1;
@@ -591,8 +598,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             playerId: id, playerName: name,
             avatar: player?.avatar || name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
             avatarUrl: player?.avatar_url ?? null,
-            ton60: t60, ton80: t80, tonPlus: tp,
-            oneEighties: e, totalTons: t60 + t80 + tp + e,
+            ton60: t60, ton80: t80, tonPlus: tp, ton40: t40,
+            oneEighties: e, totalTons: t60 + t80 + tp + t40 + e,
             highestCheckout: hc, bestAvg: avg,
             wins: won, losses: lost, matchesPlayed: 1,
             winRate: won ? 100 : 0,

@@ -110,9 +110,10 @@ const StatsPage = () => {
                   <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Gracz</th>
                   {activeTab === "tons" && (
                     <>
-                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">T60</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-primary">T80</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">T+</th>
+                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">60+</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-primary">100+</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">140+</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-accent">170+</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-destructive">180</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Suma</th>
                     </>
@@ -164,6 +165,7 @@ const StatsPage = () => {
                          <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-secondary/10 text-secondary text-sm font-display font-bold border border-secondary/20">{entry.ton60}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-display font-bold border border-primary/20">{entry.ton80}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-muted text-foreground text-sm font-display font-bold border border-border">{entry.tonPlus}</span></td>
+                        <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-accent/10 text-accent text-sm font-display font-bold border border-accent/20">{entry.ton40}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-destructive/10 text-destructive text-sm font-display font-bold border border-destructive/20">{entry.oneEighties}</span></td>
                         <td className="text-center px-3 py-3"><span className="text-lg font-display font-bold text-foreground">{entry.totalTons}</span></td>
                       </>

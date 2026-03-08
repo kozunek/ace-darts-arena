@@ -17,7 +17,6 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  ArrowLeftRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -48,8 +47,9 @@ const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
   { key1: "one_eighties1", key2: "one_eighties2", label: "180" },
   { key1: "high_checkout1", key2: "high_checkout2", label: "Najw. checkout" },
   { key1: "ton60_1", key2: "ton60_2", label: "60+" },
-  { key1: "ton80_1", key2: "ton80_2", label: "80+" },
-  { key1: "ton_plus1", key2: "ton_plus2", label: "100+" },
+  { key1: "ton80_1", key2: "ton80_2", label: "100+" },
+  { key1: "ton_plus1", key2: "ton_plus2", label: "140+" },
+  { key1: "ton40_1", key2: "ton40_2", label: "170+" },
   { key1: "darts_thrown1", key2: "darts_thrown2", label: "Rzuty" },
   { key1: "checkout_attempts1", key2: "checkout_attempts2", label: "Checkout próby" },
   { key1: "checkout_hits1", key2: "checkout_hits2", label: "Checkout traf." },
@@ -140,6 +140,8 @@ const SubmitMatchPage = () => {
       ton80_2: String(asNumber(payload.ton80_2)),
       tonPlus1: String(asNumber(payload.ton_plus1)),
       tonPlus2: String(asNumber(payload.ton_plus2)),
+      ton40_1: String(asNumber(payload.ton40_1)),
+      ton40_2: String(asNumber(payload.ton40_2)),
       darts1: String(asNumber(payload.darts_thrown1)),
       darts2: String(asNumber(payload.darts_thrown2)),
       checkoutAttempts1: String(asNumber(payload.checkout_attempts1)),
@@ -194,6 +196,8 @@ const SubmitMatchPage = () => {
           ton80_2: asNumber(payload.ton80_2),
           tonPlus1: asNumber(payload.ton_plus1),
           tonPlus2: asNumber(payload.ton_plus2),
+          ton40_1: asNumber(payload.ton40_1),
+          ton40_2: asNumber(payload.ton40_2),
           dartsThrown1: asNumber(payload.darts_thrown1),
           dartsThrown2: asNumber(payload.darts_thrown2),
           checkoutAttempts1: asNumber(payload.checkout_attempts1),
@@ -312,52 +316,6 @@ const SubmitMatchPage = () => {
     setFetchingAutodarts(false);
   }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
 
-  // Swap all stats between player columns
-  const handleSwapSides = useCallback(() => {
-    setScore1((prev) => {
-      const old2 = score2;
-      setScore2(prev);
-      return old2;
-    });
-    setStats((prev) => ({
-      ...prev,
-      avg1: prev.avg2 || "", avg2: prev.avg1 || "",
-      first9Avg1: prev.first9Avg2 || "", first9Avg2: prev.first9Avg1 || "",
-      avgUntil170_1: prev.avgUntil170_2 || "", avgUntil170_2: prev.avgUntil170_1 || "",
-      oneEighties1: prev.oneEighties2 || "", oneEighties2: prev.oneEighties1 || "",
-      hc1: prev.hc2 || "", hc2: prev.hc1 || "",
-      ton60_1: prev.ton60_2 || "", ton60_2: prev.ton60_1 || "",
-      ton80_1: prev.ton80_2 || "", ton80_2: prev.ton80_1 || "",
-      tonPlus1: prev.tonPlus2 || "", tonPlus2: prev.tonPlus1 || "",
-      darts1: prev.darts2 || "", darts2: prev.darts1 || "",
-      checkoutAttempts1: prev.checkoutAttempts2 || "", checkoutAttempts2: prev.checkoutAttempts1 || "",
-      checkoutHits1: prev.checkoutHits2 || "", checkoutHits2: prev.checkoutHits1 || "",
-    }));
-    if (rawPreview) {
-      setRawPreview((prev) =>
-        prev
-          ? {
-              ...prev,
-              score1: prev.score2, score2: prev.score1,
-              avg1: prev.avg2, avg2: prev.avg1,
-              first_9_avg1: prev.first_9_avg2, first_9_avg2: prev.first_9_avg1,
-              avg_until_170_1: prev.avg_until_170_2, avg_until_170_2: prev.avg_until_170_1,
-              one_eighties1: prev.one_eighties2, one_eighties2: prev.one_eighties1,
-              high_checkout1: prev.high_checkout2, high_checkout2: prev.high_checkout1,
-              ton60_1: prev.ton60_2, ton60_2: prev.ton60_1,
-              ton80_1: prev.ton80_2, ton80_2: prev.ton80_1,
-              ton_plus1: prev.ton_plus2, ton_plus2: prev.ton_plus1,
-              darts_thrown1: prev.darts_thrown2, darts_thrown2: prev.darts_thrown1,
-              checkout_attempts1: prev.checkout_attempts2, checkout_attempts2: prev.checkout_attempts1,
-              checkout_hits1: prev.checkout_hits2, checkout_hits2: prev.checkout_hits1,
-              player1_name: prev.player2_name, player2_name: prev.player1_name,
-            }
-          : null,
-      );
-    }
-    toast({ title: "Zamieniono strony ↔", description: "Wynik i statystyki zostały zamienione." });
-  }, [score2, rawPreview, toast]);
-
   const resetForm = () => {
     setSelectedMatchId("");
     setScore1("");
@@ -413,6 +371,8 @@ const SubmitMatchPage = () => {
       ton80_2: optNum("ton80_2"),
       tonPlus1: optNum("tonPlus1"),
       tonPlus2: optNum("tonPlus2"),
+      ton40_1: optNum("ton40_1"),
+      ton40_2: optNum("ton40_2"),
       dartsThrown1: optNum("darts1"),
       dartsThrown2: optNum("darts2"),
       checkoutAttempts1: attemptsP1,
@@ -585,19 +545,10 @@ const SubmitMatchPage = () => {
               {/* Raw preview from Autodarts */}
               {rawPreview && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div>
                     <h3 className="font-display font-bold text-sm text-primary uppercase tracking-wider">
                       📊 Dane z Autodarts
                     </h3>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSwapSides}
-                      className="text-xs gap-1"
-                    >
-                      <ArrowLeftRight className="h-3 w-3" /> Zamień strony
-                    </Button>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-center text-xs font-body">
@@ -632,8 +583,7 @@ const SubmitMatchPage = () => {
                   </div>
 
                   <p className="text-[10px] text-muted-foreground text-center">
-                    Dane z Autodarts uzupełniły formularz. Jeśli kolejność graczy się nie zgadza, kliknij „Zamień
-                    strony".
+                    Dane z Autodarts uzupełniły formularz poniżej.
                   </p>
                 </div>
               )}
@@ -672,9 +622,6 @@ const SubmitMatchPage = () => {
                 </div>
               </div>
 
-              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides} className="gap-1">
-                <ArrowLeftRight className="h-3.5 w-3.5" /> Zamień strony graczy
-              </Button>
 
               {/* Autodarts link */}
               <div className="space-y-2">
