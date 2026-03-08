@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, ArrowLeft, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MessageCircle, Send, ArrowLeft, Users, Search } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -29,6 +29,7 @@ interface Message {
 
 const ChatPage = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [contacts, setContacts] = useState<ChatContact[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,13 +37,25 @@ const ChatPage = () => {
   const [sending, setSending] = useState(false);
   const [allPlayers, setAllPlayers] = useState<{ user_id: string; name: string; avatar: string }[]>([]);
   const [showNewChat, setShowNewChat] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const initialOpenDone = useRef(false);
 
   useEffect(() => {
     if (!user) return;
     loadContacts();
     loadAllPlayers();
   }, [user]);
+
+  // Auto-open chat from URL param ?with=user_id
+  useEffect(() => {
+    if (!user || initialOpenDone.current) return;
+    const withUserId = searchParams.get("with");
+    if (withUserId) {
+      initialOpenDone.current = true;
+      loadMessages(withUserId);
+    }
+  }, [user, searchParams]);
 
   // Realtime subscription
   useEffect(() => {
@@ -54,7 +67,6 @@ const ChatPage = () => {
         if (msg.sender_id === user.id || msg.receiver_id === user.id) {
           if (activeChat && (msg.sender_id === activeChat || msg.receiver_id === activeChat)) {
             setMessages((prev) => [...prev, msg]);
-            // Mark as read if we're the receiver
             if (msg.receiver_id === user.id) {
               supabase.from("chat_messages").update({ is_read: true }).eq("id", msg.id).then();
             }
@@ -77,7 +89,6 @@ const ChatPage = () => {
 
   const loadContacts = async () => {
     if (!user) return;
-    // Get all messages involving this user
     const { data: msgs } = await supabase
       .from("chat_messages")
       .select("*")
@@ -86,7 +97,6 @@ const ChatPage = () => {
 
     if (!msgs || msgs.length === 0) { setContacts([]); return; }
 
-    // Group by contact
     const contactMap = new Map<string, { lastMsg: string; lastTime: string; unread: number }>();
     msgs.forEach((m) => {
       const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
@@ -99,7 +109,6 @@ const ChatPage = () => {
       }
     });
 
-    // Get player info for contacts
     const contactIds = [...contactMap.keys()];
     const { data: players } = await supabase.from("players").select("user_id, name, avatar").in("user_id", contactIds);
 
@@ -135,7 +144,6 @@ const ChatPage = () => {
 
     setMessages((data as Message[]) || []);
 
-    // Mark unread as read
     await supabase
       .from("chat_messages")
       .update({ is_read: true })
@@ -166,6 +174,13 @@ const ChatPage = () => {
     || allPlayers.find((p) => p.user_id === activeChat)?.name
     || "Czat";
 
+  // Filter contacts and players by search query
+  const q = searchQuery.toLowerCase();
+  const filteredContacts = q ? contacts.filter((c) => c.name.toLowerCase().includes(q)) : contacts;
+  const filteredNewPlayers = allPlayers
+    .filter((p) => !contacts.find((c) => c.user_id === p.user_id))
+    .filter((p) => !q || p.name.toLowerCase().includes(q));
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md">
@@ -191,27 +206,42 @@ const ChatPage = () => {
               <Users className="h-4 w-4" />
             </Button>
           </div>
+          {/* Search */}
+          <div className="p-2 border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Szukaj gracza..."
+                className="pl-8 h-8 text-sm bg-muted/30 border-border"
+              />
+            </div>
+          </div>
           <ScrollArea className="flex-1">
-            {showNewChat && (
+            {(showNewChat || (q && filteredNewPlayers.length > 0)) && (
               <div className="p-2 border-b border-border bg-muted/20">
-                <p className="text-xs font-display uppercase text-muted-foreground mb-2 px-2">Nowa rozmowa</p>
-                {allPlayers
-                  .filter((p) => !contacts.find((c) => c.user_id === p.user_id))
-                  .map((p) => (
-                    <button
-                      key={p.user_id}
-                      onClick={() => startNewChat(p.user_id!)}
-                      className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/40 transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
-                        {p.avatar}
-                      </div>
-                      <span className="font-body text-sm text-foreground">{p.name}</span>
-                    </button>
-                  ))}
+                <p className="text-xs font-display uppercase text-muted-foreground mb-2 px-2">
+                  {q ? "Wyniki wyszukiwania" : "Nowa rozmowa"}
+                </p>
+                {filteredNewPlayers.map((p) => (
+                  <button
+                    key={p.user_id}
+                    onClick={() => startNewChat(p.user_id!)}
+                    className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/40 transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
+                      {p.avatar}
+                    </div>
+                    <span className="font-body text-sm text-foreground">{p.name}</span>
+                  </button>
+                ))}
+                {filteredNewPlayers.length === 0 && q && (
+                  <p className="text-xs text-muted-foreground px-2 py-1">Nie znaleziono gracza</p>
+                )}
               </div>
             )}
-            {contacts.map((c) => (
+            {filteredContacts.map((c) => (
               <button
                 key={c.user_id}
                 onClick={() => loadMessages(c.user_id)}
@@ -235,7 +265,7 @@ const ChatPage = () => {
                 </div>
               </button>
             ))}
-            {contacts.length === 0 && !showNewChat && (
+            {filteredContacts.length === 0 && !showNewChat && !q && (
               <div className="p-6 text-center text-muted-foreground text-sm font-body">
                 Brak rozmów. Kliknij <Users className="h-3.5 w-3.5 inline" /> aby rozpocząć.
               </div>

@@ -1,6 +1,6 @@
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, Phone, MessageCircle, ArrowLeft, Handshake, User } from "lucide-react";
+import { Calendar, Phone, MessageCircle, Handshake, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -18,13 +18,7 @@ const MyMatchesPage = () => {
   const { user } = useAuth();
   const { players, matches, activeLeagueId, getLeagueMatches } = useLeague();
   const [contacts, setContacts] = useState<Record<string, PlayerContact>>({});
-
-  // Find my player record
-  const myPlayer = players.find((p) => (p as any).user_id === user?.id) 
-    || players.find((p) => {
-      // fallback: we need user_id from DB
-      return false;
-    });
+  const [opponentUserIds, setOpponentUserIds] = useState<Record<string, string>>({});
 
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
 
@@ -45,7 +39,7 @@ const MyMatchesPage = () => {
     (m) => m.status === "upcoming" && myPlayerId && (m.player1Id === myPlayerId || m.player2Id === myPlayerId)
   );
 
-  // Fetch contact info for opponents using secure function
+  // Fetch contact info and user_ids for opponents
   useEffect(() => {
     if (!myPlayerId || myUpcoming.length === 0) return;
     const opponentIds = myUpcoming.map((m) =>
@@ -53,6 +47,7 @@ const MyMatchesPage = () => {
     );
     const uniqueIds = [...new Set(opponentIds)];
 
+    // Get contacts
     Promise.all(
       uniqueIds.map((id) =>
         supabase.rpc("get_opponent_contact", { opponent_player_id: id }).then(({ data }) => {
@@ -65,6 +60,19 @@ const MyMatchesPage = () => {
       results.forEach((r) => { map[r.id] = { id: r.id, phone: r.phone, discord: r.discord }; });
       setContacts(map);
     });
+
+    // Get user_ids for chat links
+    supabase
+      .from("players")
+      .select("id, user_id")
+      .in("id", uniqueIds)
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((p) => { if (p.user_id) map[p.id] = p.user_id; });
+          setOpponentUserIds(map);
+        }
+      });
   }, [myPlayerId, myUpcoming.length]);
 
   if (!user) {
@@ -104,6 +112,7 @@ const MyMatchesPage = () => {
             const opponentId = isP1 ? match.player2Id : match.player1Id;
             const opponentName = isP1 ? match.player2Name : match.player1Name;
             const contact = contacts[opponentId];
+            const opponentUserId = opponentUserIds[opponentId];
 
             return (
               <div key={match.id} className="rounded-lg border border-border bg-card p-5 card-glow">
@@ -133,7 +142,7 @@ const MyMatchesPage = () => {
                   <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-sm font-display font-bold text-primary">
                     {players.find((p) => p.id === opponentId)?.avatar || "?"}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <Link
                       to={`/players/${opponentId}`}
                       className="font-body font-semibold text-foreground hover:text-primary transition-colors"
@@ -141,6 +150,13 @@ const MyMatchesPage = () => {
                       vs {opponentName}
                     </Link>
                   </div>
+                  {opponentUserId && (
+                    <Link to={`/chat?with=${opponentUserId}`}>
+                      <Button variant="outline" size="sm" className="font-display text-xs uppercase tracking-wider">
+                        <MessageCircle className="h-3.5 w-3.5 mr-1" /> Czat
+                      </Button>
+                    </Link>
+                  )}
                 </div>
 
                 {/* Contact info */}
