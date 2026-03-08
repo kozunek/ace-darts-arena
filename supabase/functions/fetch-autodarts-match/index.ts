@@ -153,6 +153,14 @@ async function fetchMatchData(matchId: string, token: string) {
   const p1Name = players[0].name || players[0].username || "Player 1";
   const p2Name = players[1].name || players[1].username || "Player 2";
 
+  // Build playerId -> index map (Autodarts uses UUIDs in turns, not numeric indices)
+  const playerIdMap: Record<string, number> = {};
+  for (let i = 0; i < players.length; i++) {
+    const pid = players[i].userId || players[i].id || players[i].playerId;
+    if (pid) playerIdMap[pid] = i;
+  }
+  console.log("Player ID map:", JSON.stringify(playerIdMap));
+
   // Extract scores from match.scores (nested objects)
   let legsWon1 = 0, legsWon2 = 0;
   if (Array.isArray(match.scores) && match.scores.length >= 2) {
