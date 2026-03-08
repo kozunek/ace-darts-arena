@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "eDART Polska - Autodarts Stats",
+  "version": "1.0.0",
+  "description": "Automatycznie pobiera token Autodarts i wysyła statystyki do eDART Polska",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": [
+    "https://login.autodarts.io/*",
+    "https://play.autodarts.io/*",
+    "https://api.autodarts.io/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.autodarts.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon48.png"
+  }
+}
