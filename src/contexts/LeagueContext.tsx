@@ -382,7 +382,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       const newLeague: League = {
         id: data.id, name: data.name, season: data.season, description: data.description,
         format: data.format, max_legs: data.max_legs, is_active: data.is_active,
-        league_type: data.league_type || "league",
+        league_type: (data.league_type as League["league_type"]) || "league",
       };
       setLeagueList((prev) => [...prev, newLeague]);
       if (!activeLeagueId) setActiveLeagueId(data.id);
