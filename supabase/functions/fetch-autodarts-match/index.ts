@@ -61,6 +61,80 @@ async function fetchJson(url: string, token: string) {
   return res.json();
 }
 
+function toNum(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function pickFirstNumber(obj: any, keys: string[]): number | null {
+  if (!obj || typeof obj !== "object") return null;
+  for (const k of keys) {
+    const n = toNum(obj[k]);
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function extractDirectCheckoutStats(player: any): { hits: number | null; attempts: number | null } {
+  const directHits = pickFirstNumber(player, [
+    "checkout_hits", "checkoutHits", "checkoutsWon", "checkoutsHit", "checkoutSuccesses",
+  ]);
+  const directAttempts = pickFirstNumber(player, [
+    "checkout_attempts", "checkoutAttempts", "checkoutTries", "checkout_tries", "checkoutsAttempts",
+  ]);
+
+  const statNodes = [
+    player?.stats,
+    player?.statistics,
+    player?.statistic,
+    player?.matchStats,
+    player?.gameStats,
+    player?.playerStats,
+    player?.performance,
+    player?.checkout,
+    player?.checkouts,
+  ].filter(Boolean);
+
+  let hits = directHits;
+  let attempts = directAttempts;
+
+  for (const node of statNodes) {
+    if (hits == null) {
+      hits = pickFirstNumber(node, [
+        "checkout_hits", "checkoutHits", "hits", "made", "won", "success", "successful", "count",
+      ]);
+    }
+
+    if (attempts == null) {
+      attempts = pickFirstNumber(node, [
+        "checkout_attempts", "checkoutAttempts", "attempts", "tries", "total", "thrown", "shots",
+      ]);
+    }
+
+    const checkoutObj = node?.checkout ?? node?.checkouts ?? null;
+    if (checkoutObj && typeof checkoutObj === "object") {
+      if (hits == null) {
+        hits = pickFirstNumber(checkoutObj, [
+          "hits", "made", "won", "success", "successful", "count",
+        ]);
+      }
+      if (attempts == null) {
+        attempts = pickFirstNumber(checkoutObj, [
+          "attempts", "tries", "total", "thrown", "shots",
+        ]);
+      }
+    }
+
+    if (hits != null && attempts != null) break;
+  }
+
+  return { hits, attempts };
+}
+
 async function loginToAutodarts(): Promise<string | null> {
   const email = Deno.env.get("AUTODARTS_EMAIL");
   const password = Deno.env.get("AUTODARTS_PASSWORD");
@@ -279,6 +353,9 @@ async function fetchMatchData(matchId: string, token: string) {
   st[0].legsWon = legsWon1;
   st[1].legsWon = legsWon2;
 
+  const directCo1 = extractDirectCheckoutStats(players[0]);
+  const directCo2 = extractDirectCheckoutStats(players[1]);
+
   // Process embedded games (legs)
   const games = Array.isArray(match.games) ? match.games.filter((g: any) => g && typeof g === "object") : [];
   console.log("Games count:", games.length);
@@ -286,6 +363,12 @@ async function fetchMatchData(matchId: string, token: string) {
   for (let gi = 0; gi < games.length; gi++) {
     processGameTurns(games[gi], playerIdMap, st, gi);
   }
+
+  // Prefer direct checkout stats from Autodarts payload when available
+  if (directCo1.hits != null) st[0].checkoutHits = directCo1.hits;
+  if (directCo1.attempts != null) st[0].checkoutAttempts = directCo1.attempts;
+  if (directCo2.hits != null) st[1].checkoutHits = directCo2.hits;
+  if (directCo2.attempts != null) st[1].checkoutAttempts = directCo2.attempts;
 
   // Log stats for debugging
   for (let i = 0; i < 2; i++) {
