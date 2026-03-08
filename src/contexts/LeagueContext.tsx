@@ -57,6 +57,8 @@ export interface MatchResultData {
   ton80_2?: number;
   tonPlus1?: number;
   tonPlus2?: number;
+  ton40_1?: number;
+  ton40_2?: number;
   dartsThrown1?: number;
   dartsThrown2?: number;
   checkoutAttempts1?: number;
