@@ -155,7 +155,7 @@ const StatsPage = () => {
                     </td>
                     <td className="px-4 py-3">
                       <Link to={`/players/${entry.playerId}`} className="flex items-center gap-3 group">
-                        <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary group-hover:bg-primary/30 transition-colors">{entry.avatar}</div>
+                        <PlayerAvatar avatarUrl={entry.avatarUrl} initials={entry.avatar} size="sm" className="group-hover:border-primary/50 transition-colors" />
                         <span className="font-body font-medium text-foreground text-sm group-hover:text-primary transition-colors">{entry.playerName}</span>
                       </Link>
                     </td>

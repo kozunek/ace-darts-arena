@@ -68,9 +68,7 @@ const LeagueTable = () => {
                     <td className="px-2 py-2"><RankIcon rank={index + 1} /></td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 shrink-0 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[9px] font-display font-bold text-primary">
-                          {entry.avatar}
-                        </div>
+                        <PlayerAvatar avatarUrl={entry.avatar_url} initials={entry.avatar} size="sm" className="w-7 h-7 text-[9px]" />
                         <span className="font-body font-medium text-foreground text-xs whitespace-nowrap">{entry.name}</span>
                       </div>
                     </td>

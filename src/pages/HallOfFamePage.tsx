@@ -173,9 +173,7 @@ const HallOfFamePage = () => {
                       <span className={`text-lg font-display w-8 text-center ${i === 0 ? "text-2xl" : ""}`}>
                         {medals[i]}
                       </span>
-                      <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
-                        {entry.playerAvatar}
-                      </div>
+                      <PlayerAvatar avatarUrl={entry.playerAvatarUrl} initials={entry.playerAvatar} size="sm" />
                       <span className="flex-1 font-body font-medium text-foreground text-sm">{entry.playerName}</span>
                       <span className="font-display font-bold text-foreground text-lg">{entry.value}</span>
                     </Link>

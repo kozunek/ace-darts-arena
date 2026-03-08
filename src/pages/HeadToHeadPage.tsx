@@ -122,9 +122,7 @@ const HeadToHeadPage = () => {
                 </div>
               </div>
               <div className="text-center flex-1">
-                <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center text-xl font-display font-bold text-primary mx-auto mb-2">
-                  {p2.avatar}
-                </div>
+                <PlayerAvatar avatarUrl={p2.avatar_url} initials={p2.avatar} size="md" className="w-16 h-16 mx-auto mb-2" />
                 <Link to={`/players/${p2.id}`} className="font-body font-semibold text-foreground hover:text-primary transition-colors">
                   {p2.name}
                 </Link>

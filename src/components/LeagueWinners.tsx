@@ -53,9 +53,7 @@ const LeagueWinners = () => {
                   return (
                     <div key={player.id} className="flex items-center gap-3">
                       <span className="text-lg">{medals[idx]}</span>
-                      <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] font-display font-bold text-primary">
-                        {player.avatar}
-                      </div>
+                      <PlayerAvatar avatarUrl={player.avatar_url} initials={player.avatar} size="sm" className="w-8 h-8 text-[10px]" />
                       <div className="flex-1">
                         <span className={`font-body font-medium text-sm ${colors[idx]}`}>{player.name}</span>
                       </div>
