@@ -35,9 +35,7 @@ const PlayerProfilePage = () => {
       {/* Profile header */}
       <div className="rounded-lg border border-border bg-card p-6 md:p-8 card-glow mb-8">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center text-2xl font-display font-bold text-primary">
-            {player.avatar}
-          </div>
+          <PlayerAvatar avatarUrl={player.avatar_url} initials={player.avatar} size="lg" />
           <div className="flex-1">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-1">{player.name}</h1>
             <p className="text-muted-foreground font-body">
