@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       // Check if match was already submitted (duplicate prevention)
       const { data: existingMatch } = await supabase
         .from("matches")
-        .select("id, status")
+        .select("id, status, score1, score2, league_id, leagues!inner(name)")
         .in("status", ["pending_approval", "completed"])
         .or(
           `and(player1_id.eq.${p1Id},player2_id.eq.${p2Id}),and(player1_id.eq.${p2Id},player2_id.eq.${p1Id})`
@@ -303,14 +303,24 @@ Deno.serve(async (req) => {
         .limit(1);
 
       if (existingMatch && existingMatch.length > 0) {
-        console.log(`[auto-submit] Match already submitted (${existingMatch[0].status}), skipping duplicate`);
+        const em = existingMatch[0] as any;
+        const emLeagueName = em.leagues?.name || "Liga";
+        const emScore = `${em.score1 ?? "?"} : ${em.score2 ?? "?"}`;
+        const emStatusText = em.status === "completed"
+          ? "Wynik zatwierdzony automatycznie!"
+          : "Wynik wysłany — oczekuje na zatwierdzenie admina.";
+        console.log(`[auto-submit] Match already submitted (${em.status}), skipping duplicate`);
         return new Response(
           JSON.stringify({
             is_league_match: true,
             submitted: false,
             already_submitted: true,
             reason: "match already submitted by the other player",
-            match_id: existingMatch[0].id,
+            match_id: em.id,
+            league_name: emLeagueName,
+            score: emScore,
+            status: em.status,
+            status_text: emStatusText,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
