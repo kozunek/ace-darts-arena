@@ -143,7 +143,6 @@ const HeadToHeadPage = () => {
                   const s1 = p1IsPlayer1 ? match.score1 : match.score2;
                   const s2 = p1IsPlayer1 ? match.score2 : match.score1;
                   const won = (s1 ?? 0) > (s2 ?? 0);
-                  const draw = s1 === s2;
 
                   return (
                     <div key={match.id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
@@ -153,13 +152,13 @@ const HeadToHeadPage = () => {
                         <div className="text-[10px] text-muted-foreground/70 mt-0.5">{leagues.find(l => l.id === match.leagueId)?.name}</div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`font-display font-bold text-lg ${won ? "text-secondary" : draw ? "text-accent" : "text-muted-foreground"}`}>
+                        <span className={`font-display font-bold text-lg ${won ? "text-secondary" : "text-muted-foreground"}`}>
                           {p1?.name?.split(" ")[0]}
                         </span>
                         <span className="text-2xl font-display font-bold text-foreground">
                           {s1}:{s2}
                         </span>
-                        <span className={`font-display font-bold text-lg ${!won && !draw ? "text-secondary" : draw ? "text-accent" : "text-muted-foreground"}`}>
+                        <span className={`font-display font-bold text-lg ${!won ? "text-secondary" : "text-muted-foreground"}`}>
                           {p2?.name?.split(" ")[0]}
                         </span>
                       </div>
