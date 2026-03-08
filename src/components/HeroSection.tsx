@@ -57,6 +57,11 @@ const HeroSection = () => {
             <Link to="/matches">
               <Button variant="outline" size="lg" className="font-display uppercase tracking-wider">Mecze</Button>
             </Link>
+            <a href="/eDART_Polska.apk" download>
+              <Button variant="outline" size="lg" className="font-display uppercase tracking-wider">
+                <Download className="h-4 w-4 mr-2" /> Android APK
+              </Button>
+            </a>
           </motion.div>
         </div>
       </div>
