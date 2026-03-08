@@ -30,6 +30,7 @@ export interface League {
   league_type: LeagueType;
   bonus_rules: BonusRules;
   registration_open?: boolean;
+  meetings_per_pair?: number;
 }
 
 export interface Player {

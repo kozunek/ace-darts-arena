@@ -174,7 +174,7 @@ const HeadToHeadPage = () => {
             </div>
           ) : (
             <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-              <p className="text-muted-foreground font-body">Ci gracze nie rozegrali jeszcze meczu w tej lidze.</p>
+              <p className="text-muted-foreground font-body">Ci gracze nie rozegrali jeszcze żadnego meczu.</p>
             </div>
           )}
         </>
