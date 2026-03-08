@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -24,45 +24,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("name, avatar").eq("user_id", userId).single();
-    if (data) setProfile(data);
-  };
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("name, avatar")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-  const checkRoles = async (userId: string) => {
-    const { data: adminData } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    setIsAdmin(!!adminData);
-    const { data: modData } = await supabase.rpc("has_role", { _user_id: userId, _role: "moderator" });
-    setIsModerator(!!modData);
-  };
+    setProfile(data ?? null);
+  }, []);
+
+  const checkRoles = useCallback(async (userId: string) => {
+    const [adminRes, modRes] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+      supabase.rpc("has_role", { _user_id: userId, _role: "moderator" }),
+    ]);
+
+    if (!adminRes.error && !modRes.error) {
+      setIsAdmin(Boolean(adminRes.data));
+      setIsModerator(Boolean(modRes.data));
+      return;
+    }
+
+    const { data: fallbackRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    const roles = (fallbackRoles || []).map((r) => r.role);
+    setIsAdmin(roles.includes("admin"));
+    setIsModerator(roles.includes("moderator"));
+  }, []);
+
+  const syncUserState = useCallback(async (currentUser: User | null) => {
+    setUser(currentUser);
+
+    if (!currentUser) {
+      setProfile(null);
+      setIsAdmin(false);
+      setIsModerator(false);
+      return;
+    }
+
+    await Promise.all([fetchProfile(currentUser.id), checkRoles(currentUser.id)]);
+  }, [checkRoles, fetchProfile]);
 
   useEffect(() => {
+    let mounted = true;
+
+    const initSession = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      await syncUserState(session?.user ?? null);
+      if (mounted) setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        await fetchProfile(u.id);
-        await checkRoles(u.id);
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
-        setIsModerator(false);
-      }
-      setLoading(false);
+      if (!mounted) return;
+      setLoading(true);
+      await syncUserState(session?.user ?? null);
+      if (mounted) setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        fetchProfile(u.id);
-        checkRoles(u.id);
-      }
-      setLoading(false);
-    });
+    initSession();
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [syncUserState]);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

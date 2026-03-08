@@ -52,6 +52,10 @@ export type Database = {
           autodarts_link: string | null
           avg1: number | null
           avg2: number | null
+          checkout_attempts1: number
+          checkout_attempts2: number
+          checkout_hits1: number
+          checkout_hits2: number
           created_at: string
           darts_thrown1: number | null
           darts_thrown2: number | null
@@ -83,6 +87,10 @@ export type Database = {
           autodarts_link?: string | null
           avg1?: number | null
           avg2?: number | null
+          checkout_attempts1?: number
+          checkout_attempts2?: number
+          checkout_hits1?: number
+          checkout_hits2?: number
           created_at?: string
           darts_thrown1?: number | null
           darts_thrown2?: number | null
@@ -114,6 +122,10 @@ export type Database = {
           autodarts_link?: string | null
           avg1?: number | null
           avg2?: number | null
+          checkout_attempts1?: number
+          checkout_attempts2?: number
+          checkout_hits1?: number
+          checkout_hits2?: number
           created_at?: string
           darts_thrown1?: number | null
           darts_thrown2?: number | null

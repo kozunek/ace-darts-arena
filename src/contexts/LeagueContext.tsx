@@ -58,6 +58,10 @@ export interface MatchResultData {
   tonPlus2?: number;
   dartsThrown1?: number;
   dartsThrown2?: number;
+  checkoutAttempts1?: number;
+  checkoutAttempts2?: number;
+  checkoutHits1?: number;
+  checkoutHits2?: number;
   autodartsLink?: string;
 }
 
@@ -77,6 +81,9 @@ export interface TonLeaderEntry {
   losses: number;
   matchesPlayed: number;
   winRate: number;
+  checkoutAttempts: number;
+  checkoutHits: number;
+  checkoutRate: number;
 }
 
 const LeagueContext = createContext<LeagueContextType | null>(null);
@@ -115,6 +122,10 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
     tonPlus2: m.ton_plus2,
     dartsThrown1: m.darts_thrown1,
     dartsThrown2: m.darts_thrown2,
+    checkoutAttempts1: m.checkout_attempts1,
+    checkoutAttempts2: m.checkout_attempts2,
+    checkoutHits1: m.checkout_hits1,
+    checkoutHits2: m.checkout_hits2,
   };
 };
 
@@ -126,6 +137,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
   let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
   let ton40 = 0, ton60 = 0, ton80 = 0, tonPlus = 0;
+  let checkoutAttempts = 0, checkoutHits = 0;
   const avgValues: number[] = [];
   const form: ("W" | "L" | "D")[] = [];
 
@@ -148,6 +160,8 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+    checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
+    checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
 
     if (myScore > oppScore) { wins++; form.push("W"); }
     else if (myScore < oppScore) { losses++; form.push("L"); }
@@ -156,6 +170,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
 
   const avg = avgValues.length > 0 ? Math.round((avgValues.reduce((a, b) => a + b, 0) / avgValues.length) * 10) / 10 : 0;
   const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
+  const checkoutRate = checkoutAttempts > 0 ? Math.round((checkoutHits / checkoutAttempts) * 100) : 0;
 
   return {
     playerId, leagueId,
@@ -170,6 +185,9 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     totalDartsThrown: totalDarts,
     ton40, ton60, ton80, tonPlus,
     winRate,
+    checkoutAttempts,
+    checkoutHits,
+    checkoutRate,
   };
 };
 
@@ -254,12 +272,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
       ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
       darts_thrown1: data.dartsThrown1 ?? 0, darts_thrown2: data.dartsThrown2 ?? 0,
+      checkout_attempts1: data.checkoutAttempts1 ?? 0,
+      checkout_attempts2: data.checkoutAttempts2 ?? 0,
+      checkout_hits1: data.checkoutHits1 ?? 0,
+      checkout_hits2: data.checkoutHits2 ?? 0,
       autodarts_link: data.autodartsLink,
     }).eq("id", matchId);
 
     setMatchList((prev) =>
       prev.map((m) =>
-        m.id === matchId ? { ...m, ...data, legsWon1: data.score1, legsWon2: data.score2, status: "pending_approval" as const } : m
+        m.id === matchId ? {
+          ...m,
+          ...data,
+          legsWon1: data.score1,
+          legsWon2: data.score2,
+          status: "pending_approval" as const,
+        } : m
       )
     );
   }, []);
@@ -280,6 +308,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0,
       ton80_1: 0, ton80_2: 0, ton_plus1: 0, ton_plus2: 0,
       darts_thrown1: 0, darts_thrown2: 0,
+      checkout_attempts1: 0, checkout_attempts2: 0,
+      checkout_hits1: 0, checkout_hits2: 0,
       autodarts_link: null,
     }).eq("id", matchId);
 
@@ -290,6 +320,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       oneEighties1: 0, oneEighties2: 0, highCheckout1: 0, highCheckout2: 0,
       ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0, ton80_1: 0, ton80_2: 0,
       tonPlus1: 0, tonPlus2: 0, dartsThrown1: 0, dartsThrown2: 0,
+      checkoutAttempts1: 0, checkoutAttempts2: 0, checkoutHits1: 0, checkoutHits2: 0,
       autodartsLink: undefined,
     } : m));
   }, []);
@@ -408,9 +439,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     filtered.forEach((m) => {
       [
-        { id: m.player1Id, name: m.player1Name, t40: m.ton40_1 ?? 0, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0 },
-        { id: m.player2Id, name: m.player2Name, t40: m.ton40_2 ?? 0, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0 },
-      ].forEach(({ id, name, t40, t60, t80, tp, e, hc, avg, score, oppScore }) => {
+        { id: m.player1Id, name: m.player1Name, t40: m.ton40_1 ?? 0, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0, attempts: m.checkoutAttempts1 ?? 0, hits: m.checkoutHits1 ?? 0 },
+        { id: m.player2Id, name: m.player2Name, t40: m.ton40_2 ?? 0, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0, attempts: m.checkoutAttempts2 ?? 0, hits: m.checkoutHits2 ?? 0 },
+      ].forEach(({ id, name, t40, t60, t80, tp, e, hc, avg, score, oppScore, attempts, hits }) => {
         const existing = playerMap.get(id);
         const player = playerList.find(p => p.id === id);
         const won = score > oppScore ? 1 : 0;
@@ -421,6 +452,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
           if (hc > existing.highestCheckout) existing.highestCheckout = hc;
           if (avg > existing.bestAvg) existing.bestAvg = avg;
           existing.wins += won; existing.losses += lost; existing.matchesPlayed += 1;
+          existing.checkoutAttempts += attempts;
+          existing.checkoutHits += hits;
+          existing.checkoutRate = existing.checkoutAttempts > 0 ? Math.round((existing.checkoutHits / existing.checkoutAttempts) * 100) : 0;
           existing.winRate = existing.matchesPlayed > 0 ? Math.round((existing.wins / existing.matchesPlayed) * 100) : 0;
         } else {
           playerMap.set(id, {
@@ -431,6 +465,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             highestCheckout: hc, bestAvg: avg,
             wins: won, losses: lost, matchesPlayed: 1,
             winRate: won ? 100 : 0,
+            checkoutAttempts: attempts,
+            checkoutHits: hits,
+            checkoutRate: attempts > 0 ? Math.round((hits / attempts) * 100) : 0,
           });
         }
       });
