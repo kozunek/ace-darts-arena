@@ -44,8 +44,10 @@ const PlayerProfilePage = () => {
             </p>
           </div>
         </div>
-      </div>
+            </div>
 
+            {/* Progress chart */}
+            <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
 
       {/* Per-league stats */}
       {allLeagueStats.map(({ league, stats }) => {
