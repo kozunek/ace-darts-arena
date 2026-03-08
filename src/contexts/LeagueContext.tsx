@@ -170,14 +170,14 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
     (m) => m.leagueId === leagueId && m.status === "completed" && (m.player1Id === playerId || m.player2Id === playerId)
   );
 
-  let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
+  let wins = 0, losses = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
   let ton60 = 0, ton80 = 0, tonPlus = 0;
   let checkoutAttempts = 0, checkoutHits = 0;
   let bestFirst9Avg = 0, bestAvgUntil170 = 0;
   let basePoints = 0, bonusPoints = 0;
   const avgValues: number[] = [];
-  const form: ("W" | "L" | "D")[] = [];
+  const form: ("W" | "L")[] = [];
 
   completed.forEach((m) => {
     const isP1 = m.player1Id === playerId;
@@ -206,8 +206,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
 
     const isWinner = myScore > oppScore;
     if (isWinner) { wins++; form.push("W"); basePoints += rules.win; }
-    else if (myScore < oppScore) { losses++; form.push("L"); }
-    else { draws++; form.push("D"); basePoints += rules.draw; }
+    else { losses++; form.push("L"); }
 
     bonusPoints += calcMatchBonusPoints(isP1, m, myScore, oppScore, isWinner, rules);
   });
@@ -218,7 +217,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
 
   return {
     playerId, leagueId,
-    wins, losses, draws,
+    wins, losses,
     points: basePoints + bonusPoints,
     basePoints,
     bonusPoints,

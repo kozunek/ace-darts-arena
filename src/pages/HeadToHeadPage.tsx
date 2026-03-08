@@ -22,7 +22,7 @@ const HeadToHeadPage = () => {
   const p2 = players.find((p) => p.id === player2Id);
 
   // Calculate H2H stats
-  let p1Wins = 0, p2Wins = 0, draws = 0;
+  let p1Wins = 0, p2Wins = 0;
   let p1AvgSum = 0, p2AvgSum = 0, avgCount = 0;
   let p1_180 = 0, p2_180 = 0;
   let p1Legs = 0, p2Legs = 0;
@@ -33,8 +33,7 @@ const HeadToHeadPage = () => {
     const s2 = p1IsPlayer1 ? m.score2 : m.score1;
 
     if ((s1 ?? 0) > (s2 ?? 0)) p1Wins++;
-    else if ((s2 ?? 0) > (s1 ?? 0)) p2Wins++;
-    else draws++;
+    else p2Wins++;
 
     const a1 = p1IsPlayer1 ? m.avg1 : m.avg2;
     const a2 = p1IsPlayer1 ? m.avg2 : m.avg1;
@@ -110,9 +109,6 @@ const HeadToHeadPage = () => {
                 <div className="text-4xl font-display font-bold text-foreground">
                   {p1Wins} <span className="text-muted-foreground text-lg">:</span> {p2Wins}
                 </div>
-                {draws > 0 && (
-                  <div className="text-xs text-muted-foreground font-body mt-1">{draws} {draws === 1 ? "remis" : "remisy"}</div>
-                )}
                 <div className="text-xs text-muted-foreground font-display uppercase mt-2">
                   {h2hMatches.length} {h2hMatches.length === 1 ? "mecz" : h2hMatches.length < 5 ? "mecze" : "meczów"}
                 </div>
@@ -147,7 +143,6 @@ const HeadToHeadPage = () => {
                   const s1 = p1IsPlayer1 ? match.score1 : match.score2;
                   const s2 = p1IsPlayer1 ? match.score2 : match.score1;
                   const won = (s1 ?? 0) > (s2 ?? 0);
-                  const draw = s1 === s2;
 
                   return (
                     <div key={match.id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
@@ -157,13 +152,13 @@ const HeadToHeadPage = () => {
                         <div className="text-[10px] text-muted-foreground/70 mt-0.5">{leagues.find(l => l.id === match.leagueId)?.name}</div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`font-display font-bold text-lg ${won ? "text-secondary" : draw ? "text-accent" : "text-muted-foreground"}`}>
+                        <span className={`font-display font-bold text-lg ${won ? "text-secondary" : "text-muted-foreground"}`}>
                           {p1?.name?.split(" ")[0]}
                         </span>
                         <span className="text-2xl font-display font-bold text-foreground">
                           {s1}:{s2}
                         </span>
-                        <span className={`font-display font-bold text-lg ${!won && !draw ? "text-secondary" : draw ? "text-accent" : "text-muted-foreground"}`}>
+                        <span className={`font-display font-bold text-lg ${!won ? "text-secondary" : "text-muted-foreground"}`}>
                           {p2?.name?.split(" ")[0]}
                         </span>
                       </div>

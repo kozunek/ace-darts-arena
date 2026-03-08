@@ -2,11 +2,10 @@ import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Medal, Award, Users } from "lucide-react";
 import type { Match, PlayerLeagueStats } from "@/data/mockData";
 
-const FormBadge = ({ result }: { result: "W" | "L" | "D" }) => {
+const FormBadge = ({ result }: { result: "W" | "L" }) => {
   const styles = {
     W: "bg-secondary/20 text-secondary border-secondary/30",
     L: "bg-destructive/20 text-destructive border-destructive/30",
-    D: "bg-accent/20 text-accent border-accent/30",
   };
   return (
     <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold border ${styles[result]}`}>
@@ -36,8 +35,8 @@ const GroupBracketView = () => {
       const player = players.find(p => p.id === pid);
       const completed = gMatches.filter(m => m.status === "completed" && (m.player1Id === pid || m.player2Id === pid));
       
-      let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0;
-      const form: ("W" | "L" | "D")[] = [];
+      let wins = 0, losses = 0, legsWon = 0, legsLost = 0;
+      const form: ("W" | "L")[] = [];
 
       completed.forEach(m => {
         const isP1 = m.player1Id === pid;
@@ -46,16 +45,15 @@ const GroupBracketView = () => {
         legsWon += myScore;
         legsLost += oppScore;
         if (myScore > oppScore) { wins++; form.push("W"); }
-        else if (myScore < oppScore) { losses++; form.push("L"); }
-        else { draws++; form.push("D"); }
+        else { losses++; form.push("L"); }
       });
 
       return {
         id: pid,
         name: player?.name ?? "?",
         avatar: player?.avatar ?? "?",
-        wins, losses, draws,
-        points: wins * 3 + draws,
+        wins, losses,
+        points: wins * 3,
         legsWon, legsLost,
         legDiff: legsWon - legsLost,
         matchesPlayed: completed.length,

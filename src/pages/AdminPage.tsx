@@ -617,14 +617,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   );
                 })}
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="mt-2">
                 <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
                   <span className="text-sm font-body text-foreground">🏆 Wygrana</span>
                   <Input type="number" min="0" max="10" value={bonusRules.win} onChange={(e) => setBonusRules(prev => ({ ...prev, win: parseInt(e.target.value) || 0 }))} className="w-16 h-8 text-center text-sm bg-muted/30 border-border font-display" />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
-                  <span className="text-sm font-body text-foreground">🤝 Remis</span>
-                  <Input type="number" min="0" max="10" value={bonusRules.draw} onChange={(e) => setBonusRules(prev => ({ ...prev, draw: parseInt(e.target.value) || 0 }))} className="w-16 h-8 text-center text-sm bg-muted/30 border-border font-display" />
                 </div>
               </div>
             </div>

@@ -3,11 +3,10 @@ import { Trophy, Medal, Award } from "lucide-react";
 import { DEFAULT_BONUS_RULES } from "@/data/mockData";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
-const FormBadge = ({ result }: { result: "W" | "L" | "D" }) => {
+const FormBadge = ({ result }: { result: "W" | "L" }) => {
   const styles = {
     W: "bg-secondary/20 text-secondary border-secondary/30",
     L: "bg-destructive/20 text-destructive border-destructive/30",
-    D: "bg-accent/20 text-accent border-accent/30",
   };
   return (
     <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold border ${styles[result]}`}>
@@ -50,7 +49,7 @@ const LeagueTable = () => {
                 <th className="text-left px-2 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground min-w-[100px]">Gracz</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">M</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">W</th>
-                <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">R</th>
+                <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">P</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">P</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Pkt</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Śr.</th>
@@ -74,7 +73,6 @@ const LeagueTable = () => {
                     </td>
                     <td className="text-center px-1.5 py-2 text-xs font-body text-muted-foreground">{entry.stats.matchesPlayed}</td>
                     <td className="text-center px-1.5 py-2 text-xs font-body text-secondary font-semibold">{entry.stats.wins}</td>
-                    <td className="text-center px-1.5 py-2 text-xs font-body text-accent font-semibold">{entry.stats.draws}</td>
                     <td className="text-center px-1.5 py-2 text-xs font-body text-destructive font-semibold">{entry.stats.losses}</td>
                     <td className="text-center px-1.5 py-2">
                       <div className="flex flex-col items-center">
@@ -116,7 +114,6 @@ const LeagueTable = () => {
         <h3 className="text-[10px] font-display uppercase tracking-wider text-muted-foreground mb-2">System punktowy</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[10px] font-body text-muted-foreground">
           {rules.win > 0 && <span>🏆 Wygrana: <strong className="text-foreground">+{rules.win}</strong></span>}
-          {rules.draw > 0 && <span>🤝 Remis: <strong className="text-foreground">+{rules.draw}</strong></span>}
           {rules.per180 > 0 && <span>🎯 180: <strong className="text-foreground">+{rules.per180}</strong></span>}
           
           {rules.checkout100 > 0 && <span>✅ CO 100+: <strong className="text-foreground">+{rules.checkout100}</strong></span>}

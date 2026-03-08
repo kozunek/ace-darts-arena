@@ -92,7 +92,6 @@ const PlayerProfilePage = () => {
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
               <MiniStatBox label="Mecze" value={stats.matchesPlayed} />
               <MiniStatBox label="Wygrane" value={stats.wins} />
-              <MiniStatBox label="Remisy" value={stats.draws} />
               <MiniStatBox label="Przegrane" value={stats.losses} />
               <MiniStatBox label="Legi +" value={stats.legsWon} />
               <MiniStatBox label="Legi -" value={stats.legsLost} />
@@ -165,7 +164,6 @@ const PlayerProfilePage = () => {
                   const myAvg = isP1 ? match.avg1 : match.avg2;
                   const my180 = isP1 ? match.oneEighties1 : match.oneEighties2;
                   const won = (myScore ?? 0) > (oppScore ?? 0);
-                  const draw = myScore === oppScore;
 
                   return (
                     <div key={match.id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
@@ -179,14 +177,13 @@ const PlayerProfilePage = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`text-2xl font-display font-bold ${won ? "text-secondary" : draw ? "text-accent" : "text-destructive"}`}>
+                        <span className={`text-2xl font-display font-bold ${won ? "text-secondary" : "text-destructive"}`}>
                           {myScore}:{oppScore}
                         </span>
                         <span className={`text-xs font-display uppercase px-2 py-1 rounded border ${
                           won ? "text-secondary bg-secondary/10 border-secondary/30" :
-                          draw ? "text-accent bg-accent/10 border-accent/30" :
                           "text-destructive bg-destructive/10 border-destructive/30"
-                        }`}>{won ? "W" : draw ? "R" : "P"}</span>
+                        }`}>{won ? "W" : "P"}</span>
                       </div>
                     </div>
                   );
