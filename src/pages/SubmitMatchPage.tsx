@@ -40,7 +40,7 @@ const readScore = (scoreLike: unknown): number => {
   return asNumber(scoreLike, 0);
 };
 
-const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
+const STAT_LABELS: { key1: string; key2: string; label: string; format?: "checkout" }[] = [
   { key1: "avg1", key2: "avg2", label: "Średnia" },
   { key1: "first_9_avg1", key2: "first_9_avg2", label: "Średnia z 9" },
   { key1: "avg_until_170_1", key2: "avg_until_170_2", label: "Śr. do 170" },
@@ -51,9 +51,12 @@ const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
   { key1: "ton_plus1", key2: "ton_plus2", label: "140+" },
   { key1: "ton40_1", key2: "ton40_2", label: "170+" },
   { key1: "darts_thrown1", key2: "darts_thrown2", label: "Rzuty" },
-  { key1: "checkout_attempts1", key2: "checkout_attempts2", label: "Checkout próby" },
-  { key1: "checkout_hits1", key2: "checkout_hits2", label: "Checkout traf." },
 ];
+
+const formatCheckout = (hits: number, attempts: number): string => {
+  if (attempts <= 0) return "0.00% (0/0)";
+  return `${((hits / attempts) * 100).toFixed(2)}% (${hits}/${attempts})`;
+};
 
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
@@ -185,20 +188,28 @@ const SubmitMatchPage = () => {
       const p1 = (payload.player1_name || "").trim().toLowerCase();
       const p2 = (payload.player2_name || "").trim().toLowerCase();
 
+      // Only match upcoming league matches (not random results)
       const matchedUpcoming = upcomingMatches.find((m) => {
         const m1 = m.player1Name.trim().toLowerCase();
         const m2 = m.player2Name.trim().toLowerCase();
         return (m1 === p1 && m2 === p2) || (m1 === p2 && m2 === p1);
       });
 
+      if (!matchedUpcoming && allowAutoSubmit) {
+        // Don't auto-submit if we can't match to a league game
+        console.log("Auto-submit skipped: no matching league match for", p1, "vs", p2);
+        return;
+      }
+
       if (matchedUpcoming) {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
-      // Check if we need to swap: autodarts player1 matches match player2
+      // Always swap on the FORM side if Autodarts player1 matches our match player2
       let finalPayload = payload;
       if (matchedUpcoming) {
         const m1 = matchedUpcoming.player1Name.trim().toLowerCase();
+        // If our match's player1 is autodarts' player2 -> swap
         if (m1 === p2 && m1 !== p1) {
           finalPayload = swapPayload(payload);
         }
@@ -608,6 +619,17 @@ const SubmitMatchPage = () => {
                         </div>
                       );
                     })}
+
+                    {/* Checkout % row */}
+                    <div className="contents">
+                      <div className="text-foreground font-display text-xs">
+                        {formatCheckout(asNumber(rawPreview.checkout_hits1), asNumber(rawPreview.checkout_attempts1))}
+                      </div>
+                      <div className="text-muted-foreground text-[10px]">Checkout %</div>
+                      <div className="text-foreground font-display text-xs">
+                        {formatCheckout(asNumber(rawPreview.checkout_hits2), asNumber(rawPreview.checkout_attempts2))}
+                      </div>
+                    </div>
                   </div>
 
                   <p className="text-[10px] text-muted-foreground text-center">
