@@ -200,6 +200,8 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
       ton80_2: parseInt(editStats.ton80_2) || 0,
       tonPlus1: parseInt(editStats.tonPlus1) || 0,
       tonPlus2: parseInt(editStats.tonPlus2) || 0,
+      ton40_1: parseInt(editStats.ton40_1) || 0,
+      ton40_2: parseInt(editStats.ton40_2) || 0,
       dartsThrown1: parseInt(editStats.darts1) || 0,
       dartsThrown2: parseInt(editStats.darts2) || 0,
       checkoutAttempts1: parseInt(editStats.checkoutAttempts1) || 0,
