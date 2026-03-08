@@ -240,6 +240,19 @@ const SubmitMatchPage = () => {
 
   const handleFetchAutodarts = useCallback(async () => {
     if (!autodartsLink) return;
+
+    // Validate that it's a match link/ID, not a JWT token
+    const trimmedLink = autodartsLink.trim();
+    const isMatchLink = trimmedLink.includes("autodarts.io/") || /^[a-f0-9-]{20,}$/i.test(trimmedLink);
+    if (!isMatchLink) {
+      toast({
+        title: "Nieprawidłowy link",
+        description: "Wklej link do meczu z Autodarts (np. https://play.autodarts.io/history/matches/...) lub ID meczu, nie token.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setFetchingAutodarts(true);
 
     try {
@@ -251,7 +264,7 @@ const SubmitMatchPage = () => {
       }
 
       const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
-        body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
+        body: { autodarts_link: trimmedLink, autodarts_token: adToken.trim() },
       });
 
       if (fnError || !fnData?.success) {

@@ -9,10 +9,19 @@ const corsHeaders = {
 const API_BASE = "https://api.autodarts.io";
 
 function extractMatchId(input: string): string {
+  // Handle full URLs like https://play.autodarts.io/history/matches/UUID
   const urlMatch = input.match(/matches\/([a-f0-9-]+)/i);
   if (urlMatch) return urlMatch[1];
-  if (/^[a-f0-9-]{20,}$/i.test(input)) return input;
-  throw new Error("Invalid Autodarts match ID or link");
+  // Handle lobby URLs like https://play.autodarts.io/lobbies/UUID
+  const lobbyMatch = input.match(/lobbies\/([a-f0-9-]+)/i);
+  if (lobbyMatch) return lobbyMatch[1];
+  // Handle raw UUID match IDs
+  if (/^[a-f0-9-]{20,}$/i.test(input.trim())) return input.trim();
+  // Reject JWT tokens and other invalid inputs
+  if (input.startsWith("eyJ") || input.length > 200) {
+    throw new Error("Podano token zamiast linku do meczu. Wklej link np. https://play.autodarts.io/history/matches/...");
+  }
+  throw new Error("Nieprawidłowy link lub ID meczu Autodarts");
 }
 
 interface PlayerStats {
