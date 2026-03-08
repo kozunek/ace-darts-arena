@@ -29,9 +29,10 @@ interface PlayerStats {
   until170Darts: number;
   oneEighties: number;
   highCheckout: number;
-  ton60: number;
-  ton80: number;
-  tonPlus: number;
+  ton60: number;   // 60-99
+  ton100: number;  // 100-139
+  ton140: number;  // 140-169
+  ton170: number;  // 170-179
   checkoutAttempts: number;
   checkoutHits: number;
   legsWon: number;
@@ -43,7 +44,7 @@ function emptyStats(): PlayerStats {
     first9Score: 0, first9Darts: 0,
     until170Score: 0, until170Darts: 0,
     oneEighties: 0, highCheckout: 0,
-    ton60: 0, ton80: 0, tonPlus: 0,
+    ton60: 0, ton100: 0, ton140: 0, ton170: 0,
     checkoutAttempts: 0, checkoutHits: 0,
     legsWon: 0,
   };
@@ -186,9 +187,11 @@ function processGameTurns(
       st.first9Darts += dartsCount;
     }
 
+    // Ton ranges matching Autodarts: 60+, 100+, 140+, 170+, 180
     if (points === 180) st.oneEighties++;
-    if (points >= 100) st.tonPlus++;
-    else if (points >= 80) st.ton80++;
+    else if (points >= 170) st.ton170++;
+    else if (points >= 140) st.ton140++;
+    else if (points >= 100) st.ton100++;
     else if (points >= 60) st.ton60++;
 
     // Checkout detection
@@ -209,7 +212,6 @@ function processGameTurns(
     } else if (typeof turn.doublesThrown === "number") {
       st.checkoutAttempts += turn.doublesThrown;
     } else if (dartsArr && canAttemptCheckout) {
-      // Only count double/bull attempts when the player could check out
       for (const d of dartsArr) {
         const seg = d.segment || d;
         const bed = seg.bed || "";
@@ -232,9 +234,6 @@ async function fetchMatchData(matchId: string, token: string) {
   const players = match.players || [];
   if (players.length < 2) throw new Error("Match does not have 2 players");
 
-  // Log full player structure for debugging
-  console.log("Player[0] keys:", Object.keys(players[0]));
-  console.log("Player[1] keys:", Object.keys(players[1]));
   console.log("Player[0] full:", JSON.stringify(players[0]).substring(0, 800));
   console.log("Player[1] full:", JSON.stringify(players[1]).substring(0, 800));
 
@@ -263,7 +262,7 @@ async function fetchMatchData(matchId: string, token: string) {
     }
   }
 
-  // ── Try Autodarts stats endpoint first ──
+  // ── Try Autodarts stats endpoint ──
   const statsEndpoints = [
     `${API_BASE}/as/v0/matches/${matchId}/stats`,
     `${API_BASE}/gs/v0/matches/${matchId}/stats`,
@@ -272,7 +271,6 @@ async function fetchMatchData(matchId: string, token: string) {
     const statsData = await tryFetchJson(url, token);
     if (statsData) {
       console.log("Got match stats from endpoint:", url);
-      console.log("Stats data keys:", Object.keys(statsData));
       console.log("Stats data:", JSON.stringify(statsData).substring(0, 2000));
     }
   }
@@ -294,11 +292,12 @@ async function fetchMatchData(matchId: string, token: string) {
       ...st1,
       totalScore: 0, totalDarts: ps1.dartsThrown ?? ps1.darts ?? 0,
       first9Score: 0, first9Darts: 0,
-      oneEighties: ps1.oneEighties ?? ps1["180s"] ?? 0,
+      oneEighties: ps1.oneEighties ?? ps1["180s"] ?? ps1["180"] ?? 0,
       highCheckout: ps1.highestCheckout ?? ps1.bestCheckout ?? 0,
-      ton60: ps1.ton60 ?? ps1["60+"] ?? 0,
-      ton80: ps1.ton80 ?? ps1["80+"] ?? 0,
-      tonPlus: ps1.tonPlus ?? ps1["100+"] ?? 0,
+      ton60: ps1["60+"] ?? ps1.ton60 ?? 0,
+      ton100: ps1["100+"] ?? ps1.ton100 ?? ps1.tonPlus ?? 0,
+      ton140: ps1["140+"] ?? ps1.ton140 ?? 0,
+      ton170: ps1["170+"] ?? ps1.ton170 ?? 0,
       checkoutAttempts: ps1.checkoutAttempts ?? ps1.checkoutDarts ?? 0,
       checkoutHits: ps1.checkoutHits ?? ps1.checkouts ?? 0,
     };
@@ -306,11 +305,12 @@ async function fetchMatchData(matchId: string, token: string) {
       ...st2,
       totalScore: 0, totalDarts: ps2.dartsThrown ?? ps2.darts ?? 0,
       first9Score: 0, first9Darts: 0,
-      oneEighties: ps2.oneEighties ?? ps2["180s"] ?? 0,
+      oneEighties: ps2.oneEighties ?? ps2["180s"] ?? ps2["180"] ?? 0,
       highCheckout: ps2.highestCheckout ?? ps2.bestCheckout ?? 0,
-      ton60: ps2.ton60 ?? ps2["60+"] ?? 0,
-      ton80: ps2.ton80 ?? ps2["80+"] ?? 0,
-      tonPlus: ps2.tonPlus ?? ps2["100+"] ?? 0,
+      ton60: ps2["60+"] ?? ps2.ton60 ?? 0,
+      ton100: ps2["100+"] ?? ps2.ton100 ?? ps2.tonPlus ?? 0,
+      ton140: ps2["140+"] ?? ps2.ton140 ?? 0,
+      ton170: ps2["170+"] ?? ps2.ton170 ?? 0,
       checkoutAttempts: ps2.checkoutAttempts ?? ps2.checkoutDarts ?? 0,
       checkoutHits: ps2.checkoutHits ?? ps2.checkouts ?? 0,
     };
@@ -333,9 +333,6 @@ async function fetchMatchData(matchId: string, token: string) {
         embeddedGames.push(g);
       }
     }
-    if (embeddedGames.length > 0) {
-      console.log("Embedded game[0] keys:", Object.keys(embeddedGames[0]));
-    }
   }
 
   if (embeddedGames.length > 0) {
@@ -345,7 +342,6 @@ async function fetchMatchData(matchId: string, token: string) {
     }
   }
 
-  // Calculate averages from accumulated turn data
   const avg1 = st1.totalDarts > 0 ? Math.round((st1.totalScore / st1.totalDarts) * 3 * 100) / 100 : null;
   const avg2 = st2.totalDarts > 0 ? Math.round((st2.totalScore / st2.totalDarts) * 3 * 100) / 100 : null;
   const f9a1 = st1.first9Darts > 0 ? Math.round((st1.first9Score / st1.first9Darts) * 3 * 100) / 100 : null;
@@ -365,6 +361,8 @@ function buildResult(
   p1AutoId: string | null, p2AutoId: string | null,
   matchId: string,
 ) {
+  // Map to DB column names:
+  // ton60 = 60+, ton80 = 100+, ton_plus = 140+, ton40 = 170+
   const result = {
     score1: s1.legsWon,
     score2: s2.legsWon,
@@ -373,9 +371,10 @@ function buildResult(
     avg_until_170_1: a170_1, avg_until_170_2: a170_2,
     one_eighties1: s1.oneEighties, one_eighties2: s2.oneEighties,
     high_checkout1: s1.highCheckout, high_checkout2: s2.highCheckout,
-    ton60_1: s1.ton60, ton60_2: s2.ton60,
-    ton80_1: s1.ton80, ton80_2: s2.ton80,
-    ton_plus1: s1.tonPlus, ton_plus2: s2.tonPlus,
+    ton60_1: s1.ton60, ton60_2: s2.ton60,         // 60+
+    ton80_1: s1.ton100, ton80_2: s2.ton100,        // 100+ (stored in ton80 column)
+    ton_plus1: s1.ton140, ton_plus2: s2.ton140,    // 140+ (stored in ton_plus column)
+    ton40_1: s1.ton170, ton40_2: s2.ton170,        // 170+ (stored in ton40 column)
     darts_thrown1: s1.totalDarts, darts_thrown2: s2.totalDarts,
     checkout_attempts1: s1.checkoutAttempts, checkout_attempts2: s2.checkoutAttempts,
     checkout_hits1: s1.checkoutHits, checkout_hits2: s2.checkoutHits,
