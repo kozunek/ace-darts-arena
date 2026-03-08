@@ -134,7 +134,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
 
   let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
-  let ton40 = 0, ton60 = 0, ton80 = 0, tonPlus = 0;
+  let ton60 = 0, ton80 = 0, tonPlus = 0;
   let checkoutAttempts = 0, checkoutHits = 0;
   const avgValues: number[] = [];
   const form: ("W" | "L" | "D")[] = [];
