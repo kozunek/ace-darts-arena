@@ -271,6 +271,7 @@ export type Database = {
         Row: {
           approved: boolean
           avatar: string
+          avatar_url: string | null
           created_at: string
           discord: string | null
           id: string
@@ -281,6 +282,7 @@ export type Database = {
         Insert: {
           approved?: boolean
           avatar?: string
+          avatar_url?: string | null
           created_at?: string
           discord?: string | null
           id?: string
@@ -291,6 +293,7 @@ export type Database = {
         Update: {
           approved?: boolean
           avatar?: string
+          avatar_url?: string | null
           created_at?: string
           discord?: string | null
           id?: string

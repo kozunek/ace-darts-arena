@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague } from "@/contexts/LeagueContext";
+import AvatarUpload from "@/components/AvatarUpload";
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -24,7 +25,7 @@ const SettingsPage = () => {
   })());
 
   // We need to get player by user_id from supabase directly
-  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string } | null>(null);
+  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string; avatar_url: string | null } | null>(null);
   const [phone, setPhone] = useState("");
   const [discord, setDiscord] = useState("");
   const [savingContact, setSavingContact] = useState(false);
@@ -32,9 +33,9 @@ const SettingsPage = () => {
   useEffect(() => {
     if (!user) return;
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.from("players").select("id, phone, discord").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      supabase.from("players").select("id, phone, discord, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => {
         if (data) {
-          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "" });
+          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "", avatar_url: (data as any).avatar_url || null });
           setPhone(data.phone || "");
           setDiscord(data.discord || "");
         }
@@ -97,12 +98,22 @@ const SettingsPage = () => {
       {/* Profile info */}
       <div className="rounded-lg border border-border bg-card p-6 card-glow mb-6">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-lg font-display font-bold text-primary">
-            {profile?.avatar || "?"}
-          </div>
+          {playerData ? (
+            <AvatarUpload
+              currentAvatarUrl={playerData.avatar_url}
+              currentInitials={profile?.avatar || "?"}
+              playerId={playerData.id}
+              onUploaded={(url) => setPlayerData({ ...playerData, avatar_url: url })}
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-lg font-display font-bold text-primary">
+              {profile?.avatar || "?"}
+            </div>
+          )}
           <div>
             <div className="font-body font-semibold text-foreground">{profile?.name || "Użytkownik"}</div>
             <div className="text-sm text-muted-foreground font-body">{user.email}</div>
+            {playerData && <div className="text-xs text-muted-foreground font-body mt-1">Najedź na zdjęcie, aby zmienić avatar</div>}
           </div>
         </div>
       </div>

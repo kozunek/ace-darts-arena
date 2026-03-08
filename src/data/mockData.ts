@@ -36,6 +36,7 @@ export interface Player {
   id: string;
   name: string;
   avatar: string;
+  avatar_url?: string | null;
   approved: boolean;
   leagueIds?: string[];
   phone?: string | null;

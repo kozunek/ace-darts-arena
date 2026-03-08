@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ const navItems = [
   { label: "Gracze", href: "/players" },
   { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
   { label: "H2H", href: "/h2h", icon: <Swords className="h-3.5 w-3.5" /> },
+  { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
+  { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit" },
 ];
 
