@@ -45,7 +45,7 @@ const HeroSection = () => {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-wrap gap-4 mb-6">
             <StatChip icon={<Trophy className="h-4 w-4" />} label="Graczy" value={totalPlayers.toString()} />
             <StatChip icon={<TrendingUp className="h-4 w-4" />} label="Rozegranych" value={totalCompleted.toString()} />
-            <StatChip icon={<Target className="h-4 w-4" />} label="180-tek" value={total180s.toString()} />
+            <StatChip icon={<img src="/pwa-192x192.png" alt="" className="h-4 w-4 rounded-full" />} label="180-tek" value={total180s.toString()} />
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-wrap gap-3">
