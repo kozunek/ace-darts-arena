@@ -315,8 +315,17 @@ async function fetchMatchData(matchId: string, token: string) {
         const st = pIdx === 0 ? s1 : s2;
         const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
 
+        // Avg until 170: count turns where score before throw is > 170
+        // In Autodarts, turn.score is remaining score AFTER the throw
+        const scoreBeforeTurn = typeof turn.score === "number" ? turn.score + points : null;
+
         st.totalScore += points;
         st.totalDarts += dartsCount;
+
+        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
+          st.until170Score += points;
+          st.until170Darts += dartsCount;
+        }
 
         if (tidx < 3) {
           st.first9Score += points;
