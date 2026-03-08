@@ -125,6 +125,32 @@ const SubmitMatchPage = () => {
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
+  useEffect(() => {
+    const playerIds = Array.from(
+      new Set(upcomingMatches.flatMap((m) => [m.player1Id, m.player2Id]).filter(Boolean)),
+    );
+
+    if (playerIds.length === 0) {
+      setPlayerAutodartsMap({});
+      return;
+    }
+
+    const loadAutoIds = async () => {
+      const { data } = await supabase
+        .from("players")
+        .select("id, autodarts_user_id")
+        .in("id", playerIds);
+
+      const map: Record<string, string> = {};
+      (data || []).forEach((row) => {
+        if (row.id && row.autodarts_user_id) map[row.id] = row.autodarts_user_id;
+      });
+      setPlayerAutodartsMap(map);
+    };
+
+    loadAutoIds();
+  }, [upcomingMatches]);
+
   // Populate form fields from payload exactly as returned by backend
   const populateForm = useCallback((payload: AutoPayload) => {
     const scoreA = readScore(payload.score1);
