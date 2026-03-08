@@ -177,14 +177,11 @@ async function tryAuthCodeFlow(clientId: string, redirectUri: string, email: str
     formActionUrl = "https://login.autodarts.io" + formActionUrl;
   }
 
-  const formAction = actionMatch[1].replace(/&amp;/g, "&");
-  console.log("Found form action URL:", formAction.substring(0, 100));
+  console.log("Found form action URL:", formActionUrl.substring(0, 100));
 
-  // Step 3: POST credentials to the form action URL
   const loginBody = new URLSearchParams({
     username: email,
     password: password,
-    credentialId: "",
   });
 
   const loginRes = await fetch(formAction, {
