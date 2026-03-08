@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
