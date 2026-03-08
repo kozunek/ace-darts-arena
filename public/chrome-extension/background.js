@@ -77,8 +77,13 @@ function handleAutoSubmitResult(result, matchPayload) {
   const p2 = matchPayload.player2_name || "Gracz 2";
 
   if (result.already_submitted) {
-    // Other player already submitted — no notification needed
-    console.log("[eDART] Match already submitted by the other player, skipping.");
+    chrome.notifications.create(`league-already-${Date.now()}`, {
+      type: "basic",
+      iconUrl: "icon128.png",
+      title: "🎯 Mecz ligowy zgłoszony!",
+      message: `${p1} vs ${p2}\nWynik został już wysłany przez przeciwnika.`,
+      priority: 2,
+    });
     return;
   }
 
