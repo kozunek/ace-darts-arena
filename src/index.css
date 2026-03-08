@@ -134,12 +134,12 @@
 
   .glass {
     backdrop-filter: blur(16px);
-    background: hsl(220 18% 11% / 0.85);
+    background: hsl(var(--card) / 0.85);
   }
 
   .glass-subtle {
     backdrop-filter: blur(8px);
-    background: hsl(220 18% 11% / 0.5);
+    background: hsl(var(--card) / 0.5);
   }
 
   /* Custom scrollbar */
