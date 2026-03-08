@@ -147,21 +147,41 @@ function processGameTurns(
   s2: PlayerStats,
 ) {
   const turns = game.turns || game.visits || game.rounds || [];
-  let turnIdx1 = 0, turnIdx2 = 0;
+  let turnIdx1 = 0;
+  let turnIdx2 = 0;
+  let unknownTurnIdx = 0;
 
   for (const turn of turns) {
-    let pIdx = 0;
-    if (turn.playerId && playerIdMap[turn.playerId] !== undefined) {
-      pIdx = playerIdMap[turn.playerId];
+    const directTurnPlayerId =
+      typeof turn.playerId === "string" ? turn.playerId :
+      typeof turn.player?.id === "string" ? turn.player.id :
+      typeof turn.player?.userId === "string" ? turn.player.userId :
+      typeof turn.userId === "string" ? turn.userId :
+      typeof turn.player === "string" ? turn.player :
+      null;
+
+    let pIdx: number | null = null;
+
+    if (directTurnPlayerId && playerIdMap[directTurnPlayerId] !== undefined) {
+      pIdx = playerIdMap[directTurnPlayerId];
     } else if (typeof turn.player === "number") {
       pIdx = turn.player;
     } else if (typeof turn.playerIndex === "number") {
       pIdx = turn.playerIndex;
     }
+
+    if (pIdx == null) {
+      pIdx = unknownTurnIdx % 2;
+      unknownTurnIdx += 1;
+    }
+
     pIdx = pIdx === 1 ? 1 : 0;
 
-    const dartsArr = Array.isArray(turn.throws) ? turn.throws :
-                     Array.isArray(turn.darts) ? turn.darts : null;
+    const dartsArr = Array.isArray(turn.throws)
+      ? turn.throws
+      : Array.isArray(turn.darts)
+        ? turn.darts
+        : null;
 
     let points = 0;
     if (typeof turn.points === "number") {
@@ -180,7 +200,15 @@ function processGameTurns(
     const st = pIdx === 0 ? s1 : s2;
     const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
 
-    const scoreBeforeTurn = typeof turn.score === "number" ? turn.score + points : null;
+    const scoreBeforeTurn = readFirstNumber(
+      turn.scoreBefore,
+      turn.startScore,
+      turn.startingScore,
+      turn.pointsBefore,
+      turn.remainingBefore,
+      typeof turn.score === "number" ? turn.score + points : null,
+      typeof turn.remaining === "number" ? turn.remaining + points : null,
+    );
 
     st.totalScore += points;
     st.totalDarts += dartsCount;
@@ -202,8 +230,12 @@ function processGameTurns(
     else if (points >= 100) st.ton100++;
     else if (points >= 60) st.ton60++;
 
-    // Checkout detection
-    const remainingScore = typeof turn.score === "number" ? turn.score : -1;
+    const remainingScore = readFirstNumber(
+      turn.score,
+      turn.remaining,
+      turn.pointsLeftAfter,
+      turn.scoreAfter,
+    );
     const isBusted = turn.busted === true;
     const isCheckout = !isBusted && (remainingScore === 0 || turn.isCheckout === true || turn.checkout === true);
 
@@ -212,7 +244,6 @@ function processGameTurns(
       if (points > st.highCheckout) st.highCheckout = points;
     }
 
-    // Checkout attempts
     const canAttemptCheckout = scoreBeforeTurn != null && scoreBeforeTurn <= 170 && scoreBeforeTurn > 1;
 
     if (typeof turn.checkoutAttempts === "number") {
@@ -222,10 +253,12 @@ function processGameTurns(
     } else if (dartsArr && canAttemptCheckout) {
       for (const d of dartsArr) {
         const seg = d.segment || d;
-        const bed = seg.bed || "";
-        if (bed === "D" || bed === "Double" || seg.multiplier === 2 || seg.name === "BULL") {
-          st.checkoutAttempts++;
-        }
+        const bed = String(seg.bed || "").toUpperCase();
+        const name = String(seg.name || "").toUpperCase();
+        const number = Number(seg.number ?? seg.value);
+        const isBull = name.includes("BULL") || (number === 25 && Number(seg.multiplier ?? 1) >= 1);
+        const isDouble = bed === "D" || bed === "DOUBLE" || Number(seg.multiplier) === 2;
+        if (isBull || isDouble) st.checkoutAttempts++;
       }
     }
   }
