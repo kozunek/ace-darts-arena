@@ -103,6 +103,13 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
+            {user && (
+              <Link to="/my-matches" onClick={() => setMobileOpen(false)}>
+                <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
+                  <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
+                </Button>
+              </Link>
+            )}
             {showAdminLink && (
               <Link to="/admin" onClick={() => setMobileOpen(false)}>
                 <Button variant={location.pathname === "/admin" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
