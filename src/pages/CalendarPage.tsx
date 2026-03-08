@@ -130,6 +130,7 @@ const CalendarPage = () => {
       {/* Legend */}
       <div className="flex gap-4 text-xs text-muted-foreground font-body">
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> Zaplanowany</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Termin ustalony</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-secondary" /> Rozegrany</span>
       </div>
 
