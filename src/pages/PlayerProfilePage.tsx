@@ -1,8 +1,9 @@
 import { useParams, Link } from "react-router-dom";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PlayerProgressChart from "@/components/PlayerProgressChart";
 
 const PlayerProfilePage = () => {
   const { id } = useParams();
@@ -45,7 +46,6 @@ const PlayerProfilePage = () => {
         </div>
       </div>
 
-
       {/* Per-league stats */}
       {allLeagueStats.map(({ league, stats }) => {
         const achiev = getPlayerAchievements(player.id, league.id);
@@ -59,6 +59,9 @@ const PlayerProfilePage = () => {
               <Trophy className="h-5 w-5 text-accent" />
               {league.name} <span className="text-sm text-muted-foreground font-body font-normal">· {league.season}</span>
             </h2>
+
+            {/* Progress chart */}
+            <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
 
             {/* Main stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
