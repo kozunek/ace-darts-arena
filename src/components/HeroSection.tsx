@@ -1,4 +1,4 @@
-import { Target, TrendingUp, Trophy, BarChart3 } from "lucide-react";
+import { TrendingUp, Trophy, BarChart3 } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
