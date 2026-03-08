@@ -155,6 +155,8 @@ async function fetchMatchData(matchId: string, token: string) {
 
   const p1Name = players[0].name || players[0].username || "Player 1";
   const p2Name = players[1].name || players[1].username || "Player 2";
+  const p1AutoId = players[0].userId || players[0].id || players[0].playerId || null;
+  const p2AutoId = players[1].userId || players[1].id || players[1].playerId || null;
 
   // Build playerId -> index map (Autodarts uses UUIDs in turns, not numeric indices)
   const playerIdMap: Record<string, number> = {};
