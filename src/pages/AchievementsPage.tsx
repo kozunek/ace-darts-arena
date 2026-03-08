@@ -31,6 +31,8 @@ const CATEGORIES: { prefix: string; label: string; icon: string }[] = [
   { prefix: "e", label: "180-tki", icon: "💯" },
   { prefix: "c", label: "Checkouty", icon: "🎯" },
   { prefix: "a", label: "Średnie", icon: "📊" },
+  { prefix: "f", label: "First 9 Average", icon: "⚡" },
+  { prefix: "u", label: "Average Until 170", icon: "📊" },
   { prefix: "t", label: "Tony (Scoring)", icon: "🎪" },
   { prefix: "r", label: "Win Rate", icon: "📈" },
   { prefix: "l", label: "Legi", icon: "🦵" },
