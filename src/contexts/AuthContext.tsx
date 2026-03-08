@@ -98,20 +98,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
     });
-    if (!error && data.user) {
-      // Create profile for new user
-      const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-      await supabase.from("profiles").upsert({
-        user_id: data.user.id,
-        name,
-        avatar: initials,
-      }, { onConflict: "user_id" });
-    }
     return { error: error?.message ?? null };
   };
 
