@@ -44,16 +44,24 @@ const PlayerProfilePage = () => {
             </p>
           </div>
         </div>
-            </div>
-
-            {/* Progress chart */}
-            <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
+      </div>
 
       {/* Per-league stats */}
       {allLeagueStats.map(({ league, stats }) => {
         const achiev = getPlayerAchievements(player.id, league.id);
         const playerMatches = matches.filter(
           (m) => m.leagueId === league.id && m.status === "completed" && (m.player1Id === id || m.player2Id === id)
+        );
+
+        return (
+          <div key={league.id} className="mb-10">
+            <h2 className="text-xl font-display font-bold text-foreground mb-4 flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-accent" />
+              {league.name} <span className="text-sm text-muted-foreground font-body font-normal">· {league.season}</span>
+            </h2>
+
+            {/* Progress chart */}
+            <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
         );
 
         return (
