@@ -139,7 +139,16 @@ async function loginToAutodarts(): Promise<string | null> {
   return null;
 }
 
-// ── Compute per-leg stats from turns ──────────────────────────────
+function resolveNumericPlayerIndex(raw: number): number | null {
+  if (!Number.isFinite(raw)) return null;
+  if (raw === 0 || raw === 1) return raw;
+  // Some payloads use 1/2 indexing
+  if (raw === 2) return 1;
+  if (raw < 0) return null;
+  // Fallback for unknown positive indexes in 1v1 matches
+  return raw > 0 ? 1 : 0;
+}
+
 function processGameTurns(
   game: any,
   playerIdMap: Record<string, number>,
@@ -150,6 +159,20 @@ function processGameTurns(
   let turnIdx1 = 0;
   let turnIdx2 = 0;
   let unknownTurnIdx = 0;
+
+  const gamePlayerIdMap: Record<string, number> = {};
+  if (Array.isArray(game.players)) {
+    for (const gp of game.players) {
+      const normalizedIdx = resolveNumericPlayerIndex(
+        Number(gp?.index ?? gp?.playerIndex ?? gp?.position),
+      );
+      if (normalizedIdx == null) continue;
+      const ids = [gp?.id, gp?.playerId, gp?.userId, gp?.hostId, gp?.user?.id];
+      for (const id of ids) {
+        if (typeof id === "string" && id) gamePlayerIdMap[id] = normalizedIdx;
+      }
+    }
+  }
 
   for (const turn of turns) {
     const directTurnPlayerId =
@@ -162,20 +185,34 @@ function processGameTurns(
 
     let pIdx: number | null = null;
 
-    if (directTurnPlayerId && playerIdMap[directTurnPlayerId] !== undefined) {
+    if (directTurnPlayerId && gamePlayerIdMap[directTurnPlayerId] !== undefined) {
+      pIdx = gamePlayerIdMap[directTurnPlayerId];
+    } else if (directTurnPlayerId && playerIdMap[directTurnPlayerId] !== undefined) {
       pIdx = playerIdMap[directTurnPlayerId];
-    } else if (typeof turn.player === "number") {
-      pIdx = turn.player;
-    } else if (typeof turn.playerIndex === "number") {
-      pIdx = turn.playerIndex;
+    } else {
+      const numericCandidates = [
+        typeof turn.player === "number" ? turn.player : null,
+        typeof turn.playerIndex === "number" ? turn.playerIndex : null,
+        typeof turn.player?.index === "number" ? turn.player.index : null,
+        typeof turn.player?.playerIndex === "number" ? turn.player.playerIndex : null,
+        typeof turn.player === "string" ? Number(turn.player) : null,
+        typeof turn.playerIndex === "string" ? Number(turn.playerIndex) : null,
+      ];
+
+      for (const candidate of numericCandidates) {
+        if (candidate == null || !Number.isFinite(candidate)) continue;
+        const resolved = resolveNumericPlayerIndex(candidate);
+        if (resolved != null) {
+          pIdx = resolved;
+          break;
+        }
+      }
     }
 
-    if (pIdx == null) {
+    if (pIdx !== 0 && pIdx !== 1) {
       pIdx = unknownTurnIdx % 2;
       unknownTurnIdx += 1;
     }
-
-    pIdx = pIdx === 1 ? 1 : 0;
 
     const dartsArr = Array.isArray(turn.throws)
       ? turn.throws
@@ -223,7 +260,6 @@ function processGameTurns(
       st.first9Darts += dartsCount;
     }
 
-    // Ton ranges matching Autodarts: 60+, 100+, 140+, 170+, 180
     if (points === 180) st.oneEighties++;
     else if (points >= 170) st.ton170++;
     else if (points >= 140) st.ton140++;
@@ -315,6 +351,7 @@ async function fetchMatchData(matchId: string, token: string) {
   }
 
   // ── Try Autodarts stats endpoint ──
+  let endpointPlayers: any[] = [];
   const statsEndpoints = [
     `${API_BASE}/as/v0/matches/${matchId}/stats`,
     `${API_BASE}/gs/v0/matches/${matchId}/stats`,
@@ -322,21 +359,27 @@ async function fetchMatchData(matchId: string, token: string) {
   for (const url of statsEndpoints) {
     const statsData = await tryFetchJson(url, token);
     if (statsData) {
+      if (Array.isArray(statsData.players) && statsData.players.length >= 2) {
+        endpointPlayers = statsData.players;
+      }
       console.log("Got match stats from endpoint:", url);
       console.log("Stats data:", JSON.stringify(statsData).substring(0, 2000));
     }
   }
 
   // ── Check pre-calculated stats on players ──
-  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || {};
-  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || {};
+  const endpointPs1 = endpointPlayers[0] || {};
+  const endpointPs2 = endpointPlayers[1] || {};
+
+  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || endpointPs1.stats || endpointPs1.matchStats || endpointPs1.gameStats || {};
+  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || endpointPs2.stats || endpointPs2.matchStats || endpointPs2.gameStats || {};
 
   const hasMeaningfulPreCalc = (ps: Record<string, any>) => {
     const keysToCheck = [
       "dartsThrown", "darts", "oneEighties", "180s", "180",
       "60+", "100+", "140+", "170+",
       "checkoutAttempts", "checkoutDarts", "checkoutHits", "checkouts",
-      "average", "avg", "ppd",
+      "highestCheckout", "bestCheckout", "ton60", "ton100", "ton140", "ton170",
     ];
     return keysToCheck.some((k) => ps?.[k] != null);
   };

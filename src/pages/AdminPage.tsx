@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, UserCheck, Plus, Calendar, Lock, Trash2, Edit2, Users, Trophy, Settings, Check, Clock, CheckCircle2, XCircle, UserPlus, Award, Shuffle, Brackets, Layers, Plug } from "lucide-react";
-import ExtensionConfigPanel from "@/components/ExtensionConfigPanel";
+import { Shield, UserCheck, Plus, Calendar, Lock, Trash2, Edit2, Users, Trophy, Settings, Check, Clock, CheckCircle2, XCircle, UserPlus, Award, Shuffle, Brackets, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,7 +14,7 @@ import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES 
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
 
-type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations";
+type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles";
 
 const LEAGUE_TYPE_LABELS: Record<LeagueType, string> = {
   league: "Liga (Round-Robin)",
@@ -66,7 +65,6 @@ const AdminPage = () => {
     { id: "players", label: "Gracze", icon: <Users className="h-4 w-4" />, adminOnly: true },
     { id: "matches", label: "Mecze", icon: <Calendar className="h-4 w-4" />, adminOnly: true },
     { id: "roles", label: "Role", icon: <Award className="h-4 w-4" />, adminOnly: true },
-    { id: "integrations", label: "Integracje", icon: <Plug className="h-4 w-4" />, adminOnly: true },
   ];
 
   const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
@@ -107,7 +105,6 @@ const AdminPage = () => {
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
           {activeTab === "roles" && isAdmin && <RolesTab toast={toast} />}
-          {activeTab === "integrations" && isAdmin && <ExtensionConfigPanel leagues={leagues} />}
         </motion.div>
       </AnimatePresence>
     </div>
