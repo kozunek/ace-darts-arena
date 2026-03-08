@@ -450,8 +450,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const won = score > oppScore ? 1 : 0;
         const lost = score < oppScore ? 1 : 0;
         if (existing) {
-          existing.ton40 += t40; existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
-          existing.oneEighties += e; existing.totalTons += t40 + t60 + t80 + tp + e;
+          existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
+          existing.oneEighties += e; existing.totalTons += t60 + t80 + tp + e;
           if (hc > existing.highestCheckout) existing.highestCheckout = hc;
           if (avg > existing.bestAvg) existing.bestAvg = avg;
           existing.wins += won; existing.losses += lost; existing.matchesPlayed += 1;
