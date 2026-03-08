@@ -238,6 +238,7 @@ const SubmitMatchPage = () => {
                   <StatRow label="Rzuty (darts)" v1={darts1} v2={darts2} s1={setDarts1} s2={setDarts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Checkouty rzucone" v1={checkoutAttempts1} v2={checkoutAttempts2} s1={setCheckoutAttempts1} s2={setCheckoutAttempts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Checkouty trafione" v1={checkoutHits1} v2={checkoutHits2} s1={setCheckoutHits1} s2={setCheckoutHits2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
+                  <StatRow label="9-dartery 🎯" v1={nineDarters1} v2={nineDarters2} s1={setNineDarters1} s2={setNineDarters2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                 </div>
               )}
 

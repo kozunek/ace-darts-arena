@@ -75,7 +75,14 @@ const LeagueTable = () => {
                     <td className="text-center px-3 py-3 text-sm font-body text-accent font-semibold">{entry.stats.draws}</td>
                     <td className="text-center px-3 py-3 text-sm font-body text-destructive font-semibold">{entry.stats.losses}</td>
                     <td className="text-center px-3 py-3">
-                      <span className="font-display font-bold text-foreground text-lg">{entry.stats.points}</span>
+                      <div className="flex flex-col items-center">
+                        <span className="font-display font-bold text-foreground text-lg">{entry.stats.points}</span>
+                        {entry.stats.bonusPoints > 0 && (
+                          <span className="text-[10px] text-accent font-display" title={`Bazowe: ${entry.stats.basePoints} + Bonus: ${entry.stats.bonusPoints}`}>
+                            ({entry.stats.basePoints}+{entry.stats.bonusPoints})
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.avg.toFixed(1)}</td>
                     <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.oneEighties}</td>

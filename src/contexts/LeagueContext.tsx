@@ -60,6 +60,8 @@ export interface MatchResultData {
   checkoutAttempts2?: number;
   checkoutHits1?: number;
   checkoutHits2?: number;
+  nineDarters1?: number;
+  nineDarters2?: number;
   autodartsLink?: string;
 }
 
