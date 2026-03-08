@@ -239,24 +239,30 @@ export type Database = {
           approved: boolean
           avatar: string
           created_at: string
+          discord: string | null
           id: string
           name: string
+          phone: string | null
           user_id: string | null
         }
         Insert: {
           approved?: boolean
           avatar?: string
           created_at?: string
+          discord?: string | null
           id?: string
           name: string
+          phone?: string | null
           user_id?: string | null
         }
         Update: {
           approved?: boolean
           avatar?: string
           created_at?: string
+          discord?: string | null
           id?: string
           name?: string
+          phone?: string | null
           user_id?: string | null
         }
         Relationships: []
