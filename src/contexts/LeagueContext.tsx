@@ -133,6 +133,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
   let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
   let ton40 = 0, ton60 = 0, ton80 = 0, tonPlus = 0;
+  let checkoutAttempts = 0, checkoutHits = 0;
   const avgValues: number[] = [];
   const form: ("W" | "L" | "D")[] = [];
 
@@ -155,6 +156,8 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+    checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
+    checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
 
     if (myScore > oppScore) { wins++; form.push("W"); }
     else if (myScore < oppScore) { losses++; form.push("L"); }
@@ -163,6 +166,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
 
   const avg = avgValues.length > 0 ? Math.round((avgValues.reduce((a, b) => a + b, 0) / avgValues.length) * 10) / 10 : 0;
   const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
+  const checkoutRate = checkoutAttempts > 0 ? Math.round((checkoutHits / checkoutAttempts) * 100) : 0;
 
   return {
     playerId, leagueId,
@@ -177,6 +181,9 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     totalDartsThrown: totalDarts,
     ton40, ton60, ton80, tonPlus,
     winRate,
+    checkoutAttempts,
+    checkoutHits,
+    checkoutRate,
   };
 };
 
