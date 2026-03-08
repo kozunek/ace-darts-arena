@@ -278,6 +278,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Realtime subscription — auto-refresh on any matches change
+  useEffect(() => {
+    const channel = supabase
+      .channel('matches-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matches' },
+        () => {
+          // Re-fetch all data when any match changes (insert/update/delete)
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData]);
+
   const refreshData = useCallback(() => { fetchData(); }, [fetchData]);
 
   const getLeagueMatches = useCallback((leagueId: string) => matchList.filter((m) => m.leagueId === leagueId), [matchList]);
