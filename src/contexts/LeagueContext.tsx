@@ -72,6 +72,7 @@ export interface TonLeaderEntry {
   playerId: string;
   playerName: string;
   avatar: string;
+  avatarUrl?: string | null;
   ton60: number;
   ton80: number;
   tonPlus: number;
