@@ -229,9 +229,66 @@ const SubmitMatchPage = () => {
 
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-2">
-                  <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io (opcjonalny)
+                  <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io
                 </Label>
-                <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://autodarts.io/matches/..." className="bg-muted/30 border-border" />
+                <div className="flex gap-2">
+                  <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://autodarts.io/matches/..." className="bg-muted/30 border-border" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!autodartsLink || fetchingAutodarts}
+                    onClick={async () => {
+                      if (!autodartsLink) return;
+                      setFetchingAutodarts(true);
+                      try {
+                        const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
+                          body: { autodarts_link: autodartsLink },
+                        });
+                        if (fnError || !fnData?.success) {
+                          toast({ title: "Błąd", description: fnData?.error || fnError?.message || "Nie udało się pobrać danych", variant: "destructive" });
+                          setFetchingAutodarts(false);
+                          return;
+                        }
+                        const d = fnData.data;
+                        setScore1(String(d.score1));
+                        setScore2(String(d.score2));
+                        setShowAdvanced(true);
+                        setStats({
+                          avg1: d.avg1 != null ? String(d.avg1) : "",
+                          avg2: d.avg2 != null ? String(d.avg2) : "",
+                          first9Avg1: d.first_9_avg1 != null ? String(d.first_9_avg1) : "",
+                          first9Avg2: d.first_9_avg2 != null ? String(d.first_9_avg2) : "",
+                          oneEighties1: String(d.one_eighties1 || 0),
+                          oneEighties2: String(d.one_eighties2 || 0),
+                          hc1: String(d.high_checkout1 || 0),
+                          hc2: String(d.high_checkout2 || 0),
+                          ton60_1: String(d.ton60_1 || 0),
+                          ton60_2: String(d.ton60_2 || 0),
+                          ton80_1: String(d.ton80_1 || 0),
+                          ton80_2: String(d.ton80_2 || 0),
+                          tonPlus1: String(d.ton_plus1 || 0),
+                          tonPlus2: String(d.ton_plus2 || 0),
+                          darts1: String(d.darts_thrown1 || 0),
+                          darts2: String(d.darts_thrown2 || 0),
+                          checkoutAttempts1: String(d.checkout_attempts1 || 0),
+                          checkoutAttempts2: String(d.checkout_attempts2 || 0),
+                          checkoutHits1: String(d.checkout_hits1 || 0),
+                          checkoutHits2: String(d.checkout_hits2 || 0),
+                        });
+                        toast({ title: "✅ Pobrano!", description: `Statystyki z Autodarts: ${d.player1_name} vs ${d.player2_name}` });
+                      } catch (err) {
+                        toast({ title: "Błąd", description: "Nie udało się połączyć z Autodarts", variant: "destructive" });
+                      }
+                      setFetchingAutodarts(false);
+                    }}
+                    className="shrink-0 font-display uppercase tracking-wider text-xs"
+                  >
+                    {fetchingAutodarts ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                    {fetchingAutodarts ? "" : " Pobierz"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground font-body">Wklej link i kliknij "Pobierz" — wynik i statystyki zostaną wypełnione automatycznie</p>
               </div>
 
               <button type="button" onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors">
