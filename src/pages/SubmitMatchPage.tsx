@@ -25,6 +25,8 @@ import MatchStatFields from "@/components/MatchStatFields";
 type AutoPayload = Record<string, any>;
 
 const normalizeName = (name?: string | null) => (name || "").trim().toLowerCase();
+const normalizeIdentity = (value?: string | null) =>
+  (value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const asNumber = (value: unknown, fallback = 0): number => {
   const n = Number(value);
