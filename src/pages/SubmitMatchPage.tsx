@@ -623,9 +623,6 @@ const SubmitMatchPage = () => {
                 </div>
               </div>
 
-              <Button type="button" variant="outline" size="sm" onClick={handleSwapSides} className="gap-1">
-                <ArrowLeftRight className="h-3.5 w-3.5" /> Zamień strony graczy
-              </Button>
 
               {/* Autodarts link */}
               <div className="space-y-2">
