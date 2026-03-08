@@ -1,6 +1,7 @@
 import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Crown, Medal } from "lucide-react";
 import { motion } from "framer-motion";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 const LeagueWinners = () => {
   const { leagues, getLeagueStandings, matches } = useLeague();
