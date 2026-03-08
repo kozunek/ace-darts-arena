@@ -58,7 +58,6 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
         require_checkout_stats: settings.require_checkout_stats,
         require_darts_thrown: settings.require_darts_thrown,
         require_ton_ranges: settings.require_ton_ranges,
-        require_nine_darters: settings.require_nine_darters,
         require_autodarts_link: settings.require_autodarts_link,
         webhook_enabled: settings.webhook_enabled,
         updated_at: new Date().toISOString(),
