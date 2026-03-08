@@ -82,7 +82,12 @@ const SettingsPage = () => {
     e.preventDefault();
     if (!playerData) return;
     setSavingContact(true);
-    await updatePlayer(playerData.id, { phone: phone.trim() || null, discord: discord.trim() || null });
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.from("players").update({
+      phone: phone.trim() || null,
+      discord: discord.trim() || null,
+      autodarts_user_id: autodartsId.trim() || null,
+    } as any).eq("id", playerData.id);
     setSavingContact(false);
     toast({ title: "Zapisano!", description: "Dane kontaktowe zostały zaktualizowane." });
   };
