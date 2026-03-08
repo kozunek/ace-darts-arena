@@ -786,7 +786,7 @@ const RolesTab = ({ toast }: any) => {
       return;
     }
     setAdding(true);
-    const { error } = await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole });
+    const { error } = await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole as "admin" | "moderator" | "user" });
     if (error) {
       toast({ title: "Błąd", description: "Nie udało się dodać roli. Sprawdź uprawnienia.", variant: "destructive" });
     } else {
