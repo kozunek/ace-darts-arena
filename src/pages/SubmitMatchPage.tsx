@@ -1,45 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link2, Send, Lock, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import MatchStatFields from "@/components/MatchStatFields";
 
 const SubmitMatchPage = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin, isModerator } = useAuth();
   const { matches, submitMatchResult } = useLeague();
   const { toast } = useToast();
 
+  const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [loadingPlayer, setLoadingPlayer] = useState(true);
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [autodartsLink, setAutodartsLink] = useState("");
   const [score1, setScore1] = useState("");
   const [score2, setScore2] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [avg1, setAvg1] = useState("");
-  const [avg2, setAvg2] = useState("");
-  const [oneEighties1, setOneEighties1] = useState("");
-  const [oneEighties2, setOneEighties2] = useState("");
-  const [hc1, setHc1] = useState("");
-  const [hc2, setHc2] = useState("");
-  const [ton60_1, setTon60_1] = useState("");
-  const [ton60_2, setTon60_2] = useState("");
-  const [ton80_1, setTon80_1] = useState("");
-  const [ton80_2, setTon80_2] = useState("");
-  const [tonPlus1, setTonPlus1] = useState("");
-  const [tonPlus2, setTonPlus2] = useState("");
-  const [darts1, setDarts1] = useState("");
-  const [darts2, setDarts2] = useState("");
-  const [checkoutAttempts1, setCheckoutAttempts1] = useState("");
-  const [checkoutAttempts2, setCheckoutAttempts2] = useState("");
-  const [checkoutHits1, setCheckoutHits1] = useState("");
-  const [checkoutHits2, setCheckoutHits2] = useState("");
-  const [nineDarters1, setNineDarters1] = useState("");
-  const [nineDarters2, setNineDarters2] = useState("");
+  const [stats, setStats] = useState<Record<string, string>>({});
 
-  if (loading) return null;
+  useEffect(() => {
+    if (!user) { setLoadingPlayer(false); return; }
+    const fetchPlayerId = async () => {
+      setLoadingPlayer(true);
+      const { data } = await supabase
+        .from("players")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setMyPlayerId(data?.id ?? null);
+      setLoadingPlayer(false);
+    };
+    fetchPlayerId();
+  }, [user]);
+
+  if (loading || loadingPlayer) return null;
 
   if (!user) {
     return (
@@ -52,8 +52,23 @@ const SubmitMatchPage = () => {
     );
   }
 
-  const upcomingMatches = matches.filter((m) => m.status === "upcoming");
-  const pendingMatches = matches.filter((m) => m.status === "pending_approval");
+  const canSubmitAll = isAdmin || isModerator;
+
+  // Players see only their matches, admins/mods see all
+  const upcomingMatches = matches.filter((m) => {
+    if (m.status !== "upcoming") return false;
+    if (canSubmitAll) return true;
+    if (!myPlayerId) return false;
+    return m.player1Id === myPlayerId || m.player2Id === myPlayerId;
+  });
+
+  const pendingMatches = matches.filter((m) => {
+    if (m.status !== "pending_approval") return false;
+    if (canSubmitAll) return true;
+    if (!myPlayerId) return false;
+    return m.player1Id === myPlayerId || m.player2Id === myPlayerId;
+  });
+
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
   const resetForm = () => {
@@ -61,26 +76,7 @@ const SubmitMatchPage = () => {
     setScore1("");
     setScore2("");
     setAutodartsLink("");
-    setAvg1("");
-    setAvg2("");
-    setOneEighties1("");
-    setOneEighties2("");
-    setHc1("");
-    setHc2("");
-    setTon60_1("");
-    setTon60_2("");
-    setTon80_1("");
-    setTon80_2("");
-    setTonPlus1("");
-    setTonPlus2("");
-    setDarts1("");
-    setDarts2("");
-    setCheckoutAttempts1("");
-    setCheckoutAttempts2("");
-    setCheckoutHits1("");
-    setCheckoutHits2("");
-    setNineDarters1("");
-    setNineDarters2("");
+    setStats({});
     setShowAdvanced(false);
   };
 
@@ -99,11 +95,11 @@ const SubmitMatchPage = () => {
       return;
     }
 
-    const optNum = (v: string) => (v ? parseFloat(v) : undefined);
-    const attemptsP1 = optNum(checkoutAttempts1) ?? 0;
-    const attemptsP2 = optNum(checkoutAttempts2) ?? 0;
-    const hitsP1 = optNum(checkoutHits1) ?? 0;
-    const hitsP2 = optNum(checkoutHits2) ?? 0;
+    const optNum = (key: string) => (stats[key] ? parseFloat(stats[key]) : undefined);
+    const attemptsP1 = optNum("checkoutAttempts1") ?? 0;
+    const attemptsP2 = optNum("checkoutAttempts2") ?? 0;
+    const hitsP1 = optNum("checkoutHits1") ?? 0;
+    const hitsP2 = optNum("checkoutHits2") ?? 0;
 
     if (hitsP1 > attemptsP1 || hitsP2 > attemptsP2) {
       toast({ title: "Błąd", description: "Trafione checkouty nie mogą być większe niż rzucone.", variant: "destructive" });
@@ -113,26 +109,26 @@ const SubmitMatchPage = () => {
     const data: MatchResultData = {
       score1: s1,
       score2: s2,
-      avg1: optNum(avg1),
-      avg2: optNum(avg2),
-      oneEighties1: optNum(oneEighties1),
-      oneEighties2: optNum(oneEighties2),
-      highCheckout1: optNum(hc1),
-      highCheckout2: optNum(hc2),
-      ton60_1: optNum(ton60_1),
-      ton60_2: optNum(ton60_2),
-      ton80_1: optNum(ton80_1),
-      ton80_2: optNum(ton80_2),
-      tonPlus1: optNum(tonPlus1),
-      tonPlus2: optNum(tonPlus2),
-      dartsThrown1: optNum(darts1),
-      dartsThrown2: optNum(darts2),
+      avg1: optNum("avg1"),
+      avg2: optNum("avg2"),
+      oneEighties1: optNum("oneEighties1"),
+      oneEighties2: optNum("oneEighties2"),
+      highCheckout1: optNum("hc1"),
+      highCheckout2: optNum("hc2"),
+      ton60_1: optNum("ton60_1"),
+      ton60_2: optNum("ton60_2"),
+      ton80_1: optNum("ton80_1"),
+      ton80_2: optNum("ton80_2"),
+      tonPlus1: optNum("tonPlus1"),
+      tonPlus2: optNum("tonPlus2"),
+      dartsThrown1: optNum("darts1"),
+      dartsThrown2: optNum("darts2"),
       checkoutAttempts1: attemptsP1,
       checkoutAttempts2: attemptsP2,
       checkoutHits1: hitsP1,
       checkoutHits2: hitsP2,
-      nineDarters1: optNum(nineDarters1),
-      nineDarters2: optNum(nineDarters2),
+      nineDarters1: optNum("nineDarters1"),
+      nineDarters2: optNum("nineDarters2"),
       autodartsLink: autodartsLink || undefined,
     };
 
@@ -141,12 +137,25 @@ const SubmitMatchPage = () => {
     resetForm();
   };
 
+  if (!canSubmitAll && !myPlayerId) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center max-w-md">
+        <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h1 className="text-2xl font-display font-bold text-foreground mb-2">Brak przypisanego gracza</h1>
+        <p className="text-muted-foreground font-body mb-6">
+          Twoje konto nie jest jeszcze powiązane z żadnym graczem. Skontaktuj się z administratorem.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Dodaj Wynik</h1>
         <p className="text-muted-foreground font-body">
           Zalogowany jako <span className="text-foreground font-semibold">{profile?.name || user.email}</span>
+          {canSubmitAll && <span className="ml-2 text-xs text-primary">(Admin/Moderator — widoczne wszystkie mecze)</span>}
         </p>
         <p className="text-xs text-accent font-body mt-1">⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.</p>
       </div>
@@ -190,7 +199,7 @@ const SubmitMatchPage = () => {
                       <div>
                         <span className="font-body font-medium text-foreground">{match.player1Name} vs {match.player2Name}</span>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
+                          Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
                           {match.round && ` · Kolejka ${match.round}`}
                         </div>
                       </div>
@@ -228,18 +237,12 @@ const SubmitMatchPage = () => {
               </button>
 
               {showAdvanced && (
-                <div className="space-y-4 rounded-lg border border-border bg-muted/10 p-4">
-                  <StatRow label="Średnia (3 darts)" v1={avg1} v2={avg2} s1={setAvg1} s2={setAvg2} step="0.1" p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="180-tki" v1={oneEighties1} v2={oneEighties2} s1={setOneEighties1} s2={setOneEighties2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Najw. checkout" v1={hc1} v2={hc2} s1={setHc1} s2={setHc2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Ton 60 (60-79)" v1={ton60_1} v2={ton60_2} s1={setTon60_1} s2={setTon60_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Ton 80 (80-99)" v1={ton80_1} v2={ton80_2} s1={setTon80_1} s2={setTon80_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Ton+ (100+)" v1={tonPlus1} v2={tonPlus2} s1={setTonPlus1} s2={setTonPlus2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Rzuty (darts)" v1={darts1} v2={darts2} s1={setDarts1} s2={setDarts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Checkouty rzucone" v1={checkoutAttempts1} v2={checkoutAttempts2} s1={setCheckoutAttempts1} s2={setCheckoutAttempts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Checkouty trafione" v1={checkoutHits1} v2={checkoutHits2} s1={setCheckoutHits1} s2={setCheckoutHits2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="9-dartery 🎯" v1={nineDarters1} v2={nineDarters2} s1={setNineDarters1} s2={setNineDarters2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                </div>
+                <MatchStatFields
+                  stats={stats}
+                  setStats={setStats}
+                  p1={selectedMatch.player1Name}
+                  p2={selectedMatch.player2Name}
+                />
               )}
 
               <Button type="submit" variant="hero" size="lg" className="w-full">
@@ -252,33 +255,5 @@ const SubmitMatchPage = () => {
     </div>
   );
 };
-
-const StatRow = ({
-  label,
-  v1,
-  v2,
-  s1,
-  s2,
-  step,
-  p1,
-  p2,
-}: {
-  label: string;
-  v1: string;
-  v2: string;
-  s1: (v: string) => void;
-  s2: (v: string) => void;
-  step?: string;
-  p1: string;
-  p2: string;
-}) => (
-  <div>
-    <Label className="text-xs text-muted-foreground font-body mb-1 block">{label}</Label>
-    <div className="grid grid-cols-2 gap-3">
-      <Input type="number" min="0" step={step || "1"} value={v1} onChange={(e) => s1(e.target.value)} placeholder={p1.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
-      <Input type="number" min="0" step={step || "1"} value={v2} onChange={(e) => s2(e.target.value)} placeholder={p2.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
-    </div>
-  </div>
-);
 
 export default SubmitMatchPage;
