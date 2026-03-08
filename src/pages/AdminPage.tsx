@@ -15,7 +15,7 @@ import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES 
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
 
-type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles";
+type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations";
 
 const LEAGUE_TYPE_LABELS: Record<LeagueType, string> = {
   league: "Liga (Round-Robin)",
