@@ -205,6 +205,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const leagues: League[] = (leaguesData || []).map((l: any) => ({
       id: l.id, name: l.name, season: l.season, description: l.description,
       is_active: l.is_active, format: l.format, max_legs: l.max_legs,
+      league_type: l.league_type || "league",
     }));
     setLeagueList(leagues);
     if (leagues.length > 0 && !activeLeagueId) {
