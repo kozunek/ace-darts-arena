@@ -14,6 +14,7 @@ const navItems = [
   { label: "H2H", href: "/h2h", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
+  { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit" },
 ];
 
