@@ -16,6 +16,7 @@ import AdminPage from "./pages/AdminPage";
 import StatsPage from "./pages/StatsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SettingsPage from "./pages/SettingsPage";
+import MyMatchesPage from "./pages/MyMatchesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/matches" element={<MatchesPage />} />
               <Route path="/players" element={<PlayersPage />} />
               <Route path="/players/:id" element={<PlayerProfilePage />} />
+              <Route path="/my-matches" element={<MyMatchesPage />} />
               <Route path="/submit" element={<SubmitMatchPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<AdminPage />} />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +43,17 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
+            {user && (
+              <Link to="/my-matches">
+                <Button
+                  variant={location.pathname === "/my-matches" ? "default" : "ghost"}
+                  size="sm"
+                  className="font-display uppercase tracking-wider text-xs"
+                >
+                  <Handshake className="h-3.5 w-3.5 mr-1" /> Moje Mecze
+                </Button>
+              </Link>
+            )}
             {showAdminLink && (
               <Link to="/admin">
                 <Button
@@ -92,6 +103,13 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
+            {user && (
+              <Link to="/my-matches" onClick={() => setMobileOpen(false)}>
+                <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
+                  <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
+                </Button>
+              </Link>
+            )}
             {showAdminLink && (
               <Link to="/admin" onClick={() => setMobileOpen(false)}>
                 <Button variant={location.pathname === "/admin" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
