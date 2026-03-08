@@ -745,10 +745,20 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
 const RolesTab = ({ toast }: any) => {
   const [rolesList, setRolesList] = useState<any[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(true);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("moderator");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     loadRoles();
+    loadProfiles();
   }, []);
+
+  const loadProfiles = async () => {
+    const { data } = await supabase.from("profiles").select("*").order("name");
+    if (data) setProfiles(data);
+  };
 
   const loadRoles = async () => {
     setLoadingRoles(true);
@@ -763,15 +773,86 @@ const RolesTab = ({ toast }: any) => {
     setLoadingRoles(false);
   };
 
+  const handleAddRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserId || !selectedRole) {
+      toast({ title: "Błąd", description: "Wybierz użytkownika i rolę.", variant: "destructive" });
+      return;
+    }
+    // Check if role already exists
+    const exists = rolesList.find(r => r.user_id === selectedUserId && r.role === selectedRole);
+    if (exists) {
+      toast({ title: "Błąd", description: "Ten użytkownik ma już tę rolę.", variant: "destructive" });
+      return;
+    }
+    setAdding(true);
+    const { error } = await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole as "admin" | "moderator" | "user" });
+    if (error) {
+      toast({ title: "Błąd", description: "Nie udało się dodać roli. Sprawdź uprawnienia.", variant: "destructive" });
+    } else {
+      toast({ title: "✅ Rola dodana!", description: `Przypisano rolę ${selectedRole}.` });
+      setSelectedUserId("");
+      setSelectedRole("moderator");
+      await loadRoles();
+    }
+    setAdding(false);
+  };
+
   const handleDeleteRole = async (roleId: string) => {
     await supabase.from("user_roles").delete().eq("id", roleId);
     setRolesList(prev => prev.filter(r => r.id !== roleId));
     toast({ title: "Rola usunięta" });
   };
 
+  // Filter out profiles that already have all roles
+  const availableProfiles = profiles.filter(p => {
+    const userRoles = rolesList.filter(r => r.user_id === p.user_id);
+    return userRoles.length < 3; // admin, moderator, user
+  });
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-display font-bold text-foreground">Zarządzanie rolami</h2>
+
+      {/* Add role form */}
+      <div className="rounded-lg border border-border bg-card p-5 card-glow">
+        <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+          <UserPlus className="h-4 w-4 text-primary" /> Przypisz rolę użytkownikowi
+        </h3>
+        <form onSubmit={handleAddRole} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Użytkownik</Label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="bg-muted/30 border-border"><SelectValue placeholder="Wybierz użytkownika" /></SelectTrigger>
+                <SelectContent>
+                  {availableProfiles.map((p: any) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Rola</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">🛡️ Admin</SelectItem>
+                  <SelectItem value="moderator">⚡ Moderator</SelectItem>
+                  <SelectItem value="user">👤 Gracz</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" variant="hero" disabled={adding} className="w-full">
+                <Award className="h-4 w-4 mr-1" /> {adding ? "Dodawanie..." : "Przypisz rolę"}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Current roles */}
       <div className="rounded-lg border border-border bg-card p-5 card-glow">
         <h3 className="font-display font-bold text-foreground mb-3">Obecne role</h3>
         {loadingRoles ? (
@@ -783,27 +864,31 @@ const RolesTab = ({ toast }: any) => {
             {rolesList.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between rounded-lg bg-muted/30 border border-border p-3">
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-display uppercase px-2 py-1 rounded-full border ${r.role === "admin" ? "bg-primary/20 border-primary/30 text-primary" : "bg-accent/20 border-accent/30 text-accent"}`}>
+                  <span className={`text-xs font-display uppercase px-2 py-1 rounded-full border ${
+                    r.role === "admin" ? "bg-primary/20 border-primary/30 text-primary" : 
+                    r.role === "moderator" ? "bg-accent/20 border-accent/30 text-accent" :
+                    "bg-secondary/20 border-secondary/30 text-secondary"
+                  }`}>
                     {r.role}
                   </span>
                   <span className="font-body text-sm text-foreground">{r.name}</span>
                 </div>
-                {r.role !== "admin" && (
-                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteRole(r.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteRole(r.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Legend */}
       <div className="rounded-lg border border-border bg-card p-5 card-glow">
         <h3 className="font-display font-bold text-foreground mb-3">Legenda ról</h3>
         <div className="space-y-2 text-sm font-body text-muted-foreground">
           <div><span className="text-primary font-semibold">Admin</span> — Pełna kontrola: zarządzanie ligami, graczami, meczami, rolami</div>
           <div><span className="text-accent font-semibold">Moderator</span> — Może zatwierdzać/odrzucać wyniki meczów zgłoszone przez graczy</div>
-          <div><span className="text-foreground font-semibold">Gracz</span> — Może zgłaszać wyniki swoich meczów</div>
+          <div><span className="text-secondary font-semibold">Gracz</span> — Może zgłaszać wyniki swoich meczów</div>
         </div>
       </div>
     </div>
