@@ -29,10 +29,10 @@ interface PlayerStats {
   until170Darts: number;
   oneEighties: number;
   highCheckout: number;
-  ton60: number;   // 60-99
-  ton100: number;  // 100-139
-  ton140: number;  // 140-169
-  ton170: number;  // 170-179
+  ton60: number;
+  ton100: number;
+  ton140: number;
+  ton170: number;
   checkoutAttempts: number;
   checkoutHits: number;
   legsWon: number;
@@ -139,80 +139,130 @@ async function loginToAutodarts(): Promise<string | null> {
   return null;
 }
 
-function resolveNumericPlayerIndex(raw: number): number | null {
-  if (!Number.isFinite(raw)) return null;
-  if (raw === 0 || raw === 1) return raw;
-  // Some payloads use 1/2 indexing
-  if (raw === 2) return 1;
-  if (raw < 0) return null;
-  // Fallback for unknown positive indexes in 1v1 matches
-  return raw > 0 ? 1 : 0;
+// ── Resolve player index from a turn ──
+function resolvePlayerIndex(
+  turn: any,
+  playerIdMap: Record<string, number>,
+): number | null {
+  // Strategy 1: Direct playerId field (string UUID)
+  const candidateIds: (string | undefined)[] = [
+    turn.playerId,
+    turn.player?.id,
+    turn.player?.userId,
+    turn.player?.hostId,
+    turn.userId,
+    turn.player?.user?.id,
+  ];
+  
+  for (const cid of candidateIds) {
+    if (typeof cid === "string" && cid.length > 0 && playerIdMap[cid] !== undefined) {
+      return playerIdMap[cid];
+    }
+  }
+
+  // Strategy 2: Numeric player field (0 or 1)
+  const numericSources: unknown[] = [
+    turn.playerIndex,
+    turn.player,
+    turn.player?.index,
+    turn.player?.playerIndex,
+  ];
+
+  for (const src of numericSources) {
+    const n = typeof src === "number" ? src : (typeof src === "string" ? Number(src) : null);
+    if (n === 0 || n === 1) return n;
+    if (n === 2) return 1; // Some APIs use 1-based indexing
+  }
+
+  return null;
 }
 
+// ── Process turns for a single game (leg) ──
 function processGameTurns(
   game: any,
-  playerIdMap: Record<string, number>,
+  matchPlayerIdMap: Record<string, number>,
   s1: PlayerStats,
   s2: PlayerStats,
+  gameIndex: number,
+  debugFirstGame: boolean,
 ) {
   const turns = game.turns || game.visits || game.rounds || [];
-  let turnIdx1 = 0;
-  let turnIdx2 = 0;
-  let unknownTurnIdx = 0;
+  if (turns.length === 0) return;
 
-  const gamePlayerIdMap: Record<string, number> = {};
+  // Build comprehensive player ID map including match + game-level IDs
+  const combinedIdMap: Record<string, number> = { ...matchPlayerIdMap };
+  
+  // Add game-level player IDs if game has players array
   if (Array.isArray(game.players)) {
     for (const gp of game.players) {
-      const normalizedIdx = resolveNumericPlayerIndex(
-        Number(gp?.index ?? gp?.playerIndex ?? gp?.position),
-      );
+      const idx = gp?.index ?? gp?.playerIndex ?? gp?.position;
+      const normalizedIdx = (idx === 0 || idx === 1) ? idx : (idx === 2 ? 1 : null);
       if (normalizedIdx == null) continue;
+      
       const ids = [gp?.id, gp?.playerId, gp?.userId, gp?.hostId, gp?.user?.id];
       for (const id of ids) {
-        if (typeof id === "string" && id) gamePlayerIdMap[id] = normalizedIdx;
+        if (typeof id === "string" && id) combinedIdMap[id] = normalizedIdx;
       }
     }
   }
 
+  // Debug: log first turn structure
+  if (debugFirstGame) {
+    const firstTurn = turns[0];
+    console.log(`[DEBUG] Game ${gameIndex} has ${turns.length} turns`);
+    console.log(`[DEBUG] First turn keys:`, Object.keys(firstTurn));
+    console.log(`[DEBUG] First turn (500 chars):`, JSON.stringify(firstTurn).substring(0, 500));
+    
+    if (turns.length > 1) {
+      console.log(`[DEBUG] Second turn keys:`, Object.keys(turns[1]));
+      console.log(`[DEBUG] Second turn (500 chars):`, JSON.stringify(turns[1]).substring(0, 500));
+    }
+    
+    // Log the combinedIdMap for debugging
+    console.log(`[DEBUG] combinedIdMap:`, JSON.stringify(combinedIdMap));
+  }
+
+  // First pass: try to resolve all turns' player indices
+  const resolvedIndices: (number | null)[] = [];
+  let resolvedCount = 0;
+  
   for (const turn of turns) {
-    const directTurnPlayerId =
-      typeof turn.playerId === "string" ? turn.playerId :
-      typeof turn.player?.id === "string" ? turn.player.id :
-      typeof turn.player?.userId === "string" ? turn.player.userId :
-      typeof turn.userId === "string" ? turn.userId :
-      typeof turn.player === "string" ? turn.player :
-      null;
+    const idx = resolvePlayerIndex(turn, combinedIdMap);
+    resolvedIndices.push(idx);
+    if (idx === 0 || idx === 1) resolvedCount++;
+  }
 
-    let pIdx: number | null = null;
+  if (debugFirstGame) {
+    console.log(`[DEBUG] Resolved ${resolvedCount}/${turns.length} turns with player mapping`);
+    console.log(`[DEBUG] First 10 resolved indices:`, resolvedIndices.slice(0, 10));
+  }
 
-    if (directTurnPlayerId && gamePlayerIdMap[directTurnPlayerId] !== undefined) {
-      pIdx = gamePlayerIdMap[directTurnPlayerId];
-    } else if (directTurnPlayerId && playerIdMap[directTurnPlayerId] !== undefined) {
-      pIdx = playerIdMap[directTurnPlayerId];
-    } else {
-      const numericCandidates = [
-        typeof turn.player === "number" ? turn.player : null,
-        typeof turn.playerIndex === "number" ? turn.playerIndex : null,
-        typeof turn.player?.index === "number" ? turn.player.index : null,
-        typeof turn.player?.playerIndex === "number" ? turn.player.playerIndex : null,
-        typeof turn.player === "string" ? Number(turn.player) : null,
-        typeof turn.playerIndex === "string" ? Number(turn.playerIndex) : null,
-      ];
-
-      for (const candidate of numericCandidates) {
-        if (candidate == null || !Number.isFinite(candidate)) continue;
-        const resolved = resolveNumericPlayerIndex(candidate);
-        if (resolved != null) {
-          pIdx = resolved;
-          break;
-        }
-      }
+  // If we couldn't resolve ANY turns, use alternating pattern
+  // In X01, turns alternate. Starting player alternates per leg.
+  const useAlternating = resolvedCount === 0;
+  // If we resolved ALL to same player, that's clearly wrong → use alternating
+  const allSamePlayer = resolvedCount > 0 && resolvedIndices.filter(i => i === 0).length === resolvedCount;
+  const allSamePlayer1 = resolvedCount > 0 && resolvedIndices.filter(i => i === 1).length === resolvedCount;
+  
+  if (useAlternating || allSamePlayer || allSamePlayer1) {
+    if (debugFirstGame) {
+      console.log(`[DEBUG] Using alternating pattern (useAlternating=${useAlternating}, allSame0=${allSamePlayer}, allSame1=${allSamePlayer1})`);
     }
-
-    if (pIdx !== 0 && pIdx !== 1) {
-      pIdx = unknownTurnIdx % 2;
-      unknownTurnIdx += 1;
+    // Determine starting player: even legs → player 0 starts, odd legs → player 1 starts
+    const startingPlayer = gameIndex % 2;
+    for (let i = 0; i < resolvedIndices.length; i++) {
+      resolvedIndices[i] = (i + startingPlayer) % 2;
     }
+  }
+
+  // Now process each turn with the resolved player index
+  let turnIdx1 = 0;
+  let turnIdx2 = 0;
+
+  for (let i = 0; i < turns.length; i++) {
+    const turn = turns[i];
+    let pIdx = resolvedIndices[i];
+    if (pIdx !== 0 && pIdx !== 1) pIdx = i % 2; // Final fallback
 
     const dartsArr = Array.isArray(turn.throws)
       ? turn.throws
@@ -233,10 +283,12 @@ function processGameTurns(
     let dartsCount = 3;
     if (dartsArr) dartsCount = dartsArr.length;
     else if (typeof turn.dartsThrown === "number") dartsCount = turn.dartsThrown;
+    else if (typeof turn.darts === "number") dartsCount = turn.darts;
 
     const st = pIdx === 0 ? s1 : s2;
     const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
 
+    // Determine score before this turn (for avg-until-170 and checkout detection)
     const scoreBeforeTurn = readFirstNumber(
       turn.scoreBefore,
       turn.startScore,
@@ -260,12 +312,14 @@ function processGameTurns(
       st.first9Darts += dartsCount;
     }
 
+    // Ton ranges: 60+, 100+, 140+, 170+, 180
     if (points === 180) st.oneEighties++;
     else if (points >= 170) st.ton170++;
     else if (points >= 140) st.ton140++;
     else if (points >= 100) st.ton100++;
     else if (points >= 60) st.ton60++;
 
+    // Checkout detection
     const remainingScore = readFirstNumber(
       turn.score,
       turn.remaining,
@@ -273,7 +327,11 @@ function processGameTurns(
       turn.scoreAfter,
     );
     const isBusted = turn.busted === true;
-    const isCheckout = !isBusted && (remainingScore === 0 || turn.isCheckout === true || turn.checkout === true);
+    const isCheckout = !isBusted && (
+      remainingScore === 0 || 
+      turn.isCheckout === true || 
+      turn.checkout === true
+    );
 
     if (isCheckout && points > 0) {
       st.checkoutHits++;
@@ -311,14 +369,15 @@ async function fetchMatchData(matchId: string, token: string) {
   const players = match.players || [];
   if (players.length < 2) throw new Error("Match does not have 2 players");
 
-  console.log("Player[0] full:", JSON.stringify(players[0]).substring(0, 800));
-  console.log("Player[1] full:", JSON.stringify(players[1]).substring(0, 800));
+  console.log("Player[0]:", JSON.stringify({ id: players[0].id, userId: players[0].userId, name: players[0].name, hostId: players[0].hostId, index: players[0].index }));
+  console.log("Player[1]:", JSON.stringify({ id: players[1].id, userId: players[1].userId, name: players[1].name, hostId: players[1].hostId, index: players[1].index }));
 
   const p1Name = players[0].name || players[0].username || "Player 1";
   const p2Name = players[1].name || players[1].username || "Player 2";
   const p1AutoId = players[0].userId || players[0].id || players[0].playerId || null;
   const p2AutoId = players[1].userId || players[1].id || players[1].playerId || null;
 
+  // Build comprehensive player ID map (maps various IDs to player index 0 or 1)
   const playerIdMap: Record<string, number> = {};
   for (let i = 0; i < players.length; i++) {
     const ids = [
@@ -328,15 +387,16 @@ async function fetchMatchData(matchId: string, token: string) {
       players[i].hostId,
       players[i]?.user?.id,
     ];
-
     for (const id of ids) {
       if (typeof id === "string" && id.length > 0) {
         playerIdMap[id] = i;
       }
     }
   }
+  
+  console.log("playerIdMap keys:", Object.keys(playerIdMap).length, "entries");
 
-  // Extract scores
+  // Extract scores (legs won)
   let legsWon1 = 0, legsWon2 = 0;
   if (Array.isArray(match.scores) && match.scores.length >= 2) {
     const s1 = match.scores[0];
@@ -350,93 +410,13 @@ async function fetchMatchData(matchId: string, token: string) {
     }
   }
 
-  // ── Try Autodarts stats endpoint ──
-  let endpointPlayers: any[] = [];
-  const statsEndpoints = [
-    `${API_BASE}/as/v0/matches/${matchId}/stats`,
-    `${API_BASE}/gs/v0/matches/${matchId}/stats`,
-  ];
-  for (const url of statsEndpoints) {
-    const statsData = await tryFetchJson(url, token);
-    if (statsData) {
-      if (Array.isArray(statsData.players) && statsData.players.length >= 2) {
-        endpointPlayers = statsData.players;
-      }
-      console.log("Got match stats from endpoint:", url);
-      console.log("Stats data:", JSON.stringify(statsData).substring(0, 2000));
-    }
-  }
-
-  // ── Check pre-calculated stats on players ──
-  const endpointPs1 = endpointPlayers[0] || {};
-  const endpointPs2 = endpointPlayers[1] || {};
-
-  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || endpointPs1.stats || endpointPs1.matchStats || endpointPs1.gameStats || {};
-  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || endpointPs2.stats || endpointPs2.matchStats || endpointPs2.gameStats || {};
-
-  const hasMeaningfulPreCalc = (ps: Record<string, any>) => {
-    const keysToCheck = [
-      "dartsThrown", "darts", "oneEighties", "180s", "180",
-      "60+", "100+", "140+", "170+",
-      "checkoutAttempts", "checkoutDarts", "checkoutHits", "checkouts",
-      "highestCheckout", "bestCheckout", "ton60", "ton100", "ton140", "ton170",
-    ];
-    return keysToCheck.some((k) => ps?.[k] != null);
-  };
-
-  const hasPreCalc1 = hasMeaningfulPreCalc(ps1);
-  const hasPreCalc2 = hasMeaningfulPreCalc(ps2);
-
   let st1 = emptyStats(), st2 = emptyStats();
   st1.legsWon = legsWon1;
   st2.legsWon = legsWon2;
 
-  if (hasPreCalc1 && hasPreCalc2) {
-    console.log("Using pre-calculated player stats for both players");
-    st1 = {
-      ...st1,
-      totalScore: 0, totalDarts: ps1.dartsThrown ?? ps1.darts ?? 0,
-      first9Score: 0, first9Darts: 0,
-      oneEighties: ps1.oneEighties ?? ps1["180s"] ?? ps1["180"] ?? 0,
-      highCheckout: ps1.highestCheckout ?? ps1.bestCheckout ?? 0,
-      ton60: ps1["60+"] ?? ps1.ton60 ?? 0,
-      ton100: ps1["100+"] ?? ps1.ton100 ?? ps1.tonPlus ?? 0,
-      ton140: ps1["140+"] ?? ps1.ton140 ?? 0,
-      ton170: ps1["170+"] ?? ps1.ton170 ?? 0,
-      checkoutAttempts: ps1.checkoutAttempts ?? ps1.checkoutDarts ?? 0,
-      checkoutHits: ps1.checkoutHits ?? ps1.checkouts ?? 0,
-    };
-    st2 = {
-      ...st2,
-      totalScore: 0, totalDarts: ps2.dartsThrown ?? ps2.darts ?? 0,
-      first9Score: 0, first9Darts: 0,
-      oneEighties: ps2.oneEighties ?? ps2["180s"] ?? ps2["180"] ?? 0,
-      highCheckout: ps2.highestCheckout ?? ps2.bestCheckout ?? 0,
-      ton60: ps2["60+"] ?? ps2.ton60 ?? 0,
-      ton100: ps2["100+"] ?? ps2.ton100 ?? ps2.tonPlus ?? 0,
-      ton140: ps2["140+"] ?? ps2.ton140 ?? 0,
-      ton170: ps2["170+"] ?? ps2.ton170 ?? 0,
-      checkoutAttempts: ps2.checkoutAttempts ?? ps2.checkoutDarts ?? 0,
-      checkoutHits: ps2.checkoutHits ?? ps2.checkouts ?? 0,
-    };
-    const avg1 = ps1.average ?? ps1.avg ?? (ps1.ppd ? ps1.ppd * 3 : null);
-    const avg2 = ps2.average ?? ps2.avg ?? (ps2.ppd ? ps2.ppd * 3 : null);
-    const f9a1 = ps1.first9Average ?? ps1.firstNineAvg ?? ps1.first9Avg ?? null;
-    const f9a2 = ps2.first9Average ?? ps2.firstNineAvg ?? ps2.first9Avg ?? null;
-    const a170_1 = ps1.avgUntil170 ?? ps1.averageUntil170 ?? ps1.avg_u170 ?? null;
-    const a170_2 = ps2.avgUntil170 ?? ps2.averageUntil170 ?? ps2.avg_u170 ?? null;
-
-    return buildResult(st1, st2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
-  }
-
-  if (hasPreCalc1 || hasPreCalc2) {
-    console.log("Partial pre-calculated stats detected; falling back to per-turn calculation for accuracy");
-  }
-
   // ── Parse from embedded games ──
   const embeddedGames: any[] = [];
   if (Array.isArray(match.games)) {
-    console.log("Games count:", match.games.length);
     for (const g of match.games) {
       if (g && typeof g === "object") {
         embeddedGames.push(g);
@@ -444,12 +424,26 @@ async function fetchMatchData(matchId: string, token: string) {
     }
   }
 
+  console.log("Games count:", embeddedGames.length);
+
   if (embeddedGames.length > 0) {
-    console.log("Processing", embeddedGames.length, "embedded games...");
-    for (const game of embeddedGames) {
-      processGameTurns(game, playerIdMap, st1, st2);
+    for (let gi = 0; gi < embeddedGames.length; gi++) {
+      const game = embeddedGames[gi];
+      console.log(`Game ${gi}: winner=${game.winner}, winnerPlayerId=${game.winnerPlayerId}, scores=${JSON.stringify(game.scores)}`);
+      processGameTurns(game, playerIdMap, st1, st2, gi, gi === 0); // debug first game
     }
   }
+
+  // Sanity check: if one player has 0 darts but match has multiple legs, log warning
+  if (st1.totalDarts === 0 && st2.totalDarts > 0) {
+    console.warn("WARNING: Player 1 has 0 darts thrown! Stats may be incorrectly mapped.");
+  }
+  if (st2.totalDarts === 0 && st1.totalDarts > 0) {
+    console.warn("WARNING: Player 2 has 0 darts thrown! Stats may be incorrectly mapped.");
+  }
+
+  console.log(`Stats P1: darts=${st1.totalDarts}, score=${st1.totalScore}, 60+=${st1.ton60}, 100+=${st1.ton100}, 140+=${st1.ton140}, 170+=${st1.ton170}, 180=${st1.oneEighties}`);
+  console.log(`Stats P2: darts=${st2.totalDarts}, score=${st2.totalScore}, 60+=${st2.ton60}, 100+=${st2.ton100}, 140+=${st2.ton140}, 170+=${st2.ton170}, 180=${st2.oneEighties}`);
 
   const avg1 = st1.totalDarts > 0 ? Math.round((st1.totalScore / st1.totalDarts) * 3 * 100) / 100 : null;
   const avg2 = st2.totalDarts > 0 ? Math.round((st2.totalScore / st2.totalDarts) * 3 * 100) / 100 : null;
@@ -458,35 +452,22 @@ async function fetchMatchData(matchId: string, token: string) {
   const a170_1 = st1.until170Darts > 0 ? Math.round((st1.until170Score / st1.until170Darts) * 3 * 100) / 100 : null;
   const a170_2 = st2.until170Darts > 0 ? Math.round((st2.until170Score / st2.until170Darts) * 3 * 100) / 100 : null;
 
-  return buildResult(st1, st2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
-}
-
-function buildResult(
-  s1: PlayerStats, s2: PlayerStats,
-  avg1: number | null, avg2: number | null,
-  f9a1: number | null, f9a2: number | null,
-  a170_1: number | null, a170_2: number | null,
-  p1Name: string, p2Name: string,
-  p1AutoId: string | null, p2AutoId: string | null,
-  matchId: string,
-) {
-  // Map to DB column names:
-  // ton60 = 60+, ton80 = 100+, ton_plus = 140+, ton40 = 170+
+  // Map to DB column names
   const result = {
-    score1: s1.legsWon,
-    score2: s2.legsWon,
+    score1: st1.legsWon,
+    score2: st2.legsWon,
     avg1, avg2,
     first_9_avg1: f9a1, first_9_avg2: f9a2,
     avg_until_170_1: a170_1, avg_until_170_2: a170_2,
-    one_eighties1: s1.oneEighties, one_eighties2: s2.oneEighties,
-    high_checkout1: s1.highCheckout, high_checkout2: s2.highCheckout,
-    ton60_1: s1.ton60, ton60_2: s2.ton60,         // 60+
-    ton80_1: s1.ton100, ton80_2: s2.ton100,        // 100+ (stored in ton80 column)
-    ton_plus1: s1.ton140, ton_plus2: s2.ton140,    // 140+ (stored in ton_plus column)
-    ton40_1: s1.ton170, ton40_2: s2.ton170,        // 170+ (stored in ton40 column)
-    darts_thrown1: s1.totalDarts, darts_thrown2: s2.totalDarts,
-    checkout_attempts1: s1.checkoutAttempts, checkout_attempts2: s2.checkoutAttempts,
-    checkout_hits1: s1.checkoutHits, checkout_hits2: s2.checkoutHits,
+    one_eighties1: st1.oneEighties, one_eighties2: st2.oneEighties,
+    high_checkout1: st1.highCheckout, high_checkout2: st2.highCheckout,
+    ton60_1: st1.ton60, ton60_2: st2.ton60,
+    ton80_1: st1.ton100, ton80_2: st2.ton100,    // 100+ → ton80 column
+    ton_plus1: st1.ton140, ton_plus2: st2.ton140, // 140+ → ton_plus column
+    ton40_1: st1.ton170, ton40_2: st2.ton170,     // 170+ → ton40 column
+    darts_thrown1: st1.totalDarts, darts_thrown2: st2.totalDarts,
+    checkout_attempts1: st1.checkoutAttempts, checkout_attempts2: st2.checkoutAttempts,
+    checkout_hits1: st1.checkoutHits, checkout_hits2: st2.checkoutHits,
     player1_name: p1Name, player2_name: p2Name,
     player1_autodarts_id: p1AutoId,
     player2_autodarts_id: p2AutoId,
