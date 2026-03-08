@@ -50,7 +50,7 @@ const LeagueTable = () => {
                 <th className="text-left px-2 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground min-w-[100px]">Gracz</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">M</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">W</th>
-                <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">R</th>
+                <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">P</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">P</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Pkt</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Śr.</th>
