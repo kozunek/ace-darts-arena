@@ -446,8 +446,9 @@ function buildResult(
     checkout_attempts1: s1.checkoutAttempts, checkout_attempts2: s2.checkoutAttempts,
     checkout_hits1: s1.checkoutHits, checkout_hits2: s2.checkoutHits,
     player1_name: p1Name, player2_name: p2Name,
+    player1_autodarts_id: p1AutoId,
+    player2_autodarts_id: p2AutoId,
     autodarts_link: `https://play.autodarts.io/history/matches/${matchId}`,
-  };
   console.log("Final result:", JSON.stringify(result));
   return result;
 }
