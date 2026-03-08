@@ -19,7 +19,7 @@ async function getAutodartsToken(): Promise<string> {
 
   const candidateClientIds = configuredClientId
     ? [configuredClientId]
-    : ["autodarts", "autodarts-app"];
+    : ["autodarts-desktop", "autodarts-app"];
 
   let lastAuthError = "";
 
