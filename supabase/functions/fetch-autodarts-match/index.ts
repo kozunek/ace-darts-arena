@@ -252,7 +252,10 @@ function processGameTurns(
         const seg = d.segment || d;
         const dartValue = getDartPoints(d);
         
-        // Before this dart: is the remaining finishable with one double?
+        if (runningRemaining <= 61 && runningRemaining > 1) {
+          st.altAttempts61++;
+        }
+
         if (isFinishableWithOneDouble(runningRemaining)) {
           st.checkoutAttempts++;
           if (pIdx === 1) {
