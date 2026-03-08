@@ -213,7 +213,7 @@ const StatsPage = () => {
         )}
 
         {activeTab === "tons" && (
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
             <LegendItem label="Ton 60" desc="Rzuty 60-79 pkt" color="bg-secondary/10 border-secondary/20 text-secondary" />
             <LegendItem label="Ton 80" desc="Rzuty 80-99 pkt" color="bg-primary/10 border-primary/20 text-primary" />
             <LegendItem label="Ton+" desc="Rzuty 100+ pkt" color="bg-muted border-border text-foreground" />

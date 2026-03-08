@@ -77,7 +77,6 @@ const PlayerProfilePage = () => {
             {/* Scoring breakdown */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               <MiniStatBox label="Najl. Śr." value={stats.bestAvg > 0 ? stats.bestAvg.toFixed(1) : "—"} />
-              <MiniStatBox label="Ton 40" value={stats.ton40} />
               <MiniStatBox label="Ton 60" value={stats.ton60} />
               <MiniStatBox label="Ton 80" value={stats.ton80} />
               <MiniStatBox label="Ton+" value={stats.tonPlus} />
