@@ -7,6 +7,23 @@ import { Button } from "@/components/ui/button";
 import PlayerProgressChart from "@/components/PlayerProgressChart";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
+const RARITY_ORDER: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const RARITY_STYLES: Record<string, string> = {
+  common: "border-border bg-muted/20",
+  rare: "border-blue-500/30 bg-blue-500/5",
+  epic: "border-purple-500/30 bg-purple-500/5",
+  legendary: "border-yellow-500/30 bg-yellow-500/5 shadow-[0_0_12px_-4px_hsl(var(--accent)/0.3)]",
+};
+const RARITY_BADGE: Record<string, string> = {
+  common: "bg-muted text-muted-foreground",
+  rare: "bg-blue-500/15 text-blue-400",
+  epic: "bg-purple-500/15 text-purple-400",
+  legendary: "bg-yellow-500/15 text-yellow-400",
+};
+const RARITY_LABELS: Record<string, string> = {
+  common: "Zwykłe", rare: "Rzadkie", epic: "Epickie", legendary: "Legendarne",
+};
+
 const PlayerProfilePage = () => {
   const { id } = useParams();
   const { players, matches, getPlayerAllLeagueStats, getPlayerAchievements } = useLeague();
