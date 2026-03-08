@@ -81,15 +81,9 @@ export interface Match {
   checkoutAttempts2?: number;
   checkoutHits1?: number;
   checkoutHits2?: number;
-}
-
-export interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  condition: (stats: PlayerLeagueStats) => boolean;
+  bracketRound?: string;
+  bracketPosition?: number;
+  groupName?: string;
 }
 
 // All Best of formats
