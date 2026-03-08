@@ -154,6 +154,26 @@ const SubmitMatchPage = () => {
     setRawPreview(payload);
   }, []);
 
+  // Swap payload so player1 in payload = player1 in match
+  const swapPayload = (p: AutoPayload): AutoPayload => ({
+    ...p,
+    score1: p.score2, score2: p.score1,
+    avg1: p.avg2, avg2: p.avg1,
+    first_9_avg1: p.first_9_avg2, first_9_avg2: p.first_9_avg1,
+    avg_until_170_1: p.avg_until_170_2, avg_until_170_2: p.avg_until_170_1,
+    one_eighties1: p.one_eighties2, one_eighties2: p.one_eighties1,
+    high_checkout1: p.high_checkout2, high_checkout2: p.high_checkout1,
+    ton60_1: p.ton60_2, ton60_2: p.ton60_1,
+    ton80_1: p.ton80_2, ton80_2: p.ton80_1,
+    ton_plus1: p.ton_plus2, ton_plus2: p.ton_plus1,
+    ton40_1: p.ton40_2, ton40_2: p.ton40_1,
+    darts_thrown1: p.darts_thrown2, darts_thrown2: p.darts_thrown1,
+    checkout_attempts1: p.checkout_attempts2, checkout_attempts2: p.checkout_attempts1,
+    checkout_hits1: p.checkout_hits2, checkout_hits2: p.checkout_hits1,
+    player1_name: p.player2_name, player2_name: p.player1_name,
+    player1_autodarts_id: p.player2_autodarts_id, player2_autodarts_id: p.player1_autodarts_id,
+  });
+
   const applyAutoPayload = useCallback(
     (payload: AutoPayload, allowAutoSubmit: boolean) => {
       if (!payload) return;
@@ -175,46 +195,54 @@ const SubmitMatchPage = () => {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
-      // Populate exactly as returned
-      populateForm(payload);
+      // Check if we need to swap: autodarts player1 matches match player2
+      let finalPayload = payload;
+      if (matchedUpcoming) {
+        const m1 = matchedUpcoming.player1Name.trim().toLowerCase();
+        if (m1 === p2 && m1 !== p1) {
+          finalPayload = swapPayload(payload);
+        }
+      }
+
+      populateForm(finalPayload);
 
       if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
-        const scoreA = readScore(payload.score1);
-        const scoreB = readScore(payload.score2);
+        const scoreA = readScore(finalPayload.score1);
+        const scoreB = readScore(finalPayload.score2);
         const data: MatchResultData = {
           score1: scoreA,
           score2: scoreB,
-          avg1: payload.avg1 ?? undefined,
-          avg2: payload.avg2 ?? undefined,
-          oneEighties1: asNumber(payload.one_eighties1),
-          oneEighties2: asNumber(payload.one_eighties2),
-          highCheckout1: asNumber(payload.high_checkout1),
-          highCheckout2: asNumber(payload.high_checkout2),
-          ton60_1: asNumber(payload.ton60_1),
-          ton60_2: asNumber(payload.ton60_2),
-          ton80_1: asNumber(payload.ton80_1),
-          ton80_2: asNumber(payload.ton80_2),
-          tonPlus1: asNumber(payload.ton_plus1),
-          tonPlus2: asNumber(payload.ton_plus2),
-          ton40_1: asNumber(payload.ton40_1),
-          ton40_2: asNumber(payload.ton40_2),
-          dartsThrown1: asNumber(payload.darts_thrown1),
-          dartsThrown2: asNumber(payload.darts_thrown2),
-          checkoutAttempts1: asNumber(payload.checkout_attempts1),
-          checkoutAttempts2: asNumber(payload.checkout_attempts2),
-          checkoutHits1: asNumber(payload.checkout_hits1),
-          checkoutHits2: asNumber(payload.checkout_hits2),
-          first9Avg1: payload.first_9_avg1 ?? undefined,
-          first9Avg2: payload.first_9_avg2 ?? undefined,
-          avgUntil170_1: payload.avg_until_170_1 ?? undefined,
-          avgUntil170_2: payload.avg_until_170_2 ?? undefined,
-          autodartsLink: payload.autodarts_link || undefined,
+          avg1: finalPayload.avg1 ?? undefined,
+          avg2: finalPayload.avg2 ?? undefined,
+          oneEighties1: asNumber(finalPayload.one_eighties1),
+          oneEighties2: asNumber(finalPayload.one_eighties2),
+          highCheckout1: asNumber(finalPayload.high_checkout1),
+          highCheckout2: asNumber(finalPayload.high_checkout2),
+          ton60_1: asNumber(finalPayload.ton60_1),
+          ton60_2: asNumber(finalPayload.ton60_2),
+          ton80_1: asNumber(finalPayload.ton80_1),
+          ton80_2: asNumber(finalPayload.ton80_2),
+          tonPlus1: asNumber(finalPayload.ton_plus1),
+          tonPlus2: asNumber(finalPayload.ton_plus2),
+          ton40_1: asNumber(finalPayload.ton40_1),
+          ton40_2: asNumber(finalPayload.ton40_2),
+          dartsThrown1: asNumber(finalPayload.darts_thrown1),
+          dartsThrown2: asNumber(finalPayload.darts_thrown2),
+          checkoutAttempts1: asNumber(finalPayload.checkout_attempts1),
+          checkoutAttempts2: asNumber(finalPayload.checkout_attempts2),
+          checkoutHits1: asNumber(finalPayload.checkout_hits1),
+          checkoutHits2: asNumber(finalPayload.checkout_hits2),
+          first9Avg1: finalPayload.first_9_avg1 ?? undefined,
+          first9Avg2: finalPayload.first_9_avg2 ?? undefined,
+          avgUntil170_1: finalPayload.avg_until_170_1 ?? undefined,
+          avgUntil170_2: finalPayload.avg_until_170_2 ?? undefined,
+          autodartsLink: finalPayload.autodarts_link || undefined,
         };
         submitMatchResult(matchedUpcoming.id, data);
         processedAutoMatchRef.current = extMatchId;
         toast({
           title: "✅ Auto-zgłoszenie",
-          description: `Wynik ${payload.player1_name} vs ${payload.player2_name} został wysłany automatycznie.`,
+          description: `Wynik ${finalPayload.player1_name} vs ${finalPayload.player2_name} został wysłany automatycznie.`,
         });
       }
     },
