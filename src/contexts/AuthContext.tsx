@@ -35,25 +35,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkRoles = useCallback(async (userId: string) => {
-    const [adminRes, modRes] = await Promise.all([
+    const [adminRes, modRes, rolesRes] = await Promise.all([
       supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
       supabase.rpc("has_role", { _user_id: userId, _role: "moderator" }),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
 
-    if (!adminRes.error && !modRes.error) {
-      setIsAdmin(Boolean(adminRes.data));
-      setIsModerator(Boolean(modRes.data));
-      return;
-    }
+    const roles = (rolesRes.data || []).map((r) => r.role);
+    const adminByRpc = !adminRes.error && Boolean(adminRes.data);
+    const modByRpc = !modRes.error && Boolean(modRes.data);
 
-    const { data: fallbackRoles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-
-    const roles = (fallbackRoles || []).map((r) => r.role);
-    setIsAdmin(roles.includes("admin"));
-    setIsModerator(roles.includes("moderator"));
+    setIsAdmin(adminByRpc || roles.includes("admin"));
+    setIsModerator(modByRpc || roles.includes("moderator"));
   }, []);
 
   const syncUserState = useCallback(async (currentUser: User | null) => {
