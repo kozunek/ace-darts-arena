@@ -19,7 +19,7 @@ async function getAutodartsToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "password",
-      client_id: "autodarts-app",
+      client_id: "autodarts",
       username: email,
       password: password,
       scope: "openid",
