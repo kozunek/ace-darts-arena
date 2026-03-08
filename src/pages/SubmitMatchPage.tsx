@@ -195,20 +195,31 @@ const SubmitMatchPage = () => {
       const expectedP1AutoId = targetMatch ? playerAutodartsMap[targetMatch.player1Id] : undefined;
       const expectedP2AutoId = targetMatch ? playerAutodartsMap[targetMatch.player2Id] : undefined;
 
-      const byAutodartsId = Boolean(
-        expectedP1AutoId && expectedP2AutoId &&
-        payload.player1_autodarts_id && payload.player2_autodarts_id &&
-        payload.player1_autodarts_id === expectedP2AutoId &&
-        payload.player2_autodarts_id === expectedP1AutoId
-      );
+      const p1Candidates = [payload.player1_autodarts_id, payload.player1_name]
+        .map((v) => normalizeIdentity(String(v ?? "")))
+        .filter(Boolean);
+      const p2Candidates = [payload.player2_autodarts_id, payload.player2_name]
+        .map((v) => normalizeIdentity(String(v ?? "")))
+        .filter(Boolean);
 
-      const byName = Boolean(
-        targetMatch &&
-          normalizeName(targetMatch.player1Name) === p2 &&
-          normalizeName(targetMatch.player2Name) === p1
-      );
+      const expectedP1Candidates = [targetMatch?.player1Name, expectedP1AutoId]
+        .map((v) => normalizeIdentity(String(v ?? "")))
+        .filter(Boolean);
+      const expectedP2Candidates = [targetMatch?.player2Name, expectedP2AutoId]
+        .map((v) => normalizeIdentity(String(v ?? "")))
+        .filter(Boolean);
 
-      const isReversedOrder = byAutodartsId || byName;
+      const overlaps = (a: string[], b: string[]) =>
+        a.some((left) => b.some((right) => left === right));
+
+      const directScore =
+        Number(overlaps(p1Candidates, expectedP1Candidates)) +
+        Number(overlaps(p2Candidates, expectedP2Candidates));
+      const reversedScore =
+        Number(overlaps(p1Candidates, expectedP2Candidates)) +
+        Number(overlaps(p2Candidates, expectedP1Candidates));
+
+      const isReversedOrder = reversedScore > directScore;
 
       const alignedPayload = isReversedOrder
         ? {
