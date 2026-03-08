@@ -15,8 +15,8 @@ const LeagueSelector = () => {
           onClick={() => setActiveLeagueId(league.id)}
           className="font-display uppercase tracking-wider text-xs"
         >
-          {!league.isActive && <span className="opacity-50 mr-1">📁</span>}
-          {league.isActive && <Trophy className="h-3.5 w-3.5 mr-1" />}
+          {!league.is_active && <span className="opacity-50 mr-1">📁</span>}
+          {league.is_active && <Trophy className="h-3.5 w-3.5 mr-1" />}
           {league.name}
         </Button>
       ))}

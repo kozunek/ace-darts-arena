@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Target, Menu, X, LogIn, LogOut, Shield, Flame } from "lucide-react";
+import { Target, Menu, X, LogIn, LogOut, Shield, BarChart3, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,13 +8,13 @@ const navItems = [
   { label: "Tabela Ligi", href: "/" },
   { label: "Mecze", href: "/matches" },
   { label: "Gracze", href: "/players" },
-  { label: "Wtryski", href: "/ton-stats", icon: <Flame className="h-3.5 w-3.5" /> },
+  { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit" },
 ];
 
 const Navbar = () => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, profile, isAdmin, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -41,7 +41,7 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            {user?.isAdmin && (
+            {isAdmin && (
               <Link to="/admin">
                 <Button
                   variant={location.pathname === "/admin" ? "default" : "ghost"}
@@ -54,7 +54,11 @@ const Navbar = () => {
             )}
             {user ? (
               <div className="flex items-center gap-2 ml-2">
-                <span className="text-xs text-muted-foreground font-body">{user.name}</span>
+                <Link to="/settings">
+                  <Button variant="ghost" size="sm" className="font-display uppercase tracking-wider text-xs">
+                    <Settings className="h-3.5 w-3.5 mr-1" /> {profile?.name || user.email}
+                  </Button>
+                </Link>
                 <Button variant="outline" size="sm" onClick={logout} className="font-display uppercase tracking-wider text-xs">
                   <LogOut className="h-4 w-4 mr-1" /> Wyloguj
                 </Button>
@@ -86,7 +90,7 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            {user?.isAdmin && (
+            {isAdmin && (
               <Link to="/admin" onClick={() => setMobileOpen(false)}>
                 <Button variant={location.pathname === "/admin" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
                   <Shield className="h-4 w-4 mr-1" /> Admin
@@ -94,9 +98,16 @@ const Navbar = () => {
               </Link>
             )}
             {user ? (
-              <Button variant="outline" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start font-display uppercase tracking-wider text-sm">
-                <LogOut className="h-4 w-4 mr-1" /> Wyloguj ({user.name})
-              </Button>
+              <>
+                <Link to="/settings" onClick={() => setMobileOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
+                    <Settings className="h-4 w-4 mr-1" /> Ustawienia
+                  </Button>
+                </Link>
+                <Button variant="outline" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start font-display uppercase tracking-wider text-sm">
+                  <LogOut className="h-4 w-4 mr-1" /> Wyloguj
+                </Button>
+              </>
             ) : (
               <Link to="/login" onClick={() => setMobileOpen(false)}>
                 <Button variant="outline" className="w-full justify-start font-display uppercase tracking-wider text-sm">

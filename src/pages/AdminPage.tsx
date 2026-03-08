@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, UserCheck, Plus, Calendar, Lock, Trash2, Edit2, Users, Trophy, Settings, X, Check, Layers } from "lucide-react";
+import { Shield, UserCheck, Plus, Calendar, Lock, Trash2, Edit2, Users, Trophy, Settings, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 type AdminTab = "overview" | "leagues" | "players" | "matches";
 
 const AdminPage = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const {
     players, matches, leagues, pendingPlayers,
     approvePlayer, addMatch, deleteMatch,
@@ -22,6 +22,8 @@ const AdminPage = () => {
   } = useLeague();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+
+  if (loading) return null;
 
   if (!user) {
     return (
@@ -33,7 +35,7 @@ const AdminPage = () => {
     );
   }
 
-  if (!user.isAdmin) {
+  if (!isAdmin) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md">
         <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -65,16 +67,9 @@ const AdminPage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
         {tabs.map((tab) => (
-          <Button
-            key={tab.id}
-            variant={activeTab === tab.id ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab(tab.id)}
-            className="font-display uppercase tracking-wider text-xs"
-          >
+          <Button key={tab.id} variant={activeTab === tab.id ? "default" : "ghost"} size="sm" onClick={() => setActiveTab(tab.id)} className="font-display uppercase tracking-wider text-xs">
             {tab.icon}
             <span className="ml-1">{tab.label}</span>
           </Button>
@@ -82,56 +77,11 @@ const AdminPage = () => {
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          {activeTab === "overview" && (
-            <OverviewTab
-              leagues={leagues}
-              players={players}
-              completedCount={completedCount}
-              upcomingCount={upcomingCount}
-              pendingPlayers={pendingPlayers}
-              approvePlayer={approvePlayer}
-              toast={toast}
-            />
-          )}
-          {activeTab === "leagues" && (
-            <LeaguesTab
-              leagues={leagues}
-              addLeague={addLeague}
-              updateLeague={updateLeague}
-              deleteLeague={deleteLeague}
-              toast={toast}
-            />
-          )}
-          {activeTab === "players" && (
-            <PlayersTab
-              players={players}
-              leagues={leagues}
-              pendingPlayers={pendingPlayers}
-              approvePlayer={approvePlayer}
-              updatePlayer={updatePlayer}
-              deletePlayer={deletePlayer}
-              assignPlayerToLeague={assignPlayerToLeague}
-              removePlayerFromLeague={removePlayerFromLeague}
-              toast={toast}
-            />
-          )}
-          {activeTab === "matches" && (
-            <MatchesTab
-              matches={matches}
-              players={players}
-              leagues={leagues}
-              addMatch={addMatch}
-              deleteMatch={deleteMatch}
-              toast={toast}
-            />
-          )}
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+          {activeTab === "overview" && <OverviewTab leagues={leagues} players={players} completedCount={completedCount} upcomingCount={upcomingCount} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} toast={toast} />}
+          {activeTab === "leagues" && <LeaguesTab leagues={leagues} addLeague={addLeague} updateLeague={updateLeague} deleteLeague={deleteLeague} toast={toast} />}
+          {activeTab === "players" && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} toast={toast} />}
+          {activeTab === "matches" && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -148,7 +98,6 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
       <SummaryBox label="Zaplanowanych" value={upcomingCount} icon="📅" />
       <SummaryBox label="Oczekujących" value={pendingPlayers.length} icon="⏳" />
     </div>
-
     {pendingPlayers.length > 0 && (
       <section className="rounded-lg border border-border bg-card p-6 card-glow">
         <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
@@ -158,9 +107,7 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
           {pendingPlayers.map((p: any) => (
             <div key={p.id} className="flex items-center justify-between rounded-lg bg-muted/30 border border-border p-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-xs font-display font-bold text-accent">
-                  {p.avatar}
-                </div>
+                <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-xs font-display font-bold text-accent">{p.avatar}</div>
                 <span className="font-body font-medium text-foreground text-sm">{p.name}</span>
               </div>
               <Button size="sm" variant="default" onClick={() => { approvePlayer(p.id); toast({ title: "Gracz zatwierdzony!", description: `${p.name} został dodany.` }); }}>
@@ -188,17 +135,17 @@ const LeaguesTab = ({ leagues, addLeague, updateLeague, deleteLeague, toast }: a
 
   const startEdit = (l: any) => {
     setEditId(l.id); setName(l.name); setSeason(l.season); setDescription(l.description);
-    setFormat(l.format || "Best of 5"); setIsActive(l.isActive); setShowForm(true);
+    setFormat(l.format || "Best of 5"); setIsActive(l.is_active); setShowForm(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !season) { toast({ title: "Błąd", description: "Wypełnij wymagane pola.", variant: "destructive" }); return; }
     if (editId) {
-      updateLeague(editId, { name, season, description, format, isActive });
+      updateLeague(editId, { name, season, description, format, is_active: isActive });
       toast({ title: "Liga zaktualizowana!", description: `${name} została zmieniona.` });
     } else {
-      addLeague({ name, season, description, format, isActive, maxLegs: format === "Best of 3" ? 3 : format === "Best of 7" ? 7 : 5 });
+      addLeague({ name, season, description, format, is_active: isActive, max_legs: format === "Best of 3" ? 3 : format === "Best of 7" ? 7 : 5 });
       toast({ title: "Liga dodana!", description: `${name} została utworzona.` });
     }
     resetForm();
@@ -212,16 +159,9 @@ const LeaguesTab = ({ leagues, addLeague, updateLeague, deleteLeague, toast }: a
           <Plus className="h-4 w-4 mr-1" /> Nowa Liga
         </Button>
       </div>
-
       <AnimatePresence>
         {showForm && (
-          <motion.form
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            onSubmit={handleSubmit}
-            className="rounded-lg border border-border bg-card p-6 card-glow space-y-4"
-          >
+          <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 card-glow space-y-4">
             <h3 className="font-display font-bold text-foreground">{editId ? "Edytuj Ligę" : "Nowa Liga"}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -265,12 +205,11 @@ const LeaguesTab = ({ leagues, addLeague, updateLeague, deleteLeague, toast }: a
           </motion.form>
         )}
       </AnimatePresence>
-
       <div className="space-y-3">
         {leagues.map((l: any) => (
           <div key={l.id} className="rounded-lg border border-border bg-card p-5 card-glow flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${l.isActive ? "bg-secondary" : "bg-muted-foreground"}`} />
+              <div className={`w-3 h-3 rounded-full ${l.is_active ? "bg-secondary" : "bg-muted-foreground"}`} />
               <div>
                 <div className="font-display font-bold text-foreground">{l.name}</div>
                 <div className="text-xs text-muted-foreground font-body">{l.season} · {l.format || "Best of 5"} · {l.description}</div>
@@ -278,10 +217,7 @@ const LeaguesTab = ({ leagues, addLeague, updateLeague, deleteLeague, toast }: a
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="ghost" onClick={() => startEdit(l)}><Edit2 className="h-4 w-4" /></Button>
-              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => {
-                deleteLeague(l.id);
-                toast({ title: "Liga usunięta", description: `${l.name} została usunięta.` });
-              }}><Trash2 className="h-4 w-4" /></Button>
+              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { deleteLeague(l.id); toast({ title: "Liga usunięta", description: `${l.name} została usunięta.` }); }}><Trash2 className="h-4 w-4" /></Button>
             </div>
           </div>
         ))}
@@ -293,10 +229,8 @@ const LeaguesTab = ({ leagues, addLeague, updateLeague, deleteLeague, toast }: a
 // ─── PLAYERS TAB ───
 const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePlayer, deletePlayer, assignPlayerToLeague, removePlayerFromLeague, toast }: any) => {
   const approved = players.filter((p: any) => p.approved);
-
   return (
     <div className="space-y-6">
-      {/* Pending */}
       {pendingPlayers.length > 0 && (
         <section className="rounded-lg border border-accent/30 bg-accent/5 p-5">
           <h3 className="font-display font-bold text-foreground mb-3">Oczekujący ({pendingPlayers.length})</h3>
@@ -312,23 +246,16 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
           </div>
         </section>
       )}
-
-      {/* Approved players */}
       <h2 className="text-xl font-display font-bold text-foreground">Zatwierdzeni gracze ({approved.length})</h2>
       <div className="space-y-3">
         {approved.map((p: any) => (
           <div key={p.id} className="rounded-lg border border-border bg-card p-5 card-glow">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
-                  {p.avatar}
-                </div>
+                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">{p.avatar}</div>
                 <span className="font-body font-medium text-foreground">{p.name}</span>
               </div>
-              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => {
-                deletePlayer(p.id);
-                toast({ title: "Gracz usunięty", description: p.name });
-              }}>
+              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { deletePlayer(p.id); toast({ title: "Gracz usunięty", description: p.name }); }}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -336,16 +263,10 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
               {leagues.map((l: any) => {
                 const isIn = (p.leagueIds || []).includes(l.id);
                 return (
-                  <button
-                    key={l.id}
-                    onClick={() => {
-                      if (isIn) { removePlayerFromLeague(p.id, l.id); toast({ title: `${p.name} usunięty z ${l.name}` }); }
-                      else { assignPlayerToLeague(p.id, l.id); toast({ title: `${p.name} dodany do ${l.name}` }); }
-                    }}
-                    className={`text-xs font-display uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all ${
-                      isIn ? "bg-secondary/20 border-secondary/30 text-secondary" : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
+                  <button key={l.id} onClick={() => {
+                    if (isIn) { removePlayerFromLeague(p.id, l.id); toast({ title: `${p.name} usunięty z ${l.name}` }); }
+                    else { assignPlayerToLeague(p.id, l.id); toast({ title: `${p.name} dodany do ${l.name}` }); }
+                  }} className={`text-xs font-display uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all ${isIn ? "bg-secondary/20 border-secondary/30 text-secondary" : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"}`}>
                     {isIn ? <Check className="h-3 w-3 inline mr-1" /> : <Plus className="h-3 w-3 inline mr-1" />}
                     {l.name}
                   </button>
@@ -380,117 +301,83 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
     setNewMatchP1(""); setNewMatchP2(""); setNewMatchDate(""); setNewMatchRound("");
   };
 
-  const leagueMatches = matches.filter((m: any) => m.leagueId === selectedLeague);
-  const upcoming = leagueMatches.filter((m: any) => m.status === "upcoming");
-  const completed = leagueMatches.filter((m: any) => m.status === "completed");
+  const approvedPlayers = players.filter((p: any) => p.approved);
+  const leagueMatches = selectedLeague ? matches.filter((m: any) => m.leagueId === selectedLeague) : matches;
 
   return (
     <div className="space-y-6">
       {/* Add match form */}
-      <section className="rounded-lg border border-border bg-card p-6 card-glow">
-        <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
-          <Plus className="h-5 w-5 text-secondary" /> Zaplanuj Mecz
-        </h2>
+      <div className="rounded-lg border border-border bg-card p-6 card-glow space-y-4">
+        <h3 className="font-display font-bold text-foreground">Dodaj mecz</h3>
         <form onSubmit={handleAddMatch} className="space-y-4">
-          <div className="space-y-2">
-            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Liga</Label>
-            <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-              <SelectTrigger className="bg-muted/30 border-border"><SelectValue placeholder="Wybierz ligę" /></SelectTrigger>
-              <SelectContent>
-                {leagues.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name} ({l.season})</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Liga</Label>
+              <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {leagues.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Data</Label>
+              <Input type="date" value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} className="bg-muted/30 border-border" required />
+            </div>
             <div className="space-y-2">
               <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Gracz 1</Label>
               <Select value={newMatchP1} onValueChange={setNewMatchP1}>
                 <SelectTrigger className="bg-muted/30 border-border"><SelectValue placeholder="Wybierz" /></SelectTrigger>
-                <SelectContent>{players.filter((p: any) => p.approved).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {approvedPlayers.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Gracz 2</Label>
               <Select value={newMatchP2} onValueChange={setNewMatchP2}>
                 <SelectTrigger className="bg-muted/30 border-border"><SelectValue placeholder="Wybierz" /></SelectTrigger>
-                <SelectContent>{players.filter((p: any) => p.approved && p.id !== newMatchP1).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {approvedPlayers.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Data</Label>
-              <Input type="date" value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} className="bg-muted/30 border-border" required />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Kolejka</Label>
-              <Input type="number" min="1" value={newMatchRound} onChange={(e) => setNewMatchRound(e.target.value)} className="bg-muted/30 border-border" placeholder="np. 3" />
-            </div>
+          <div className="space-y-2">
+            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Kolejka (opcjonalne)</Label>
+            <Input type="number" min="1" value={newMatchRound} onChange={(e) => setNewMatchRound(e.target.value)} className="bg-muted/30 border-border w-32" />
           </div>
-          <Button type="submit" variant="hero" className="w-full">
-            <Calendar className="h-4 w-4 mr-2" /> Dodaj Mecz
-          </Button>
+          <Button type="submit" variant="hero"><Plus className="h-4 w-4 mr-1" /> Dodaj mecz</Button>
         </form>
-      </section>
+      </div>
 
       {/* Match list */}
-      <div className="space-y-4">
-        {upcoming.length > 0 && (
-          <div>
-            <h3 className="font-display font-bold text-foreground mb-3">Zaplanowane ({upcoming.length})</h3>
-            <div className="space-y-2">
-              {upcoming.map((m: any) => (
-                <div key={m.id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
-                  <div>
-                    <span className="font-body text-sm text-foreground">{m.player1Name} vs {m.player2Name}</span>
-                    <div className="text-xs text-muted-foreground">{m.date}{m.round ? ` · Kolejka ${m.round}` : ""}</div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
-                    deleteMatch(m.id);
-                    toast({ title: "Mecz usunięty" });
-                  }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+      <div className="space-y-2">
+        {leagueMatches.map((m: any) => (
+          <div key={m.id} className="rounded-lg border border-border bg-card p-4 card-glow flex items-center justify-between">
+            <div>
+              <div className="font-body text-sm text-foreground">{m.player1Name} vs {m.player2Name}</div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(m.date).toLocaleDateString("pl-PL")} · {m.status === "completed" ? `${m.score1}:${m.score2}` : "Zaplanowany"}
+                {m.round && ` · Kolejka ${m.round}`}
+              </div>
             </div>
+            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { deleteMatch(m.id); toast({ title: "Mecz usunięty" }); }}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-        {completed.length > 0 && (
-          <div>
-            <h3 className="font-display font-bold text-foreground mb-3">Rozegrane ({completed.length})</h3>
-            <div className="space-y-2">
-              {completed.map((m: any) => (
-                <div key={m.id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
-                  <div>
-                    <span className="font-body text-sm text-foreground">{m.player1Name} <span className="text-secondary font-bold">{m.score1}</span> : <span className="text-secondary font-bold">{m.score2}</span> {m.player2Name}</span>
-                    <div className="text-xs text-muted-foreground">{m.date}{m.round ? ` · Kolejka ${m.round}` : ""}</div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
-                    deleteMatch(m.id);
-                    toast({ title: "Mecz usunięty" });
-                  }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );
 };
 
 const SummaryBox = ({ label, value, icon }: { label: string; value: number; icon: string }) => (
-  <motion.div
-    whileHover={{ scale: 1.05 }}
-    className="text-center bg-card rounded-lg p-5 border border-border card-glow"
-  >
+  <div className="rounded-lg border border-border bg-card p-4 card-glow text-center">
     <div className="text-2xl mb-1">{icon}</div>
-    <div className="text-3xl font-display font-bold text-foreground">{value}</div>
-    <div className="text-xs text-muted-foreground font-display uppercase tracking-wider mt-1">{label}</div>
-  </motion.div>
+    <div className="text-2xl font-display font-bold text-foreground">{value}</div>
+    <div className="text-xs text-muted-foreground uppercase tracking-wider font-display">{label}</div>
+  </div>
 );
 
 export default AdminPage;

@@ -1,52 +1,99 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-
-interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-}
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
-  user: AuthUser | null;
-  login: (email: string, password: string) => boolean;
-  register: (name: string, email: string, password: string) => void;
-  logout: () => void;
+  user: User | null;
+  profile: { name: string; avatar: string } | null;
+  isAdmin: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  register: (name: string, email: string, password: string) => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Demo accounts for testing
-const DEMO_ACCOUNTS: (AuthUser & { password: string })[] = [
-  { id: "1", name: "Krzysztof Nowak", email: "admin@dartliga.pl", password: "admin123", isAdmin: true },
-  { id: "2", name: "Anna Wiśniewska", email: "anna@dartliga.pl", password: "anna123", isAdmin: false },
-  { id: "3", name: "Tomasz Kowalski", email: "tomasz@dartliga.pl", password: "tomasz123", isAdmin: false },
-  { id: "4", name: "Magdalena Zielińska", email: "magda@dartliga.pl", password: "magda123", isAdmin: false },
-  { id: "5", name: "Piotr Kamiński", email: "piotr@dartliga.pl", password: "piotr123", isAdmin: false },
-  { id: "6", name: "Ewa Dąbrowska", email: "ewa@dartliga.pl", password: "ewa123", isAdmin: false },
-];
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [pendingUsers, setPendingUsers] = useState<{ name: string; email: string }[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<{ name: string; avatar: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const login = (email: string, password: string): boolean => {
-    const found = DEMO_ACCOUNTS.find((a) => a.email === email && a.password === password);
-    if (found) {
-      setUser({ id: found.id, name: found.name, email: found.email, isAdmin: found.isAdmin });
-      return true;
-    }
-    return false;
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("name, avatar").eq("user_id", userId).single();
+    if (data) setProfile(data);
   };
 
-  const register = (name: string, email: string, _password: string) => {
-    setPendingUsers((prev) => [...prev, { name, email }]);
+  const checkAdmin = async (userId: string) => {
+    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    setIsAdmin(!!data);
   };
 
-  const logout = () => setUser(null);
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        await fetchProfile(u.id);
+        await checkAdmin(u.id);
+      } else {
+        setProfile(null);
+        setIsAdmin(false);
+      }
+      setLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        fetchProfile(u.id);
+        checkAdmin(u.id);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error?.message ?? null };
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    setIsAdmin(false);
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error?.message ?? null };
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, loading, login, register, logout, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

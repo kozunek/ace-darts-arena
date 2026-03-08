@@ -4,12 +4,12 @@ import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link2, PenTool, Send, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { Link2, Send, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 const SubmitMatchPage = () => {
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { matches, submitMatchResult } = useLeague();
   const { toast } = useToast();
 
@@ -35,6 +35,8 @@ const SubmitMatchPage = () => {
   const [darts1, setDarts1] = useState("");
   const [darts2, setDarts2] = useState("");
 
+  if (loading) return null;
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md">
@@ -46,9 +48,8 @@ const SubmitMatchPage = () => {
     );
   }
 
-  const myUpcomingMatches = matches.filter(
-    (m) => m.status === "upcoming" && (m.player1Id === user.id || m.player2Id === user.id)
-  );
+  // Show all upcoming matches (admin or any logged in user can submit)
+  const upcomingMatches = matches.filter((m) => m.status === "upcoming");
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
   const resetForm = () => {
@@ -90,29 +91,28 @@ const SubmitMatchPage = () => {
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Dodaj Wynik</h1>
         <p className="text-muted-foreground font-body">
-          Zalogowany jako <span className="text-foreground font-semibold">{user.name}</span>
+          Zalogowany jako <span className="text-foreground font-semibold">{profile?.name || user.email}</span>
         </p>
       </div>
 
-      {myUpcomingMatches.length === 0 ? (
+      {upcomingMatches.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center card-glow">
           <p className="text-muted-foreground font-body text-lg mb-2">Brak zaplanowanych meczów</p>
-          <p className="text-sm text-muted-foreground">Nie masz żadnych nadchodzących meczów do zgłoszenia.</p>
+          <p className="text-sm text-muted-foreground">Nie ma żadnych nadchodzących meczów do zgłoszenia.</p>
         </div>
       ) : (
         <>
           <div className="space-y-2 mb-6">
-            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Wybierz mecz z Twojej kolejki</Label>
+            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Wybierz mecz</Label>
             <div className="space-y-2">
-              {myUpcomingMatches.map((match) => {
-                const opponent = match.player1Id === user.id ? match.player2Name : match.player1Name;
+              {upcomingMatches.map((match) => {
                 const isSelected = selectedMatchId === match.id;
                 return (
                   <button key={match.id} type="button" onClick={() => setSelectedMatchId(match.id)}
                     className={`w-full rounded-lg border p-4 text-left transition-all ${isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"}`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-body font-medium text-foreground">vs {opponent}</span>
+                        <span className="font-body font-medium text-foreground">{match.player1Name} vs {match.player2Name}</span>
                         <div className="text-xs text-muted-foreground mt-1">
                           {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
                           {match.round && ` · Kolejka ${match.round}`}
@@ -128,42 +128,31 @@ const SubmitMatchPage = () => {
 
           {selectedMatch && (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Score */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player1Name}</Label>
-                  <Input type="number" min="0" max="20" value={score1} onChange={(e) => setScore1(e.target.value)}
-                    className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
+                  <Input type="number" min="0" max="20" value={score1} onChange={(e) => setScore1(e.target.value)} className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">{selectedMatch.player2Name}</Label>
-                  <Input type="number" min="0" max="20" value={score2} onChange={(e) => setScore2(e.target.value)}
-                    className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
+                  <Input type="number" min="0" max="20" value={score2} onChange={(e) => setScore2(e.target.value)} className="bg-muted/30 border-border text-center text-2xl font-display" placeholder="0" required />
                 </div>
               </div>
 
-              {/* Autodarts link */}
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5" /> Link Autodarts.io (opcjonalny)
                 </Label>
-                <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)}
-                  placeholder="https://autodarts.io/matches/..." className="bg-muted/30 border-border" />
+                <Input type="url" value={autodartsLink} onChange={(e) => setAutodartsLink(e.target.value)} placeholder="https://autodarts.io/matches/..." className="bg-muted/30 border-border" />
               </div>
 
-              {/* Advanced stats toggle */}
-              <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors">
+              <button type="button" onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors">
                 {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                {showAdvanced ? "Ukryj szczegółowe statystyki" : "Dodaj szczegółowe statystyki (średnia, 180, checkout...)"}
+                {showAdvanced ? "Ukryj szczegółowe statystyki" : "Dodaj szczegółowe statystyki"}
               </button>
 
               {showAdvanced && (
                 <div className="space-y-4 rounded-lg border border-border bg-muted/10 p-4">
-                  <p className="text-xs text-muted-foreground font-body mb-2">
-                    Wpisz statystyki z Autodarts.io — wszystkie pola są opcjonalne.
-                  </p>
-
                   <StatRow label="Średnia (3 darts)" v1={avg1} v2={avg2} s1={setAvg1} s2={setAvg2} step="0.1" p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="180-tki" v1={oneEighties1} v2={oneEighties2} s1={setOneEighties1} s2={setOneEighties2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Najw. checkout" v1={hc1} v2={hc2} s1={setHc1} s2={setHc2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
@@ -194,10 +183,8 @@ const StatRow = ({ label, v1, v2, s1, s2, step, p1, p2 }: {
   <div>
     <Label className="text-xs text-muted-foreground font-body mb-1 block">{label}</Label>
     <div className="grid grid-cols-2 gap-3">
-      <Input type="number" min="0" step={step || "1"} value={v1} onChange={(e) => s1(e.target.value)}
-        placeholder={p1.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
-      <Input type="number" min="0" step={step || "1"} value={v2} onChange={(e) => s2(e.target.value)}
-        placeholder={p2.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
+      <Input type="number" min="0" step={step || "1"} value={v1} onChange={(e) => s1(e.target.value)} placeholder={p1.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
+      <Input type="number" min="0" step={step || "1"} value={v2} onChange={(e) => s2(e.target.value)} placeholder={p2.split(" ")[0]} className="bg-muted/30 border-border text-center font-display" />
     </div>
   </div>
 );
