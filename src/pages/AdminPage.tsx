@@ -751,6 +751,27 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
   const approved = players.filter((p: any) => p.approved);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [profiles, setProfiles] = useState<{ user_id: string; name: string }[]>([]);
+  const [playerUserMap, setPlayerUserMap] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data } = await supabase.from("profiles").select("user_id, name");
+      setProfiles(data || []);
+      // Fetch player->user_id mapping
+      const { data: playersWithUser } = await supabase.from("players").select("id, user_id");
+      const map: Record<string, string | null> = {};
+      (playersWithUser || []).forEach((p: any) => { map[p.id] = p.user_id; });
+      setPlayerUserMap(map);
+    };
+    fetchProfiles();
+  }, [players]);
+
+  const linkUserToPlayer = async (playerId: string, userId: string | null) => {
+    await supabase.from("players").update({ user_id: userId }).eq("id", playerId);
+    setPlayerUserMap(prev => ({ ...prev, [playerId]: userId }));
+    toast({ title: userId ? "Konto powiązane!" : "Powiązanie usunięte" });
+  };
 
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
