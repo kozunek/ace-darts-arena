@@ -238,6 +238,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          user_id: string | null
         }
         Insert: {
           approved?: boolean
@@ -245,6 +246,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          user_id?: string | null
         }
         Update: {
           approved?: boolean
@@ -252,6 +254,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          user_id?: string | null
         }
         Relationships: []
       }
