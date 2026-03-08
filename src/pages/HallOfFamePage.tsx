@@ -8,6 +8,7 @@ interface RecordEntry {
   playerId: string;
   playerName: string;
   playerAvatar: string;
+  playerAvatarUrl?: string | null;
   value: string | number;
 }
 
