@@ -122,6 +122,10 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
     tonPlus2: m.ton_plus2,
     dartsThrown1: m.darts_thrown1,
     dartsThrown2: m.darts_thrown2,
+    checkoutAttempts1: m.checkout_attempts1,
+    checkoutAttempts2: m.checkout_attempts2,
+    checkoutHits1: m.checkout_hits1,
+    checkoutHits2: m.checkout_hits2,
   };
 };
 
