@@ -353,6 +353,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_player_public_info: {
+        Args: { p_id: string }
+        Returns: {
+          approved: boolean
+          avatar: string
+          avatar_url: string
+          id: string
+          name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
