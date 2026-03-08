@@ -21,10 +21,11 @@ const CalendarPage = () => {
 
   const leagueMatches = getLeagueMatches(activeLeagueId);
 
-  // Group matches by date string
+  // Group matches by date - use confirmedDate if available, else date (deadline)
   const matchesByDate: Record<string, typeof leagueMatches> = {};
   leagueMatches.forEach((m) => {
-    const key = m.date.slice(0, 10);
+    const displayDate = m.confirmedDate || m.date;
+    const key = displayDate.slice(0, 10);
     if (!matchesByDate[key]) matchesByDate[key] = [];
     matchesByDate[key].push(m);
   });
