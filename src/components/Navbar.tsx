@@ -38,6 +38,8 @@ const allMobileItems = [
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-4 w-4" /> },
   { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-4 w-4" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-4 w-4" /> },
+  { label: "Czat", href: "/chat", icon: <MessageCircle className="h-4 w-4" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit" },
 ];
 
