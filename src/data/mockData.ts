@@ -86,6 +86,15 @@ export interface Match {
   groupName?: string;
 }
 
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  condition: (stats: PlayerLeagueStats) => boolean;
+}
+
 // All Best of formats
 export const BEST_OF_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
   value: `Best of ${i + 1}`,

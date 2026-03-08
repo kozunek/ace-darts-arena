@@ -376,9 +376,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase.from("leagues").insert({
       name: league.name, season: league.season, description: league.description,
       format: league.format, max_legs: league.max_legs, is_active: league.is_active,
+      league_type: league.league_type || "league",
     }).select().single();
     if (data) {
-      const newLeague = { id: data.id, name: data.name, season: data.season, description: data.description, format: data.format, max_legs: data.max_legs, is_active: data.is_active };
+      const newLeague: League = {
+        id: data.id, name: data.name, season: data.season, description: data.description,
+        format: data.format, max_legs: data.max_legs, is_active: data.is_active,
+        league_type: data.league_type || "league",
+      };
       setLeagueList((prev) => [...prev, newLeague]);
       if (!activeLeagueId) setActiveLeagueId(data.id);
     }
