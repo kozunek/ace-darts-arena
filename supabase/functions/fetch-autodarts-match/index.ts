@@ -345,7 +345,7 @@ async function fetchMatchData(matchId: string, token: string) {
 
   // Log stats for debugging
   for (let i = 0; i < 2; i++) {
-    console.log(`P${i + 1} (${i === 0 ? p1Name : p2Name}): darts=${st[i].totalDarts}, score=${st[i].totalScore}, co=${st[i].checkoutHits}/${st[i].checkoutAttempts}, alt61=${st[i].altAttempts61}, hc=${st[i].highCheckout}, 60+=${st[i].ton60}, 100+=${st[i].ton100}, 140+=${st[i].ton140}, 180=${st[i].oneEighties}`);
+    console.log(`P${i + 1} (${i === 0 ? p1Name : p2Name}): darts=${st[i].totalDarts}, score=${st[i].totalScore}, co=${st[i].checkoutHits}/${st[i].checkoutAttempts}, hc=${st[i].highCheckout}, 60+=${st[i].ton60}, 100+=${st[i].ton100}, 140+=${st[i].ton140}, 180=${st[i].oneEighties}`);
   }
 
   const avg = (s: PlayerStats) => s.totalDarts > 0 ? Math.round((s.totalScore / s.totalDarts) * 3 * 100) / 100 : null;
