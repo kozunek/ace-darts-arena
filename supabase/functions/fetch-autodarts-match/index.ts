@@ -414,14 +414,17 @@ async function fetchMatchData(matchId: string, token: string) {
   const avg2 = s2.totalDarts > 0 ? Math.round((s2.totalScore / s2.totalDarts) * 3 * 100) / 100 : null;
   const f9a1 = s1.first9Darts > 0 ? Math.round((s1.first9Score / s1.first9Darts) * 3 * 100) / 100 : null;
   const f9a2 = s2.first9Darts > 0 ? Math.round((s2.first9Score / s2.first9Darts) * 3 * 100) / 100 : null;
+  const a170_1 = s1.until170Darts > 0 ? Math.round((s1.until170Score / s1.until170Darts) * 3 * 100) / 100 : null;
+  const a170_2 = s2.until170Darts > 0 ? Math.round((s2.until170Score / s2.until170Darts) * 3 * 100) / 100 : null;
 
-  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, p1Name, p2Name, matchId);
+  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, matchId);
 }
 
 function buildResult(
   s1: PlayerStats, s2: PlayerStats,
   avg1: number | null, avg2: number | null,
   f9a1: number | null, f9a2: number | null,
+  a170_1: number | null, a170_2: number | null,
   p1Name: string, p2Name: string, matchId: string
 ) {
   const result = {
@@ -429,6 +432,7 @@ function buildResult(
     score2: s2.legsWon,
     avg1, avg2,
     first_9_avg1: f9a1, first_9_avg2: f9a2,
+    avg_until_170_1: a170_1, avg_until_170_2: a170_2,
     one_eighties1: s1.oneEighties, one_eighties2: s2.oneEighties,
     high_checkout1: s1.highCheckout, high_checkout2: s2.highCheckout,
     ton60_1: s1.ton60, ton60_2: s2.ton60,
