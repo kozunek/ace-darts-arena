@@ -388,12 +388,18 @@ async function fetchMatchData(matchId: string, token: string) {
       let turnIdx1 = 0, turnIdx2 = 0;
       for (const turn of turns) {
         const pIdx = turn.player ?? turn.playerIndex ?? 0;
-        const points = turn.points ?? turn.score ?? 0;
-        const darts = turn.darts?.length ?? turn.dartsThrown ?? 3;
+        const points = turn.points ?? 0;
+        const remaining = typeof turn.score === "number" ? turn.score : null;
+        const darts = turn.darts?.length ?? turn.throws?.length ?? turn.dartsThrown ?? 3;
         const st = pIdx === 0 ? s1 : s2;
         const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
         st.totalScore += points;
         st.totalDarts += darts;
+        const scoreBeforeTurn = remaining != null ? remaining + points : null;
+        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
+          st.until170Score += points;
+          st.until170Darts += darts;
+        }
         if (tidx < 3) { st.first9Score += points; st.first9Darts += darts; }
         if (points === 180) st.oneEighties++;
         if (points >= 100) st.tonPlus++;
