@@ -37,6 +37,7 @@ export interface PlayerLeagueStats {
   ton60: number;
   ton80: number;
   tonPlus: number;
+  winRate: number;
 }
 
 export interface Match {
@@ -50,7 +51,7 @@ export interface Match {
   score2?: number;
   legsWon1?: number;
   legsWon2?: number;
-  status: "upcoming" | "completed" | "pending";
+  status: "upcoming" | "completed" | "pending_approval";
   date: string;
   round?: number;
   autodartsLink?: string;
@@ -81,6 +82,13 @@ export interface Achievement {
   condition: (stats: PlayerLeagueStats) => boolean;
 }
 
+// All Best of formats
+export const BEST_OF_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
+  value: `Best of ${i + 1}`,
+  label: `Best of ${i + 1}`,
+  maxLegs: i + 1,
+}));
+
 export const achievements: Achievement[] = [
   { id: "a1", name: "Pierwszy Mecz", description: "Rozegraj swój pierwszy mecz", icon: "🎯", rarity: "common", condition: (s) => s.matchesPlayed >= 1 },
   { id: "a2", name: "Seria 3 Wygranych", description: "Wygraj 3 mecze z rzędu", icon: "🔥", rarity: "rare", condition: (s) => { const f = s.form; for (let i = 0; i <= f.length - 3; i++) { if (f[i]==="W"&&f[i+1]==="W"&&f[i+2]==="W") return true; } return false; }},
@@ -97,4 +105,5 @@ export const achievements: Achievement[] = [
   { id: "a13", name: "Rzucający Maszyna", description: "Rzuć ponad 500 dartsów w lidze", icon: "🤖", rarity: "rare", condition: (s) => s.totalDartsThrown >= 500 },
   { id: "a14", name: "Perfekcjonista", description: "Osiągnij najlepszą średnią powyżej 90", icon: "🌟", rarity: "legendary", condition: (s) => s.bestAvg >= 90 },
   { id: "a15", name: "Ton 80 Kolekcjoner", description: "Zbierz 15 wyników Ton 80 (80-99)", icon: "🃏", rarity: "rare", condition: (s) => s.ton80 >= 15 },
+  { id: "a16", name: "Wysoki Win Rate", description: "Osiągnij win rate powyżej 75%", icon: "🏅", rarity: "epic", condition: (s) => s.winRate >= 75 && s.matchesPlayed >= 4 },
 ];

@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   profile: { name: string; avatar: string } | null;
   isAdmin: boolean;
+  isModerator: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   register: (name: string, email: string, password: string) => Promise<{ error: string | null }>;
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ name: string; avatar: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -27,9 +29,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data) setProfile(data);
   };
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    setIsAdmin(!!data);
+  const checkRoles = async (userId: string) => {
+    const { data: adminData } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    setIsAdmin(!!adminData);
+    const { data: modData } = await supabase.rpc("has_role", { _user_id: userId, _role: "moderator" });
+    setIsModerator(!!modData);
   };
 
   useEffect(() => {
@@ -38,10 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(u);
       if (u) {
         await fetchProfile(u.id);
-        await checkAdmin(u.id);
+        await checkRoles(u.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsModerator(false);
       }
       setLoading(false);
     });
@@ -51,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(u);
       if (u) {
         fetchProfile(u.id);
-        checkAdmin(u.id);
+        checkRoles(u.id);
       }
       setLoading(false);
     });
@@ -78,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsModerator(false);
   };
 
   const resetPassword = async (email: string) => {
@@ -93,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, isAdmin, loading, login, register, logout, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, isModerator, loading, login, register, logout, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

@@ -14,8 +14,10 @@ const navItems = [
 
 const Navbar = () => {
   const location = useLocation();
-  const { user, profile, isAdmin, logout } = useAuth();
+  const { user, profile, isAdmin, isModerator, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const showAdminLink = isAdmin || isModerator;
 
   return (
     <nav className="sticky top-0 z-50 glass border-b border-border">
@@ -41,14 +43,14 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            {isAdmin && (
+            {showAdminLink && (
               <Link to="/admin">
                 <Button
                   variant={location.pathname === "/admin" ? "default" : "ghost"}
                   size="sm"
                   className="font-display uppercase tracking-wider text-xs"
                 >
-                  <Shield className="h-3.5 w-3.5 mr-1" /> Admin
+                  <Shield className="h-3.5 w-3.5 mr-1" /> {isAdmin ? "Admin" : "Moderator"}
                 </Button>
               </Link>
             )}
@@ -90,10 +92,10 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            {isAdmin && (
+            {showAdminLink && (
               <Link to="/admin" onClick={() => setMobileOpen(false)}>
                 <Button variant={location.pathname === "/admin" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                  <Shield className="h-4 w-4 mr-1" /> Admin
+                  <Shield className="h-4 w-4 mr-1" /> {isAdmin ? "Admin" : "Moderator"}
                 </Button>
               </Link>
             )}

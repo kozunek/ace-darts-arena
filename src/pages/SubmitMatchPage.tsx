@@ -4,7 +4,7 @@ import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link2, Send, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { Link2, Send, Lock, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
@@ -48,8 +48,8 @@ const SubmitMatchPage = () => {
     );
   }
 
-  // Show all upcoming matches (admin or any logged in user can submit)
   const upcomingMatches = matches.filter((m) => m.status === "upcoming");
+  const pendingMatches = matches.filter((m) => m.status === "pending_approval");
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
   const resetForm = () => {
@@ -82,7 +82,7 @@ const SubmitMatchPage = () => {
     };
 
     submitMatchResult(selectedMatchId, data);
-    toast({ title: "✅ Wynik zgłoszony!", description: "Tabela i statystyki zostały przeliczone." });
+    toast({ title: "📋 Wynik zgłoszony!", description: "Wynik został wysłany do zatwierdzenia przez admina/moderatora." });
     resetForm();
   };
 
@@ -93,7 +93,27 @@ const SubmitMatchPage = () => {
         <p className="text-muted-foreground font-body">
           Zalogowany jako <span className="text-foreground font-semibold">{profile?.name || user.email}</span>
         </p>
+        <p className="text-xs text-accent font-body mt-1">
+          ⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.
+        </p>
       </div>
+
+      {/* Show pending matches */}
+      {pendingMatches.length > 0 && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-5 mb-6">
+          <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-accent" /> Oczekujące na zatwierdzenie ({pendingMatches.length})
+          </h3>
+          <div className="space-y-2">
+            {pendingMatches.map((m) => (
+              <div key={m.id} className="flex items-center justify-between rounded-lg bg-card border border-border p-3">
+                <span className="font-body text-sm text-foreground">{m.player1Name} vs {m.player2Name}</span>
+                <span className="text-sm font-display text-accent">{m.score1}:{m.score2} ⏳</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {upcomingMatches.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center card-glow">
@@ -165,7 +185,7 @@ const SubmitMatchPage = () => {
               )}
 
               <Button type="submit" variant="hero" size="lg" className="w-full">
-                <Send className="h-4 w-4 mr-2" /> Zgłoś Wynik
+                <Send className="h-4 w-4 mr-2" /> Zgłoś Wynik (do zatwierdzenia)
               </Button>
             </form>
           )}

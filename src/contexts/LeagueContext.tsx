@@ -17,10 +17,13 @@ interface LeagueContextType {
   getPlayerAchievements: (playerId: string, leagueId: string) => Achievement[];
   getLeagueStandings: (leagueId: string) => (Player & { stats: PlayerLeagueStats })[];
   submitMatchResult: (matchId: string, data: MatchResultData) => void;
+  approveMatch: (matchId: string) => void;
+  rejectMatch: (matchId: string) => void;
   addMatch: (leagueId: string, player1Id: string, player2Id: string, date: string, round?: number) => void;
   approvePlayer: (playerId: string) => void;
   pendingPlayers: Player[];
   addPendingPlayer: (name: string) => void;
+  addPlayer: (name: string) => void;
   addLeague: (league: Omit<League, "id">) => void;
   updateLeague: (id: string, data: Partial<League>) => void;
   deleteLeague: (id: string) => void;
@@ -31,7 +34,9 @@ interface LeagueContextType {
   deleteMatch: (matchId: string) => void;
   getGlobalTonStats: () => TonLeaderEntry[];
   getLeagueTonStats: (leagueId: string) => TonLeaderEntry[];
+  getPendingApprovalMatches: () => Match[];
   loading: boolean;
+  refreshData: () => void;
 }
 
 export interface MatchResultData {
@@ -68,11 +73,14 @@ export interface TonLeaderEntry {
   totalTons: number;
   highestCheckout: number;
   bestAvg: number;
+  wins: number;
+  losses: number;
+  matchesPlayed: number;
+  winRate: number;
 }
 
 const LeagueContext = createContext<LeagueContextType | null>(null);
 
-// Map DB row to app Match type
 const mapDbMatch = (m: any, players: Player[]): Match => {
   const p1 = players.find(p => p.id === m.player1_id);
   const p2 = players.find(p => p.id === m.player2_id);
@@ -147,6 +155,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
   });
 
   const avg = avgValues.length > 0 ? Math.round((avgValues.reduce((a, b) => a + b, 0) / avgValues.length) * 10) / 10 : 0;
+  const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
 
   return {
     playerId, leagueId,
@@ -160,6 +169,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     bestAvg: Math.round(bestAvg * 10) / 10,
     totalDartsThrown: totalDarts,
     ton40, ton60, ton80, tonPlus,
+    winRate,
   };
 };
 
@@ -171,43 +181,40 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   const [activeLeagueId, setActiveLeagueId] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Fetch all data from DB
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      // Fetch leagues
-      const { data: leaguesData } = await supabase.from("leagues").select("*").order("created_at");
-      const leagues: League[] = (leaguesData || []).map((l: any) => ({
-        id: l.id, name: l.name, season: l.season, description: l.description,
-        is_active: l.is_active, format: l.format, max_legs: l.max_legs,
-      }));
-      setLeagueList(leagues);
-      if (leagues.length > 0 && !activeLeagueId) {
-        setActiveLeagueId(leagues.find(l => l.is_active)?.id || leagues[0].id);
-      }
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const { data: leaguesData } = await supabase.from("leagues").select("*").order("created_at");
+    const leagues: League[] = (leaguesData || []).map((l: any) => ({
+      id: l.id, name: l.name, season: l.season, description: l.description,
+      is_active: l.is_active, format: l.format, max_legs: l.max_legs,
+    }));
+    setLeagueList(leagues);
+    if (leagues.length > 0 && !activeLeagueId) {
+      setActiveLeagueId(leagues.find(l => l.is_active)?.id || leagues[0].id);
+    }
 
-      // Fetch players with their league assignments
-      const { data: playersData } = await supabase.from("players").select("*").order("name");
-      const { data: plData } = await supabase.from("player_leagues").select("*");
-      const playerLeagues = plData || [];
+    const { data: playersData } = await supabase.from("players").select("*").order("name");
+    const { data: plData } = await supabase.from("player_leagues").select("*");
+    const playerLeagues = plData || [];
 
-      const players: Player[] = (playersData || []).map((p: any) => ({
-        id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
-        leagueIds: playerLeagues.filter((pl: any) => pl.player_id === p.id).map((pl: any) => pl.league_id),
-      }));
-      const approved = players.filter(p => p.approved);
-      const pending = players.filter(p => !p.approved);
-      setPlayerList(approved);
-      setPendingPlayers(pending);
+    const allPlayers: Player[] = (playersData || []).map((p: any) => ({
+      id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
+      leagueIds: playerLeagues.filter((pl: any) => pl.player_id === p.id).map((pl: any) => pl.league_id),
+    }));
+    const approved = allPlayers.filter(p => p.approved);
+    const pending = allPlayers.filter(p => !p.approved);
+    setPlayerList(approved);
+    setPendingPlayers(pending);
 
-      // Fetch matches
-      const { data: matchesData } = await supabase.from("matches").select("*").order("date", { ascending: false });
-      setMatchList((matchesData || []).map((m: any) => mapDbMatch(m, players)));
+    const { data: matchesData } = await supabase.from("matches").select("*").order("date", { ascending: false });
+    setMatchList((matchesData || []).map((m: any) => mapDbMatch(m, allPlayers)));
 
-      setLoading(false);
-    };
-    fetchData();
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchData(); }, []);
+
+  const refreshData = useCallback(() => { fetchData(); }, [fetchData]);
 
   const getLeagueMatches = useCallback((leagueId: string) => matchList.filter((m) => m.leagueId === leagueId), [matchList]);
 
@@ -216,10 +223,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   const getPlayerAllLeagueStats = useCallback((playerId: string) => {
     return leagueList.filter(l => {
       return matchList.some(m => m.leagueId === l.id && (m.player1Id === playerId || m.player2Id === playerId));
-    }).map(league => ({
-      league,
-      stats: calcStats(playerId, league.id, matchList),
-    }));
+    }).map(league => ({ league, stats: calcStats(playerId, league.id, matchList) }));
   }, [matchList, leagueList]);
 
   const getPlayerAchievements = useCallback((playerId: string, leagueId: string) => {
@@ -237,10 +241,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, [matchList, playerList]);
 
   const submitMatchResult = useCallback(async (matchId: string, data: MatchResultData) => {
+    // Players submit results as "pending_approval" - admin/moderator must approve
     await supabase.from("matches").update({
       score1: data.score1, score2: data.score2,
       legs_won1: data.score1, legs_won2: data.score2,
-      status: "completed",
+      status: "pending_approval",
       avg1: data.avg1, avg2: data.avg2,
       one_eighties1: data.oneEighties1 ?? 0, one_eighties2: data.oneEighties2 ?? 0,
       high_checkout1: data.highCheckout1 ?? 0, high_checkout2: data.highCheckout2 ?? 0,
@@ -252,13 +257,46 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       autodarts_link: data.autodartsLink,
     }).eq("id", matchId);
 
-    // Update local state
     setMatchList((prev) =>
       prev.map((m) =>
-        m.id === matchId ? { ...m, ...data, legsWon1: data.score1, legsWon2: data.score2, status: "completed" as const } : m
+        m.id === matchId ? { ...m, ...data, legsWon1: data.score1, legsWon2: data.score2, status: "pending_approval" as const } : m
       )
     );
   }, []);
+
+  const approveMatch = useCallback(async (matchId: string) => {
+    await supabase.from("matches").update({ status: "completed" }).eq("id", matchId);
+    setMatchList((prev) => prev.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m));
+  }, []);
+
+  const rejectMatch = useCallback(async (matchId: string) => {
+    // Reset match back to upcoming, clear stats
+    await supabase.from("matches").update({
+      status: "upcoming",
+      score1: null, score2: null, legs_won1: null, legs_won2: null,
+      avg1: null, avg2: null,
+      one_eighties1: 0, one_eighties2: 0,
+      high_checkout1: 0, high_checkout2: 0,
+      ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0,
+      ton80_1: 0, ton80_2: 0, ton_plus1: 0, ton_plus2: 0,
+      darts_thrown1: 0, darts_thrown2: 0,
+      autodarts_link: null,
+    }).eq("id", matchId);
+
+    setMatchList((prev) => prev.map((m) => m.id === matchId ? {
+      ...m, status: "upcoming" as const,
+      score1: undefined, score2: undefined, legsWon1: undefined, legsWon2: undefined,
+      avg1: undefined, avg2: undefined,
+      oneEighties1: 0, oneEighties2: 0, highCheckout1: 0, highCheckout2: 0,
+      ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0, ton80_1: 0, ton80_2: 0,
+      tonPlus1: 0, tonPlus2: 0, dartsThrown1: 0, dartsThrown2: 0,
+      autodartsLink: undefined,
+    } : m));
+  }, []);
+
+  const getPendingApprovalMatches = useCallback(() => {
+    return matchList.filter(m => m.status === "pending_approval");
+  }, [matchList]);
 
   const addMatch = useCallback(async (leagueId: string, player1Id: string, player2Id: string, date: string, round?: number) => {
     const { data } = await supabase.from("matches").insert({
@@ -267,9 +305,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }).select().single();
 
     if (data) {
-      const p1 = playerList.find(p => p.id === player1Id);
-      const p2 = playerList.find(p => p.id === player2Id);
-      setMatchList((prev) => [...prev, mapDbMatch(data, playerList)]);
+      setMatchList((prev) => [mapDbMatch(data, playerList), ...prev]);
     }
   }, [playerList]);
 
@@ -286,6 +322,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const addPlayer = useCallback(async (name: string) => {
+    const initials = name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    const { data, error } = await supabase.from("players").insert({ name, avatar: initials, approved: true }).select().single();
+    if (data) {
+      setPlayerList((prev) => [...prev, { id: data.id, name: data.name, avatar: data.avatar, approved: true, leagueIds: [] }]);
+    }
+    return { data, error };
+  }, []);
+
   const approvePlayer = useCallback(async (playerId: string) => {
     await supabase.from("players").update({ approved: true }).eq("id", playerId);
     setPendingPlayers((prev) => {
@@ -296,14 +341,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addLeague = useCallback(async (league: Omit<League, "id">) => {
-    const { data } = await supabase.from("leagues").insert({
+    const { data, error } = await supabase.from("leagues").insert({
       name: league.name, season: league.season, description: league.description,
       format: league.format, max_legs: league.max_legs, is_active: league.is_active,
     }).select().single();
     if (data) {
-      setLeagueList((prev) => [...prev, { id: data.id, name: data.name, season: data.season, description: data.description, format: data.format, max_legs: data.max_legs, is_active: data.is_active }]);
+      const newLeague = { id: data.id, name: data.name, season: data.season, description: data.description, format: data.format, max_legs: data.max_legs, is_active: data.is_active };
+      setLeagueList((prev) => [...prev, newLeague]);
+      if (!activeLeagueId) setActiveLeagueId(data.id);
     }
-  }, []);
+    return { data, error };
+  }, [activeLeagueId]);
 
   const updateLeague = useCallback(async (id: string, data: Partial<League>) => {
     await supabase.from("leagues").update(data).eq("id", id);
@@ -311,6 +359,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deleteLeague = useCallback(async (id: string) => {
+    // Delete related matches and player_leagues first
+    await supabase.from("matches").delete().eq("league_id", id);
+    await supabase.from("player_leagues").delete().eq("league_id", id);
     await supabase.from("leagues").delete().eq("id", id);
     setLeagueList((prev) => prev.filter((l) => l.id !== id));
     setMatchList((prev) => prev.filter((m) => m.leagueId !== id));
@@ -322,19 +373,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deletePlayer = useCallback(async (id: string) => {
+    await supabase.from("player_leagues").delete().eq("player_id", id);
     await supabase.from("players").delete().eq("id", id);
     setPlayerList((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
   const assignPlayerToLeague = useCallback(async (playerId: string, leagueId: string) => {
-    await supabase.from("player_leagues").insert({ player_id: playerId, league_id: leagueId });
-    setPlayerList((prev) => prev.map((p) => {
-      if (p.id === playerId) {
-        const ids = p.leagueIds || [];
-        if (!ids.includes(leagueId)) return { ...p, leagueIds: [...ids, leagueId] };
-      }
-      return p;
-    }));
+    const { error } = await supabase.from("player_leagues").insert({ player_id: playerId, league_id: leagueId });
+    if (!error) {
+      setPlayerList((prev) => prev.map((p) => {
+        if (p.id === playerId) {
+          const ids = p.leagueIds || [];
+          if (!ids.includes(leagueId)) return { ...p, leagueIds: [...ids, leagueId] };
+        }
+        return p;
+      }));
+    }
   }, []);
 
   const removePlayerFromLeague = useCallback(async (playerId: string, leagueId: string) => {
@@ -347,23 +401,27 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
-  // Ton stats
+  // Ton stats with win rate data
   const calcTonStats = useCallback((filterLeagueId?: string): TonLeaderEntry[] => {
     const filtered = filterLeagueId ? matchList.filter(m => m.leagueId === filterLeagueId && m.status === "completed") : matchList.filter(m => m.status === "completed");
     const playerMap = new Map<string, TonLeaderEntry>();
 
     filtered.forEach((m) => {
       [
-        { id: m.player1Id, name: m.player1Name, t40: m.ton40_1 ?? 0, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0 },
-        { id: m.player2Id, name: m.player2Name, t40: m.ton40_2 ?? 0, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0 },
-      ].forEach(({ id, name, t40, t60, t80, tp, e, hc, avg }) => {
+        { id: m.player1Id, name: m.player1Name, t40: m.ton40_1 ?? 0, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0 },
+        { id: m.player2Id, name: m.player2Name, t40: m.ton40_2 ?? 0, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0 },
+      ].forEach(({ id, name, t40, t60, t80, tp, e, hc, avg, score, oppScore }) => {
         const existing = playerMap.get(id);
         const player = playerList.find(p => p.id === id);
+        const won = score > oppScore ? 1 : 0;
+        const lost = score < oppScore ? 1 : 0;
         if (existing) {
           existing.ton40 += t40; existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
           existing.oneEighties += e; existing.totalTons += t40 + t60 + t80 + tp + e;
           if (hc > existing.highestCheckout) existing.highestCheckout = hc;
           if (avg > existing.bestAvg) existing.bestAvg = avg;
+          existing.wins += won; existing.losses += lost; existing.matchesPlayed += 1;
+          existing.winRate = existing.matchesPlayed > 0 ? Math.round((existing.wins / existing.matchesPlayed) * 100) : 0;
         } else {
           playerMap.set(id, {
             playerId: id, playerName: name,
@@ -371,6 +429,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             ton40: t40, ton60: t60, ton80: t80, tonPlus: tp,
             oneEighties: e, totalTons: t40 + t60 + t80 + tp + e,
             highestCheckout: hc, bestAvg: avg,
+            wins: won, losses: lost, matchesPlayed: 1,
+            winRate: won ? 100 : 0,
           });
         }
       });
@@ -388,12 +448,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       activeLeagueId, setActiveLeagueId,
       getLeagueMatches, getPlayerLeagueStats, getPlayerAllLeagueStats,
       getPlayerAchievements, getLeagueStandings,
-      submitMatchResult, addMatch, approvePlayer, pendingPlayers, addPendingPlayer,
+      submitMatchResult, approveMatch, rejectMatch,
+      addMatch, approvePlayer, pendingPlayers, addPendingPlayer, addPlayer,
       addLeague, updateLeague, deleteLeague,
       updatePlayer, deletePlayer, assignPlayerToLeague, removePlayerFromLeague,
       deleteMatch,
-      getGlobalTonStats, getLeagueTonStats,
-      loading,
+      getGlobalTonStats, getLeagueTonStats, getPendingApprovalMatches,
+      loading, refreshData,
     }}>
       {children}
     </LeagueContext.Provider>
