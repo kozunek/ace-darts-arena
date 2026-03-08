@@ -228,6 +228,9 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [generating, setGenerating] = useState(false);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [doShuffle, setDoShuffle] = useState(true);
+  const [generateMode, setGenerateMode] = useState<"all" | "selected">("all");
+  const [selectedRounds, setSelectedRounds] = useState<number[]>([]);
+  const [roundDeadlines, setRoundDeadlines] = useState<Record<number, string>>({});
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
