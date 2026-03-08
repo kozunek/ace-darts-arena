@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
+import MatchStatFields from "@/components/MatchStatFields";
 
 type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles";
 
@@ -28,7 +29,7 @@ const AdminPage = () => {
     approvePlayer, addMatch, deleteMatch, addPlayer,
     addLeague, updateLeague, deleteLeague,
     updatePlayer, deletePlayer, assignPlayerToLeague, removePlayerFromLeague,
-    approveMatch, rejectMatch, getPendingApprovalMatches, refreshData,
+    approveMatch, rejectMatch, updateMatchResult, getPendingApprovalMatches, refreshData,
   } = useLeague();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -99,7 +100,7 @@ const AdminPage = () => {
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
           {activeTab === "overview" && <OverviewTab leagues={leagues} players={players} completedCount={completedCount} upcomingCount={upcomingCount} pendingPlayers={pendingPlayers} pendingApproval={pendingApproval} approvePlayer={approvePlayer} toast={toast} isAdmin={isAdmin} />}
-          {activeTab === "approval" && <ApprovalTab pendingApproval={pendingApproval} approveMatch={approveMatch} rejectMatch={rejectMatch} toast={toast} />}
+          {activeTab === "approval" && <ApprovalTab pendingApproval={pendingApproval} approveMatch={approveMatch} rejectMatch={rejectMatch} updateMatchResult={updateMatchResult} toast={toast} />}
           {activeTab === "leagues" && isAdmin && <LeaguesTab leagues={leagues} players={players} addLeague={addLeague} updateLeague={updateLeague} deleteLeague={deleteLeague} addMatch={addMatch} refreshData={refreshData} assignPlayerToLeague={assignPlayerToLeague} toast={toast} />}
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
@@ -153,7 +154,61 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
 );
 
 // ─── APPROVAL TAB ───
-const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, toast }: any) => {
+const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchResult, toast }: any) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStats, setEditStats] = useState<Record<string, string>>({});
+  const [editScore1, setEditScore1] = useState("");
+  const [editScore2, setEditScore2] = useState("");
+
+  const startEdit = (m: any) => {
+    setEditingId(m.id);
+    setEditScore1(String(m.score1 ?? ""));
+    setEditScore2(String(m.score2 ?? ""));
+    setEditStats({
+      avg1: String(m.avg1 ?? ""), avg2: String(m.avg2 ?? ""),
+      oneEighties1: String(m.oneEighties1 ?? ""), oneEighties2: String(m.oneEighties2 ?? ""),
+      hc1: String(m.highCheckout1 ?? ""), hc2: String(m.highCheckout2 ?? ""),
+      ton60_1: String(m.ton60_1 ?? ""), ton60_2: String(m.ton60_2 ?? ""),
+      ton80_1: String(m.ton80_1 ?? ""), ton80_2: String(m.ton80_2 ?? ""),
+      tonPlus1: String(m.tonPlus1 ?? ""), tonPlus2: String(m.tonPlus2 ?? ""),
+      darts1: String(m.dartsThrown1 ?? ""), darts2: String(m.dartsThrown2 ?? ""),
+      checkoutAttempts1: String(m.checkoutAttempts1 ?? ""), checkoutAttempts2: String(m.checkoutAttempts2 ?? ""),
+      checkoutHits1: String(m.checkoutHits1 ?? ""), checkoutHits2: String(m.checkoutHits2 ?? ""),
+      nineDarters1: String(m.nineDarters1 ?? ""), nineDarters2: String(m.nineDarters2 ?? ""),
+    });
+  };
+
+  const saveEdit = async (m: any) => {
+    const s1 = parseInt(editScore1) || 0;
+    const s2 = parseInt(editScore2) || 0;
+    await updateMatchResult(m.id, {
+      score1: s1, score2: s2,
+      avg1: parseFloat(editStats.avg1) || undefined,
+      avg2: parseFloat(editStats.avg2) || undefined,
+      oneEighties1: parseInt(editStats.oneEighties1) || 0,
+      oneEighties2: parseInt(editStats.oneEighties2) || 0,
+      highCheckout1: parseInt(editStats.hc1) || 0,
+      highCheckout2: parseInt(editStats.hc2) || 0,
+      ton60_1: parseInt(editStats.ton60_1) || 0,
+      ton60_2: parseInt(editStats.ton60_2) || 0,
+      ton80_1: parseInt(editStats.ton80_1) || 0,
+      ton80_2: parseInt(editStats.ton80_2) || 0,
+      tonPlus1: parseInt(editStats.tonPlus1) || 0,
+      tonPlus2: parseInt(editStats.tonPlus2) || 0,
+      dartsThrown1: parseInt(editStats.darts1) || 0,
+      dartsThrown2: parseInt(editStats.darts2) || 0,
+      checkoutAttempts1: parseInt(editStats.checkoutAttempts1) || 0,
+      checkoutAttempts2: parseInt(editStats.checkoutAttempts2) || 0,
+      checkoutHits1: parseInt(editStats.checkoutHits1) || 0,
+      checkoutHits2: parseInt(editStats.checkoutHits2) || 0,
+      nineDarters1: parseInt(editStats.nineDarters1) || 0,
+      nineDarters2: parseInt(editStats.nineDarters2) || 0,
+      autodartsLink: m.autodartsLink,
+    });
+    setEditingId(null);
+    toast({ title: "✏️ Wynik zaktualizowany!", description: `${m.player1Name} vs ${m.player2Name}` });
+  };
+
   if (pendingApproval.length === 0) {
     return (
       <div className="text-center py-16">
@@ -178,30 +233,58 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, toast }: any)
               {m.groupName && <span className="text-[10px] font-display uppercase text-accent">{m.groupName}</span>}
               <span className="ml-auto text-accent font-display text-[10px] uppercase border border-accent/30 rounded-full px-2 py-0.5">Oczekuje</span>
             </div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-left flex-1">
-                <div className="font-body font-medium text-foreground">{m.player1Name}</div>
-                {m.avg1 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg1?.toFixed(1)} · 180: {m.oneEighties1 ?? 0} · HC: {m.highCheckout1 ?? 0}{(m.nineDarters1 ?? 0) > 0 && ` · 9d: ${m.nineDarters1}`}</div>}
+
+            {editingId === m.id ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-body mb-1 block">{m.player1Name} — Legi</Label>
+                    <Input type="number" min="0" value={editScore1} onChange={e => setEditScore1(e.target.value)} className="bg-muted/30 border-border text-center font-display text-lg" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-body mb-1 block">{m.player2Name} — Legi</Label>
+                    <Input type="number" min="0" value={editScore2} onChange={e => setEditScore2(e.target.value)} className="bg-muted/30 border-border text-center font-display text-lg" />
+                  </div>
+                </div>
+                <MatchStatFields stats={editStats} setStats={setEditStats} p1={m.player1Name} p2={m.player2Name} />
+                <div className="flex gap-3">
+                  <Button variant="default" size="sm" className="flex-1" onClick={() => saveEdit(m)}>
+                    <Check className="h-4 w-4 mr-1" /> Zapisz zmiany
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>Anuluj</Button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 px-4">
-                <span className={`text-3xl font-display font-bold ${(m.score1 ?? 0) > (m.score2 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score1}</span>
-                <span className="text-sm text-muted-foreground font-display">:</span>
-                <span className={`text-3xl font-display font-bold ${(m.score2 ?? 0) > (m.score1 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score2}</span>
-              </div>
-              <div className="text-right flex-1">
-                <div className="font-body font-medium text-foreground">{m.player2Name}</div>
-                {m.avg2 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg2?.toFixed(1)} · 180: {m.oneEighties2 ?? 0} · HC: {m.highCheckout2 ?? 0}{(m.nineDarters2 ?? 0) > 0 && ` · 9d: ${m.nineDarters2}`}</div>}
-              </div>
-            </div>
-            {m.autodartsLink && <div className="text-xs text-primary mb-4"><a href={m.autodartsLink} target="_blank" rel="noopener noreferrer" className="hover:underline">🔗 Link Autodarts</a></div>}
-            <div className="flex gap-3">
-              <Button variant="default" size="sm" className="flex-1" onClick={() => { approveMatch(m.id); toast({ title: "✅ Mecz zatwierdzony!", description: `${m.player1Name} vs ${m.player2Name}` }); }}>
-                <CheckCircle2 className="h-4 w-4 mr-1" /> Zatwierdź
-              </Button>
-              <Button variant="destructive" size="sm" className="flex-1" onClick={() => { rejectMatch(m.id); toast({ title: "❌ Mecz odrzucony", description: "Wynik został odrzucony." }); }}>
-                <XCircle className="h-4 w-4 mr-1" /> Odrzuć
-              </Button>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-left flex-1">
+                    <div className="font-body font-medium text-foreground">{m.player1Name}</div>
+                    {m.avg1 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg1?.toFixed(1)} · 180: {m.oneEighties1 ?? 0} · HC: {m.highCheckout1 ?? 0}{(m.nineDarters1 ?? 0) > 0 && ` · 9d: ${m.nineDarters1}`}</div>}
+                  </div>
+                  <div className="flex items-center gap-3 px-4">
+                    <span className={`text-3xl font-display font-bold ${(m.score1 ?? 0) > (m.score2 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score1}</span>
+                    <span className="text-sm text-muted-foreground font-display">:</span>
+                    <span className={`text-3xl font-display font-bold ${(m.score2 ?? 0) > (m.score1 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score2}</span>
+                  </div>
+                  <div className="text-right flex-1">
+                    <div className="font-body font-medium text-foreground">{m.player2Name}</div>
+                    {m.avg2 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg2?.toFixed(1)} · 180: {m.oneEighties2 ?? 0} · HC: {m.highCheckout2 ?? 0}{(m.nineDarters2 ?? 0) > 0 && ` · 9d: ${m.nineDarters2}`}</div>}
+                  </div>
+                </div>
+                {m.autodartsLink && <div className="text-xs text-primary mb-4"><a href={m.autodartsLink} target="_blank" rel="noopener noreferrer" className="hover:underline">🔗 Link Autodarts</a></div>}
+                <div className="flex gap-3">
+                  <Button variant="default" size="sm" className="flex-1" onClick={() => { approveMatch(m.id); toast({ title: "✅ Mecz zatwierdzony!", description: `${m.player1Name} vs ${m.player2Name}` }); }}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Zatwierdź
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => startEdit(m)}>
+                    <Edit2 className="h-4 w-4 mr-1" /> Edytuj
+                  </Button>
+                  <Button variant="destructive" size="sm" className="flex-1" onClick={() => { rejectMatch(m.id); toast({ title: "❌ Mecz odrzucony", description: "Wynik został odrzucony." }); }}>
+                    <XCircle className="h-4 w-4 mr-1" /> Odrzuć
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
