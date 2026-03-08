@@ -34,6 +34,10 @@ const SubmitMatchPage = () => {
   const [tonPlus2, setTonPlus2] = useState("");
   const [darts1, setDarts1] = useState("");
   const [darts2, setDarts2] = useState("");
+  const [checkoutAttempts1, setCheckoutAttempts1] = useState("");
+  const [checkoutAttempts2, setCheckoutAttempts2] = useState("");
+  const [checkoutHits1, setCheckoutHits1] = useState("");
+  const [checkoutHits2, setCheckoutHits2] = useState("");
 
   if (loading) return null;
 
@@ -53,31 +57,82 @@ const SubmitMatchPage = () => {
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
   const resetForm = () => {
-    setSelectedMatchId(""); setScore1(""); setScore2(""); setAutodartsLink("");
-    setAvg1(""); setAvg2(""); setOneEighties1(""); setOneEighties2("");
-    setHc1(""); setHc2(""); setTon40_1(""); setTon40_2("");
-    setTon60_1(""); setTon60_2(""); setTon80_1(""); setTon80_2("");
-    setTonPlus1(""); setTonPlus2(""); setDarts1(""); setDarts2("");
+    setSelectedMatchId("");
+    setScore1("");
+    setScore2("");
+    setAutodartsLink("");
+    setAvg1("");
+    setAvg2("");
+    setOneEighties1("");
+    setOneEighties2("");
+    setHc1("");
+    setHc2("");
+    setTon40_1("");
+    setTon40_2("");
+    setTon60_1("");
+    setTon60_2("");
+    setTon80_1("");
+    setTon80_2("");
+    setTonPlus1("");
+    setTonPlus2("");
+    setDarts1("");
+    setDarts2("");
+    setCheckoutAttempts1("");
+    setCheckoutAttempts2("");
+    setCheckoutHits1("");
+    setCheckoutHits2("");
     setShowAdvanced(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMatchId) { toast({ title: "Błąd", description: "Wybierz mecz.", variant: "destructive" }); return; }
-    const s1 = parseInt(score1), s2 = parseInt(score2);
-    if (isNaN(s1) || isNaN(s2)) { toast({ title: "Błąd", description: "Podaj prawidłowy wynik.", variant: "destructive" }); return; }
+    if (!selectedMatchId) {
+      toast({ title: "Błąd", description: "Wybierz mecz.", variant: "destructive" });
+      return;
+    }
 
-    const optNum = (v: string) => v ? parseFloat(v) : undefined;
+    const s1 = parseInt(score1, 10);
+    const s2 = parseInt(score2, 10);
+
+    if (isNaN(s1) || isNaN(s2)) {
+      toast({ title: "Błąd", description: "Podaj prawidłowy wynik.", variant: "destructive" });
+      return;
+    }
+
+    const optNum = (v: string) => (v ? parseFloat(v) : undefined);
+    const attemptsP1 = optNum(checkoutAttempts1) ?? 0;
+    const attemptsP2 = optNum(checkoutAttempts2) ?? 0;
+    const hitsP1 = optNum(checkoutHits1) ?? 0;
+    const hitsP2 = optNum(checkoutHits2) ?? 0;
+
+    if (hitsP1 > attemptsP1 || hitsP2 > attemptsP2) {
+      toast({ title: "Błąd", description: "Trafione checkouty nie mogą być większe niż rzucone.", variant: "destructive" });
+      return;
+    }
+
     const data: MatchResultData = {
-      score1: s1, score2: s2,
-      avg1: optNum(avg1), avg2: optNum(avg2),
-      oneEighties1: optNum(oneEighties1), oneEighties2: optNum(oneEighties2),
-      highCheckout1: optNum(hc1), highCheckout2: optNum(hc2),
-      ton40_1: optNum(ton40_1), ton40_2: optNum(ton40_2),
-      ton60_1: optNum(ton60_1), ton60_2: optNum(ton60_2),
-      ton80_1: optNum(ton80_1), ton80_2: optNum(ton80_2),
-      tonPlus1: optNum(tonPlus1), tonPlus2: optNum(tonPlus2),
-      dartsThrown1: optNum(darts1), dartsThrown2: optNum(darts2),
+      score1: s1,
+      score2: s2,
+      avg1: optNum(avg1),
+      avg2: optNum(avg2),
+      oneEighties1: optNum(oneEighties1),
+      oneEighties2: optNum(oneEighties2),
+      highCheckout1: optNum(hc1),
+      highCheckout2: optNum(hc2),
+      ton40_1: optNum(ton40_1),
+      ton40_2: optNum(ton40_2),
+      ton60_1: optNum(ton60_1),
+      ton60_2: optNum(ton60_2),
+      ton80_1: optNum(ton80_1),
+      ton80_2: optNum(ton80_2),
+      tonPlus1: optNum(tonPlus1),
+      tonPlus2: optNum(tonPlus2),
+      dartsThrown1: optNum(darts1),
+      dartsThrown2: optNum(darts2),
+      checkoutAttempts1: attemptsP1,
+      checkoutAttempts2: attemptsP2,
+      checkoutHits1: hitsP1,
+      checkoutHits2: hitsP2,
       autodartsLink: autodartsLink || undefined,
     };
 
@@ -93,12 +148,9 @@ const SubmitMatchPage = () => {
         <p className="text-muted-foreground font-body">
           Zalogowany jako <span className="text-foreground font-semibold">{profile?.name || user.email}</span>
         </p>
-        <p className="text-xs text-accent font-body mt-1">
-          ⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.
-        </p>
+        <p className="text-xs text-accent font-body mt-1">⚠️ Zgłoszone wyniki wymagają zatwierdzenia przez admina lub moderatora.</p>
       </div>
 
-      {/* Show pending matches */}
       {pendingMatches.length > 0 && (
         <div className="rounded-lg border border-accent/30 bg-accent/5 p-5 mb-6">
           <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
@@ -128,8 +180,12 @@ const SubmitMatchPage = () => {
               {upcomingMatches.map((match) => {
                 const isSelected = selectedMatchId === match.id;
                 return (
-                  <button key={match.id} type="button" onClick={() => setSelectedMatchId(match.id)}
-                    className={`w-full rounded-lg border p-4 text-left transition-all ${isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"}`}>
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => setSelectedMatchId(match.id)}
+                    className={`w-full rounded-lg border p-4 text-left transition-all ${isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"}`}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-body font-medium text-foreground">{match.player1Name} vs {match.player2Name}</span>
@@ -181,6 +237,8 @@ const SubmitMatchPage = () => {
                   <StatRow label="Ton 80 (80-99)" v1={ton80_1} v2={ton80_2} s1={setTon80_1} s2={setTon80_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Ton+ (100+)" v1={tonPlus1} v2={tonPlus2} s1={setTonPlus1} s2={setTonPlus2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Rzuty (darts)" v1={darts1} v2={darts2} s1={setDarts1} s2={setDarts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
+                  <StatRow label="Checkouty rzucone" v1={checkoutAttempts1} v2={checkoutAttempts2} s1={setCheckoutAttempts1} s2={setCheckoutAttempts2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
+                  <StatRow label="Checkouty trafione" v1={checkoutHits1} v2={checkoutHits2} s1={setCheckoutHits1} s2={setCheckoutHits2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                 </div>
               )}
 
@@ -195,10 +253,24 @@ const SubmitMatchPage = () => {
   );
 };
 
-const StatRow = ({ label, v1, v2, s1, s2, step, p1, p2 }: {
-  label: string; v1: string; v2: string;
-  s1: (v: string) => void; s2: (v: string) => void;
-  step?: string; p1: string; p2: string;
+const StatRow = ({
+  label,
+  v1,
+  v2,
+  s1,
+  s2,
+  step,
+  p1,
+  p2,
+}: {
+  label: string;
+  v1: string;
+  v2: string;
+  s1: (v: string) => void;
+  s2: (v: string) => void;
+  step?: string;
+  p1: string;
+  p2: string;
 }) => (
   <div>
     <Label className="text-xs text-muted-foreground font-body mb-1 block">{label}</Label>

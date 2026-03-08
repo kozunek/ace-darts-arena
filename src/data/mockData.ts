@@ -38,6 +38,9 @@ export interface PlayerLeagueStats {
   ton80: number;
   tonPlus: number;
   winRate: number;
+  checkoutAttempts: number;
+  checkoutHits: number;
+  checkoutRate: number;
 }
 
 export interface Match {
@@ -71,6 +74,10 @@ export interface Match {
   tonPlus2?: number;
   dartsThrown1?: number;
   dartsThrown2?: number;
+  checkoutAttempts1?: number;
+  checkoutAttempts2?: number;
+  checkoutHits1?: number;
+  checkoutHits2?: number;
 }
 
 export interface Achievement {

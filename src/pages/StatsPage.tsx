@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, Trophy, Target, Crown, TrendingUp, Crosshair, Award, Percent } from "lucide-react";
+import { BarChart3, Trophy, Target, Crown, TrendingUp, Crosshair, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LeagueSelector from "@/components/LeagueSelector";
 
@@ -12,27 +12,27 @@ const StatsPage = () => {
   const { getGlobalTonStats, getLeagueTonStats, activeLeagueId, leagues } = useLeague();
   const [viewMode, setViewMode] = useState<"global" | "league">("global");
   const [activeTab, setActiveTab] = useState<StatsTab>("tons");
-  
+
   const stats = viewMode === "global" ? getGlobalTonStats() : getLeagueTonStats(activeLeagueId);
-  const activeLg = leagues.find(l => l.id === activeLeagueId);
+  const activeLg = leagues.find((l) => l.id === activeLeagueId);
 
   const tabs: { id: StatsTab; label: string; icon: React.ReactNode }[] = [
     { id: "tons", label: "Ton Scores", icon: <Target className="h-3.5 w-3.5" /> },
     { id: "averages", label: "Średnie", icon: <TrendingUp className="h-3.5 w-3.5" /> },
-    { id: "checkouts", label: "Checkouty", icon: <Crosshair className="h-3.5 w-3.5" /> },
+    { id: "checkouts", label: "Checkout %", icon: <Crosshair className="h-3.5 w-3.5" /> },
     { id: "winrate", label: "Win Rate", icon: <Percent className="h-3.5 w-3.5" /> },
   ];
 
   const sortedStats = [...stats].sort((a, b) => {
     if (activeTab === "averages") return b.bestAvg - a.bestAvg;
-    if (activeTab === "checkouts") return b.highestCheckout - a.highestCheckout;
+    if (activeTab === "checkouts") return b.checkoutRate - a.checkoutRate || b.checkoutHits - a.checkoutHits;
     if (activeTab === "winrate") return b.winRate - a.winRate || b.wins - a.wins;
     return b.totalTons - a.totalTons;
   });
 
   const getPodiumValue = (entry: any) => {
     if (activeTab === "averages") return entry.bestAvg > 0 ? entry.bestAvg.toFixed(1) : "—";
-    if (activeTab === "checkouts") return entry.highestCheckout > 0 ? entry.highestCheckout.toString() : "—";
+    if (activeTab === "checkouts") return `${entry.checkoutRate}%`;
     if (activeTab === "winrate") return `${entry.winRate}%`;
     return `${entry.totalTons} tonów`;
   };
@@ -76,13 +76,12 @@ const StatsPage = () => {
           </p>
         )}
 
-        {/* Top 3 podium */}
         {sortedStats.length >= 3 && (
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[sortedStats[1], sortedStats[0], sortedStats[2]].map((entry, idx) => {
               const rank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
               const heights = ["h-28", "h-36", "h-24"];
-              const colors = ["text-muted-foreground", "text-accent", "text-primary/60"];
+              const colors = ["text-muted-foreground", "text-accent", "text-primary"];
               return (
                 <motion.div key={entry.playerId} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.15, duration: 0.5 }} className="flex flex-col items-center">
                   <Link to={`/players/${entry.playerId}`} className="flex flex-col items-center group">
@@ -101,7 +100,6 @@ const StatsPage = () => {
           </div>
         )}
 
-        {/* Full table */}
         <div className="rounded-lg border border-border overflow-hidden card-glow">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -114,7 +112,7 @@ const StatsPage = () => {
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-accent">T40</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">T60</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-primary">T80</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-purple-400">T+</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">T+</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-destructive">180</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Suma</th>
                     </>
@@ -128,9 +126,10 @@ const StatsPage = () => {
                   )}
                   {activeTab === "checkouts" && (
                     <>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Najw. HC</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Najl. Śr.</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">180</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Checkout %</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">Trafione</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Rzucone</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Najw. HC</th>
                     </>
                   )}
                   {activeTab === "winrate" && (
@@ -149,7 +148,7 @@ const StatsPage = () => {
                   <motion.tr key={entry.playerId} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05, duration: 0.3 }} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       {index < 3 ? (
-                        <span className={`text-lg font-display font-bold ${index === 0 ? "text-accent" : index === 1 ? "text-muted-foreground" : "text-primary/60"}`}>{index + 1}</span>
+                        <span className={`text-lg font-display font-bold ${index === 0 ? "text-accent" : index === 1 ? "text-muted-foreground" : "text-primary"}`}>{index + 1}</span>
                       ) : (
                         <span className="text-sm text-muted-foreground font-display">{index + 1}</span>
                       )}
@@ -165,7 +164,7 @@ const StatsPage = () => {
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-accent/10 text-accent text-sm font-display font-bold border border-accent/20">{entry.ton40}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-secondary/10 text-secondary text-sm font-display font-bold border border-secondary/20">{entry.ton60}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-display font-bold border border-primary/20">{entry.ton80}</span></td>
-                        <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-purple-500/10 text-purple-400 text-sm font-display font-bold border border-purple-500/20">{entry.tonPlus}</span></td>
+                        <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-muted text-foreground text-sm font-display font-bold border border-border">{entry.tonPlus}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-destructive/10 text-destructive text-sm font-display font-bold border border-destructive/20">{entry.oneEighties}</span></td>
                         <td className="text-center px-3 py-3"><span className="text-lg font-display font-bold text-foreground">{entry.totalTons}</span></td>
                       </>
@@ -179,9 +178,10 @@ const StatsPage = () => {
                     )}
                     {activeTab === "checkouts" && (
                       <>
-                        <td className="text-center px-3 py-3"><span className="text-lg font-display font-bold text-foreground">{entry.highestCheckout > 0 ? entry.highestCheckout : "—"}</span></td>
-                        <td className="text-center px-3 py-3 text-sm text-muted-foreground font-body">{entry.bestAvg > 0 ? entry.bestAvg.toFixed(1) : "—"}</td>
-                        <td className="text-center px-3 py-3 text-sm text-muted-foreground font-body">{entry.oneEighties}</td>
+                        <td className="text-center px-3 py-3"><span className="text-lg font-display font-bold text-foreground">{entry.checkoutRate}%</span></td>
+                        <td className="text-center px-3 py-3 text-sm font-display font-bold text-secondary">{entry.checkoutHits}</td>
+                        <td className="text-center px-3 py-3 text-sm text-muted-foreground font-body">{entry.checkoutAttempts}</td>
+                        <td className="text-center px-3 py-3 text-sm text-muted-foreground font-body">{entry.highestCheckout > 0 ? entry.highestCheckout : "—"}</td>
                       </>
                     )}
                     {activeTab === "winrate" && (
@@ -219,7 +219,7 @@ const StatsPage = () => {
             <LegendItem label="Ton 40" desc="Rzuty 40-59 pkt" color="bg-accent/10 border-accent/20 text-accent" />
             <LegendItem label="Ton 60" desc="Rzuty 60-79 pkt" color="bg-secondary/10 border-secondary/20 text-secondary" />
             <LegendItem label="Ton 80" desc="Rzuty 80-99 pkt" color="bg-primary/10 border-primary/20 text-primary" />
-            <LegendItem label="Ton+" desc="Rzuty 100+ pkt" color="bg-purple-500/10 border-purple-500/20 text-purple-400" />
+            <LegendItem label="Ton+" desc="Rzuty 100+ pkt" color="bg-muted border-border text-foreground" />
             <LegendItem label="180" desc="Maksymalny wynik" color="bg-destructive/10 border-destructive/20 text-destructive" />
           </div>
         )}
