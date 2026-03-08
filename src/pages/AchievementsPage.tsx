@@ -36,7 +36,7 @@ const CATEGORIES: { prefix: string; label: string; icon: string }[] = [
   { prefix: "l", label: "Legi", icon: "🦵" },
   { prefix: "d", label: "Rzuty (Darty)", icon: "🤖" },
   { prefix: "x", label: "Specjalne", icon: "💫" },
-  { prefix: "n", label: "9-Darter", icon: "💎" },
+  
 ];
 
 const AchievementsPage = () => {

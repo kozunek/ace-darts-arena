@@ -572,7 +572,6 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {([
                   { key: "per180", label: "🎯 Za każde 180", desc: "pkt za 180" },
-                  { key: "nineDarter", label: "💎 9-darter", desc: "pkt za 9-dartera" },
                   { key: "checkout100", label: "✅ Checkout 100+", desc: "pkt za checkout 100+" },
                   { key: "checkout150", label: "💫 Checkout 150+ (extra)", desc: "dodatkowe pkt za 150+" },
                   { key: "avg90", label: "📊 Średnia 90+", desc: "pkt za średnią 90+" },

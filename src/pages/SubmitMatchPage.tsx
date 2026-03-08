@@ -127,8 +127,6 @@ const SubmitMatchPage = () => {
       checkoutAttempts2: attemptsP2,
       checkoutHits1: hitsP1,
       checkoutHits2: hitsP2,
-      nineDarters1: optNum("nineDarters1"),
-      nineDarters2: optNum("nineDarters2"),
       autodartsLink: autodartsLink || undefined,
     };
 

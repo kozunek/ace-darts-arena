@@ -200,7 +200,4 @@ export const achievements: Achievement[] = [
   { id: "x4", name: "Bonus Hunter", description: "Zdobądź ponad 10 punktów bonusowych", icon: "💫", rarity: "rare", condition: (s) => s.bonusPoints >= 10 },
   { id: "x5", name: "Bonus King", description: "Zdobądź ponad 25 punktów bonusowych", icon: "🌠", rarity: "epic", condition: (s) => s.bonusPoints >= 25 },
 
-  // ─── 9-DARTER ───
-  { id: "n1", name: "Pierwszy 9-Darter!", description: "Rzuć swojego pierwszego 9-dartera", icon: "💎", rarity: "legendary", condition: (s) => s.nineDarters >= 1 },
-  { id: "n2", name: "9-Darter x2", description: "Rzuć 2 dziewięciodartowce", icon: "💎💎", rarity: "legendary", condition: (s) => s.nineDarters >= 2 },
 ];

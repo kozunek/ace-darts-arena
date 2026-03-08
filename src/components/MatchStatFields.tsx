@@ -18,7 +18,7 @@ const STAT_ROWS = [
   { label: "Rzuty (darts)", k1: "darts1", k2: "darts2" },
   { label: "Checkouty rzucone", k1: "checkoutAttempts1", k2: "checkoutAttempts2" },
   { label: "Checkouty trafione", k1: "checkoutHits1", k2: "checkoutHits2" },
-  { label: "9-dartery 🎯", k1: "nineDarters1", k2: "nineDarters2" },
+  
 ];
 
 const MatchStatFields = ({ stats, setStats, p1, p2 }: MatchStatFieldsProps) => {
