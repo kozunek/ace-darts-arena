@@ -243,6 +243,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       is_active: l.is_active, format: l.format, max_legs: l.max_legs,
       league_type: l.league_type || "league",
       bonus_rules: { ...DEFAULT_BONUS_RULES, ...(l.bonus_rules || {}) } as BonusRules,
+      registration_open: l.registration_open ?? false,
     }));
     setLeagueList(leagues);
     if (leagues.length > 0 && !activeLeagueId) {
