@@ -1,5 +1,5 @@
 // Content script that runs on eDART pages
-// Provides token + latest finished match data to the app
+// Provides token + latest finished match data + league match data to the app
 
 (function () {
   const postToken = () => {
@@ -29,9 +29,23 @@
     });
   };
 
+  const postLeagueMatch = () => {
+    chrome.storage.local.get(["autodarts_league_match", "autodarts_league_match_timestamp"], (result) => {
+      window.postMessage(
+        {
+          type: "EDART_LEAGUE_MATCH_RESPONSE",
+          payload: result.autodarts_league_match || null,
+          timestamp: result.autodarts_league_match_timestamp || null,
+        },
+        "*"
+      );
+    });
+  };
+
   window.addEventListener("message", (event) => {
     if (event.data?.type === "EDART_REQUEST_TOKEN") postToken();
     if (event.data?.type === "EDART_REQUEST_LAST_MATCH") postLastMatch();
+    if (event.data?.type === "EDART_REQUEST_LEAGUE_MATCH") postLeagueMatch();
   });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -46,12 +60,23 @@
         "*"
       );
     }
+    if (changes.autodarts_league_match) {
+      window.postMessage(
+        {
+          type: "EDART_LEAGUE_MATCH_PUSH",
+          payload: changes.autodarts_league_match.newValue || null,
+          timestamp: Date.now(),
+        },
+        "*"
+      );
+    }
     if (changes.autodarts_token || changes.token_timestamp) {
       postToken();
     }
   });
 
-  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.3.0" }, "*");
+  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.4.0" }, "*");
   postToken();
   postLastMatch();
+  postLeagueMatch();
 })();

@@ -1,5 +1,6 @@
 // Content script - runs on play.autodarts.io
 // Captures auth token + finished match stats and stores them for eDART page
+// After a finished match, checks if it's a league match via background script
 
 (function () {
   function safeJsonParse(value) {
@@ -45,6 +46,8 @@
       autodarts_link: `https://play.autodarts.io/history/matches/${match?.id || fallbackMatchId}`,
       player1_name: p1.name || p1.username || p1.displayName || "Player 1",
       player2_name: p2.name || p2.username || p2.displayName || "Player 2",
+      player1_autodarts_id: p1.userId || p1.user_id || p1.id || null,
+      player2_autodarts_id: p2.userId || p2.user_id || p2.id || null,
       score1,
       score2,
       avg1: readAvg(s1),
@@ -86,6 +89,9 @@
     return a > 0 || b > 0;
   }
 
+  // Track already-checked match IDs to avoid duplicate checks
+  const checkedMatches = new Set();
+
   function captureFinishedMatch(match, sourceUrl) {
     if (!match || !isFinishedMatch(match)) return;
 
@@ -102,6 +108,21 @@
         console.log("[eDART] Captured finished match:", payload.match_id, payload.player1_name, "vs", payload.player2_name);
       }
     );
+
+    // Check if this is a league match (only once per match)
+    if (!checkedMatches.has(payload.match_id)) {
+      checkedMatches.add(payload.match_id);
+      chrome.runtime.sendMessage(
+        { type: "CHECK_LEAGUE_MATCH", payload },
+        (response) => {
+          if (response?.is_league_match) {
+            console.log("[eDART] ✅ Liga wykryta!", response.league_name, "- mecz zostanie zgłoszony automatycznie");
+          } else {
+            console.log("[eDART] Mecz towarzyski (nie ligowy)");
+          }
+        }
+      );
+    }
   }
 
   function getAutodartsToken() {
