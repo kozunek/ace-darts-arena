@@ -183,6 +183,8 @@ Deno.serve(async (req) => {
         ton80_2,
         ton_plus1,
         ton_plus2,
+        ton40_1,
+        ton40_2,
         darts_thrown1,
         darts_thrown2,
         checkout_attempts1,
