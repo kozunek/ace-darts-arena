@@ -114,7 +114,7 @@ const SubmitMatchPage = () => {
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
-  // Populate form fields from payload (no swapping — data goes in as-is)
+  // Populate form fields from payload exactly as returned by backend
   const populateForm = useCallback((payload: AutoPayload) => {
     const scoreA = readScore(payload.score1);
     const scoreB = readScore(payload.score2);
