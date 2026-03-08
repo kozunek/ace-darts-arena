@@ -131,24 +131,15 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
   };
 };
 
-// ─── BONUS POINTS SYSTEM ───
-// Base: Win = 3pts, Draw = 1pt, Loss = 0pts
-// Bonus (per match, per player):
-//   +1 per 180 scored
-//   +3 per 9-darter
-//   +1 for high checkout 100+
-//   +1 extra for high checkout 150+
-//   +1 for match average 90+
-//   +1 extra for match average 100+
-//   +1 for loser if close match (1 leg difference)
-//   +1 for winner if clean sweep (opponent 0 legs)
+// ─── BONUS POINTS SYSTEM (configurable per league) ───
 
 const calcMatchBonusPoints = (
   isP1: boolean,
   m: Match,
   myScore: number,
   oppScore: number,
-  isWinner: boolean
+  isWinner: boolean,
+  rules: BonusRules
 ): number => {
   let bonus = 0;
   const my180 = isP1 ? (m.oneEighties1 ?? 0) : (m.oneEighties2 ?? 0);
@@ -156,20 +147,14 @@ const calcMatchBonusPoints = (
   const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
   const my9d = isP1 ? (m.nineDarters1 ?? 0) : (m.nineDarters2 ?? 0);
 
-  // +1 per 180
-  bonus += my180;
-  // +3 per 9-darter
-  bonus += my9d * 3;
-  // High checkout bonuses
-  if (myHC >= 100) bonus += 1;
-  if (myHC >= 150) bonus += 1;
-  // Average bonuses
-  if (myAvg >= 90) bonus += 1;
-  if (myAvg >= 100) bonus += 1;
-  // Close loss: loser gets +1 if difference is exactly 1 leg
-  if (!isWinner && myScore < oppScore && (oppScore - myScore) === 1) bonus += 1;
-  // Clean sweep: winner gets +1 if opponent scored 0
-  if (isWinner && oppScore === 0) bonus += 1;
+  bonus += my180 * rules.per180;
+  bonus += my9d * rules.nineDarter;
+  if (myHC >= 100) bonus += rules.checkout100;
+  if (myHC >= 150) bonus += rules.checkout150;
+  if (myAvg >= 90) bonus += rules.avg90;
+  if (myAvg >= 100) bonus += rules.avg100;
+  if (!isWinner && myScore < oppScore && (oppScore - myScore) === 1) bonus += rules.closeLoss;
+  if (isWinner && oppScore === 0) bonus += rules.cleanSweep;
 
   return bonus;
 };
