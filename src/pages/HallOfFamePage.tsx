@@ -133,7 +133,7 @@ const HallOfFamePage = () => {
     icon: <Flame className="h-6 w-6 text-destructive" />,
     title: "Najdłuższa seria zwycięstw",
     entries: streakEntries.map((r) => ({
-      playerId: r!.pid, playerName: r!.name, playerAvatar: r!.avatar, value: `${r!.val} z rzędu`,
+      playerId: r!.pid, playerName: r!.name, playerAvatar: r!.avatar, playerAvatarUrl: r!.avatarUrl, value: `${r!.val} z rzędu`,
     })),
   });
 
