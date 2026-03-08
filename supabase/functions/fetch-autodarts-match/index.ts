@@ -209,10 +209,16 @@ function processGameTurns(
       }
     }
 
-    let dartsCount = 3;
-    if (dartsArr) dartsCount = dartsArr.length;
-    else if (typeof turn.dartsThrown === "number") dartsCount = turn.dartsThrown;
-    else if (typeof turn.darts === "number") dartsCount = turn.darts;
+    const recordedDartsCount = dartsArr ? dartsArr.length : 0;
+    const declaredDartsCount =
+      typeof turn.dartsThrown === "number"
+        ? turn.dartsThrown
+        : typeof turn.darts === "number"
+          ? turn.darts
+          : recordedDartsCount;
+
+    let dartsCount = Math.max(recordedDartsCount, declaredDartsCount, 0);
+    if (!dartsArr && dartsCount === 0) dartsCount = 3;
 
     // scoreBeforeTurn: remaining score BEFORE this visit
     // In Autodarts API, turn.score = remaining AFTER the visit
@@ -258,6 +264,15 @@ function processGameTurns(
 
         runningRemaining -= dartValue;
         if (runningRemaining <= 0) break;
+      }
+
+      // Autodarts may omit trailing darts in a visit (empty dart slots).
+      // If API declares more darts than it provides, treat missing ones as misses (0 points).
+      const missingDarts = Math.max(0, dartsCount - dartsArr.length);
+      for (let md = 0; md < missingDarts; md++) {
+        if (isFinishableWithOneDouble(runningRemaining)) {
+          st.checkoutAttempts++;
+        }
       }
     } else if (!dartsArr && scoreBeforeTurn != null) {
       // No per-dart detail: only count if starting score is a one-dart finish
