@@ -161,16 +161,6 @@ const Navbar = () => {
                     <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
                   </Button>
                 </Link>
-                <Link to="/chat" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/chat" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <MessageCircle className="h-4 w-4 mr-1" /> Czat
-                  </Button>
-                </Link>
-                <Link to="/announcements" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/announcements" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <Megaphone className="h-4 w-4 mr-1" /> Ogłoszenia
-                  </Button>
-                </Link>
               </>
             )}
             {showAdminLink && (
