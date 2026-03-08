@@ -619,6 +619,17 @@ const SubmitMatchPage = () => {
                         </div>
                       );
                     })}
+
+                    {/* Checkout % row */}
+                    <div className="contents">
+                      <div className="text-foreground font-display text-xs">
+                        {formatCheckout(asNumber(rawPreview.checkout_hits1), asNumber(rawPreview.checkout_attempts1))}
+                      </div>
+                      <div className="text-muted-foreground text-[10px]">Checkout %</div>
+                      <div className="text-foreground font-display text-xs">
+                        {formatCheckout(asNumber(rawPreview.checkout_hits2), asNumber(rawPreview.checkout_attempts2))}
+                      </div>
+                    </div>
                   </div>
 
                   <p className="text-[10px] text-muted-foreground text-center">
