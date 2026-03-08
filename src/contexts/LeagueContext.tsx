@@ -342,6 +342,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  const updateMatchResult = useCallback(async (matchId: string, data: MatchResultData) => {
+    await supabase.from("matches").update({
+      score1: data.score1, score2: data.score2,
+      legs_won1: data.score1, legs_won2: data.score2,
+      avg1: data.avg1, avg2: data.avg2,
+      one_eighties1: data.oneEighties1 ?? 0, one_eighties2: data.oneEighties2 ?? 0,
+      high_checkout1: data.highCheckout1 ?? 0, high_checkout2: data.highCheckout2 ?? 0,
+      ton60_1: data.ton60_1 ?? 0, ton60_2: data.ton60_2 ?? 0,
+      ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
+      ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
+      darts_thrown1: data.dartsThrown1 ?? 0, darts_thrown2: data.dartsThrown2 ?? 0,
+      checkout_attempts1: data.checkoutAttempts1 ?? 0, checkout_attempts2: data.checkoutAttempts2 ?? 0,
+      checkout_hits1: data.checkoutHits1 ?? 0, checkout_hits2: data.checkoutHits2 ?? 0,
+      nine_darters1: data.nineDarters1 ?? 0, nine_darters2: data.nineDarters2 ?? 0,
+      autodarts_link: data.autodartsLink,
+    }).eq("id", matchId);
+
+    setMatchList((prev) =>
+      prev.map((m) =>
+        m.id === matchId ? { ...m, ...data, legsWon1: data.score1, legsWon2: data.score2 } : m
+      )
+    );
+  }, []);
+
   const approveMatch = useCallback(async (matchId: string) => {
     await supabase.from("matches").update({ status: "completed" }).eq("id", matchId);
     setMatchList((prev) => prev.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m));
