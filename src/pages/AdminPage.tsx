@@ -105,7 +105,6 @@ const AdminPage = () => {
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
           {activeTab === "roles" && isAdmin && <RolesTab toast={toast} />}
-          {activeTab === "integrations" && isAdmin && <ExtensionConfigPanel leagues={leagues} />}
         </motion.div>
       </AnimatePresence>
     </div>

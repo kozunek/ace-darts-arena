@@ -351,6 +351,7 @@ async function fetchMatchData(matchId: string, token: string) {
   }
 
   // ── Try Autodarts stats endpoint ──
+  let endpointPlayers: any[] = [];
   const statsEndpoints = [
     `${API_BASE}/as/v0/matches/${matchId}/stats`,
     `${API_BASE}/gs/v0/matches/${matchId}/stats`,
@@ -358,21 +359,27 @@ async function fetchMatchData(matchId: string, token: string) {
   for (const url of statsEndpoints) {
     const statsData = await tryFetchJson(url, token);
     if (statsData) {
+      if (Array.isArray(statsData.players) && statsData.players.length >= 2) {
+        endpointPlayers = statsData.players;
+      }
       console.log("Got match stats from endpoint:", url);
       console.log("Stats data:", JSON.stringify(statsData).substring(0, 2000));
     }
   }
 
   // ── Check pre-calculated stats on players ──
-  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || {};
-  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || {};
+  const endpointPs1 = endpointPlayers[0] || {};
+  const endpointPs2 = endpointPlayers[1] || {};
+
+  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || endpointPs1.stats || endpointPs1.matchStats || endpointPs1.gameStats || {};
+  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || endpointPs2.stats || endpointPs2.matchStats || endpointPs2.gameStats || {};
 
   const hasMeaningfulPreCalc = (ps: Record<string, any>) => {
     const keysToCheck = [
       "dartsThrown", "darts", "oneEighties", "180s", "180",
       "60+", "100+", "140+", "170+",
       "checkoutAttempts", "checkoutDarts", "checkoutHits", "checkouts",
-      "average", "avg", "ppd",
+      "highestCheckout", "bestCheckout", "ton60", "ton100", "ton140", "ton170",
     ];
     return keysToCheck.some((k) => ps?.[k] != null);
   };
