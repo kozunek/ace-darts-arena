@@ -1,11 +1,15 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { players } from "@/data/mockData";
+import LeagueTable from "@/components/LeagueTable";
+import HeroSection from "@/components/HeroSection";
+import UpcomingMatchesPreview from "@/components/UpcomingMatchesPreview";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen">
+      <HeroSection />
+      <div className="container mx-auto px-4 py-8 space-y-12">
+        <LeagueTable players={players} />
+        <UpcomingMatchesPreview />
       </div>
     </div>
   );
