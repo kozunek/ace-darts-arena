@@ -187,27 +187,24 @@ async function fetchMatchData(matchId: string, token: string) {
 
     const games = [...embeddedGames, ...fetchedGames].filter(Boolean);
 
-      
-      // Determine leg winner
+    for (const game of games) {
+      console.log("Game keys:", Object.keys(game));
+
       if (typeof game.winner === "number") {
         if (game.winner === 0) s1.legsWon = Math.max(s1.legsWon, legsWon1);
         else if (game.winner === 1) s2.legsWon = Math.max(s2.legsWon, legsWon2);
       }
 
-      // Parse turns/rounds/visits
       const turns = game.turns || game.visits || game.rounds || [];
       let turnIdx1 = 0, turnIdx2 = 0;
 
       for (const turn of turns) {
         const pIdx = turn.player ?? turn.playerIndex ?? turn.p ?? 0;
-        
-        // Calculate points from darts or use points directly
+
         let points = 0;
-        if (typeof turn.points === "number") {
-          points = turn.points;
-        } else if (typeof turn.score === "number") {
-          points = turn.score;
-        } else if (Array.isArray(turn.darts)) {
+        if (typeof turn.points === "number") points = turn.points;
+        else if (typeof turn.score === "number") points = turn.score;
+        else if (Array.isArray(turn.darts)) {
           for (const d of turn.darts) {
             const segment = d.segment || d;
             const mul = segment.multiplier ?? d.multiplier ?? 1;
@@ -217,37 +214,30 @@ async function fetchMatchData(matchId: string, token: string) {
         }
 
         const dartsCount = Array.isArray(turn.darts) ? turn.darts.length : (turn.dartsThrown ?? turn.throws ?? 3);
-
         const st = pIdx === 0 ? s1 : s2;
         const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
 
         st.totalScore += points;
         st.totalDarts += dartsCount;
 
-        // First 9 darts (first 3 turns)
         if (tidx < 3) {
           st.first9Score += points;
           st.first9Darts += dartsCount;
         }
 
-        // 180s
         if (points === 180) st.oneEighties++;
-        
-        // Ton ranges
         if (points >= 100) st.tonPlus++;
         else if (points >= 80) st.ton80++;
         else if (points >= 60) st.ton60++;
 
-        // Checkout detection
-        const isCheckout = turn.isCheckout || turn.checkout || 
+        const isCheckout = turn.isCheckout || turn.checkout ||
           (Array.isArray(turn.darts) && turn.darts.some((d: any) => d.segment?.bed === "D" || d.bed === "D" || d.segment?.multiplier === 2));
-        
+
         if (isCheckout && points > 0) {
           st.checkoutHits++;
           if (points > st.highCheckout) st.highCheckout = points;
         }
 
-        // Checkout attempts (doubles thrown)
         if (turn.checkoutAttempts != null) {
           st.checkoutAttempts += turn.checkoutAttempts;
         } else if (turn.doublesThrown != null) {
@@ -255,36 +245,24 @@ async function fetchMatchData(matchId: string, token: string) {
         } else if (Array.isArray(turn.darts)) {
           for (const d of turn.darts) {
             const seg = d.segment || d;
-            if (seg.bed === "D" || seg.multiplier === 2) {
-              st.checkoutAttempts++;
-            }
+            if (seg.bed === "D" || seg.multiplier === 2) st.checkoutAttempts++;
           }
         }
       }
 
-      // Check game-level stats as fallback
       if (game.stats) {
         console.log("Game has stats:", JSON.stringify(game.stats));
       }
-      
-      // Check game players stats
       if (Array.isArray(game.players)) {
         for (let pi = 0; pi < game.players.length && pi < 2; pi++) {
           const gp = game.players[pi];
           if (gp?.stats && Object.keys(gp.stats).length > 0) {
             console.log(`Game player ${pi} stats:`, JSON.stringify(gp.stats));
-            const st = pi === 0 ? s1 : s2;
-            const gs = gp.stats;
-            // Use game-level player stats if we got them
-            if (gs.average != null && st.totalDarts === 0) {
-              // Will be handled in avg calculation
-            }
           }
         }
       }
-      
-      legIdx++;
     }
+
   } else if (legArrays.length > 0) {
     console.log("Parsing", legArrays.length, "legs from match data");
     for (const leg of legArrays) {
