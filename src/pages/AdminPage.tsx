@@ -760,7 +760,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
 
                   {/* Round selection for league type */}
                   {l.league_type === "league" && selectedPlayers.length >= 2 && (() => {
-                    const totalRounds = getTotalRounds(selectedPlayers.length);
+                    const totalRounds = getTotalRounds(selectedPlayers.length, l.meetings_per_pair ?? 1);
                     const existingRounds = getExistingRounds(l.id);
                     const allRoundNumbers = Array.from({ length: totalRounds }, (_, i) => i + 1);
                     const availableRounds = allRoundNumbers.filter(r => !existingRounds.includes(r));
