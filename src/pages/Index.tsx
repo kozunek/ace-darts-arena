@@ -1,9 +1,11 @@
-import { players } from "@/data/mockData";
+import { useLeague } from "@/contexts/LeagueContext";
 import LeagueTable from "@/components/LeagueTable";
 import HeroSection from "@/components/HeroSection";
 import UpcomingMatchesPreview from "@/components/UpcomingMatchesPreview";
 
 const Index = () => {
+  const { players } = useLeague();
+
   return (
     <div className="min-h-screen">
       <HeroSection />

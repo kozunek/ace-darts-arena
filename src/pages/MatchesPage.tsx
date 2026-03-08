@@ -1,8 +1,9 @@
-import { matches } from "@/data/mockData";
+import { useLeague } from "@/contexts/LeagueContext";
 import { Calendar, Trophy, Clock, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const MatchesPage = () => {
+  const { matches } = useLeague();
   const completed = matches.filter((m) => m.status === "completed");
   const upcoming = matches.filter((m) => m.status === "upcoming");
 
@@ -13,11 +14,9 @@ const MatchesPage = () => {
         <p className="text-muted-foreground font-body">Historia i nadchodzące mecze ligi</p>
       </div>
 
-      {/* Upcoming */}
       <section>
         <h2 className="text-xl font-display font-bold text-foreground mb-4 flex items-center gap-2">
-          <Clock className="h-5 w-5 text-accent" />
-          Nadchodzące
+          <Clock className="h-5 w-5 text-accent" /> Nadchodzące
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {upcoming.map((match) => (
@@ -38,14 +37,15 @@ const MatchesPage = () => {
               </div>
             </div>
           ))}
+          {upcoming.length === 0 && (
+            <p className="text-muted-foreground font-body col-span-2">Brak zaplanowanych meczów.</p>
+          )}
         </div>
       </section>
 
-      {/* Completed */}
       <section>
         <h2 className="text-xl font-display font-bold text-foreground mb-4 flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-secondary" />
-          Rozegrane
+          <Trophy className="h-5 w-5 text-secondary" /> Rozegrane
         </h2>
         <div className="space-y-4">
           {completed.map((match) => (
@@ -61,15 +61,16 @@ const MatchesPage = () => {
                   </a>
                 )}
               </div>
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-left">
+              <div className="flex items-center justify-between">
+                <div className="text-left flex-1">
                   <div className="font-body font-medium text-foreground">{match.player1Name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Śr. {match.avg1?.toFixed(1)} · 180: {match.oneEighties1} · HC: {match.highCheckout1}
-                  </div>
+                  {match.avg1 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Śr. {match.avg1?.toFixed(1)} · 180: {match.oneEighties1} · HC: {match.highCheckout1}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 px-4">
                   <span className={`text-3xl font-display font-bold ${(match.score1 ?? 0) > (match.score2 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>
                     {match.score1}
                   </span>
@@ -78,11 +79,13 @@ const MatchesPage = () => {
                     {match.score2}
                   </span>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-1">
                   <div className="font-body font-medium text-foreground">{match.player2Name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Śr. {match.avg2?.toFixed(1)} · 180: {match.oneEighties2} · HC: {match.highCheckout2}
-                  </div>
+                  {match.avg2 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Śr. {match.avg2?.toFixed(1)} · 180: {match.oneEighties2} · HC: {match.highCheckout2}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

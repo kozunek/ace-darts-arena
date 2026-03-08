@@ -1,8 +1,8 @@
-import { players } from "@/data/mockData";
-import { User, Target, TrendingUp } from "lucide-react";
+import { useLeague } from "@/contexts/LeagueContext";
 import { Link } from "react-router-dom";
 
 const PlayersPage = () => {
+  const { players } = useLeague();
   const sorted = [...players].sort((a, b) => b.points - a.points);
 
   return (
@@ -27,9 +27,18 @@ const PlayersPage = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <StatBlock label="Pkt" value={player.points.toString()} />
-                <StatBlock label="Śr." value={player.avg.toFixed(1)} />
-                <StatBlock label="180" value={player.oneEighties.toString()} />
+                <div className="text-center bg-muted/30 rounded-md py-2">
+                  <div className="font-display font-bold text-foreground text-lg">{player.points}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-display">Pkt</div>
+                </div>
+                <div className="text-center bg-muted/30 rounded-md py-2">
+                  <div className="font-display font-bold text-foreground text-lg">{player.avg.toFixed(1)}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-display">Śr.</div>
+                </div>
+                <div className="text-center bg-muted/30 rounded-md py-2">
+                  <div className="font-display font-bold text-foreground text-lg">{player.oneEighties}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-display">180</div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -64,12 +73,5 @@ const PlayersPage = () => {
     </div>
   );
 };
-
-const StatBlock = ({ label, value }: { label: string; value: string }) => (
-  <div className="text-center bg-muted/30 rounded-md py-2">
-    <div className="font-display font-bold text-foreground text-lg">{value}</div>
-    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-display">{label}</div>
-  </div>
-);
 
 export default PlayersPage;

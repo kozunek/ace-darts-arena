@@ -1,9 +1,10 @@
-import { matches } from "@/data/mockData";
+import { useLeague } from "@/contexts/LeagueContext";
 import { Calendar, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const UpcomingMatchesPreview = () => {
+  const { matches } = useLeague();
   const upcoming = matches.filter((m) => m.status === "upcoming").slice(0, 4);
 
   return (

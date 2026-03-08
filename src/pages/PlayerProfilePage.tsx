@@ -1,10 +1,11 @@
 import { useParams, Link } from "react-router-dom";
-import { players, matches } from "@/data/mockData";
+import { useLeague } from "@/contexts/LeagueContext";
 import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const PlayerProfilePage = () => {
   const { id } = useParams();
+  const { players, matches } = useLeague();
   const player = players.find((p) => p.id === id);
 
   if (!player) {
@@ -19,7 +20,6 @@ const PlayerProfilePage = () => {
   const playerMatches = matches.filter(
     (m) => (m.player1Id === id || m.player2Id === id) && m.status === "completed"
   );
-
   const rank = [...players].sort((a, b) => b.points - a.points).findIndex((p) => p.id === id) + 1;
 
   return (
@@ -30,7 +30,6 @@ const PlayerProfilePage = () => {
         </Button>
       </Link>
 
-      {/* Profile header */}
       <div className="rounded-lg border border-border bg-card p-6 md:p-8 card-glow mb-8">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center text-2xl font-display font-bold text-primary">
@@ -64,7 +63,6 @@ const PlayerProfilePage = () => {
         </div>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard icon={<Trophy className="h-5 w-5" />} label="Punkty" value={player.points.toString()} color="text-accent" />
         <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Średnia" value={player.avg.toFixed(1)} color="text-secondary" />
@@ -72,14 +70,12 @@ const PlayerProfilePage = () => {
         <StatCard icon={<Crosshair className="h-5 w-5" />} label="Najw. checkout" value={player.highestCheckout.toString()} color="text-foreground" />
       </div>
 
-      {/* Match stats row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <MiniStat label="Wygrane" value={player.wins} total={player.wins + player.losses + player.draws} colorClass="text-secondary" />
-        <MiniStat label="Remisy" value={player.draws} total={player.wins + player.losses + player.draws} colorClass="text-accent" />
-        <MiniStat label="Przegrane" value={player.losses} total={player.wins + player.losses + player.draws} colorClass="text-destructive" />
+        <MiniStat label="Wygrane" value={player.wins} total={player.wins + player.losses + player.draws} colorClass="text-secondary" bgClass="bg-secondary" />
+        <MiniStat label="Remisy" value={player.draws} total={player.wins + player.losses + player.draws} colorClass="text-accent" bgClass="bg-accent" />
+        <MiniStat label="Przegrane" value={player.losses} total={player.wins + player.losses + player.draws} colorClass="text-destructive" bgClass="bg-destructive" />
       </div>
 
-      {/* Match history */}
       <section>
         <h2 className="text-xl font-display font-bold text-foreground mb-4">Historia Meczów</h2>
         {playerMatches.length === 0 ? (
@@ -132,12 +128,12 @@ const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode; label:
   </div>
 );
 
-const MiniStat = ({ label, value, total, colorClass }: { label: string; value: number; total: number; colorClass: string }) => (
+const MiniStat = ({ label, value, total, colorClass, bgClass }: { label: string; value: number; total: number; colorClass: string; bgClass: string }) => (
   <div className="rounded-lg border border-border bg-card p-4 text-center">
     <div className={`text-2xl font-display font-bold ${colorClass}`}>{value}</div>
     <div className="text-xs text-muted-foreground font-body mt-1">{label}</div>
     <div className="w-full bg-muted/50 rounded-full h-1.5 mt-2">
-      <div className={`h-1.5 rounded-full ${colorClass === "text-secondary" ? "bg-secondary" : colorClass === "text-accent" ? "bg-accent" : "bg-destructive"}`} style={{ width: `${total > 0 ? (value / total) * 100 : 0}%` }} />
+      <div className={`h-1.5 rounded-full ${bgClass}`} style={{ width: `${total > 0 ? (value / total) * 100 : 0}%` }} />
     </div>
   </div>
 );

@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { Target, Menu, X, LogIn } from "lucide-react";
+import { Target, Menu, X, LogIn, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Tabela Ligi", href: "/" },
@@ -12,6 +13,7 @@ const navItems = [
 
 const Navbar = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -25,7 +27,6 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link key={item.href} to={item.href}>
@@ -38,24 +39,38 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="ml-2 font-display uppercase tracking-wider text-xs">
-                <LogIn className="h-4 w-4 mr-1" />
-                Zaloguj
-              </Button>
-            </Link>
+            {user?.isAdmin && (
+              <Link to="/admin">
+                <Button
+                  variant={location.pathname === "/admin" ? "default" : "ghost"}
+                  size="sm"
+                  className="font-display uppercase tracking-wider text-xs"
+                >
+                  <Shield className="h-3.5 w-3.5 mr-1" /> Admin
+                </Button>
+              </Link>
+            )}
+            {user ? (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-muted-foreground font-body">{user.name}</span>
+                <Button variant="outline" size="sm" onClick={logout} className="font-display uppercase tracking-wider text-xs">
+                  <LogOut className="h-4 w-4 mr-1" /> Wyloguj
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="ml-2 font-display uppercase tracking-wider text-xs">
+                  <LogIn className="h-4 w-4 mr-1" /> Zaloguj
+                </Button>
+              </Link>
+            )}
           </div>
 
-          {/* Mobile toggle */}
-          <button
-            className="md:hidden text-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
+          <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 
-        {/* Mobile nav */}
         {mobileOpen && (
           <div className="md:hidden pb-4 animate-fade-in">
             {navItems.map((item) => (
@@ -68,12 +83,24 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
-            <Link to="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="outline" className="w-full justify-start font-display uppercase tracking-wider text-sm">
-                <LogIn className="h-4 w-4 mr-1" />
-                Zaloguj
+            {user?.isAdmin && (
+              <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                <Button variant={location.pathname === "/admin" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
+                  <Shield className="h-4 w-4 mr-1" /> Admin
+                </Button>
+              </Link>
+            )}
+            {user ? (
+              <Button variant="outline" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start font-display uppercase tracking-wider text-sm">
+                <LogOut className="h-4 w-4 mr-1" /> Wyloguj ({user.name})
               </Button>
-            </Link>
+            ) : (
+              <Link to="/login" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" className="w-full justify-start font-display uppercase tracking-wider text-sm">
+                  <LogIn className="h-4 w-4 mr-1" /> Zaloguj
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
