@@ -19,7 +19,6 @@ interface ExtensionSettings {
   require_checkout_stats: boolean;
   require_darts_thrown: boolean;
   require_ton_ranges: boolean;
-  require_nine_darters: boolean;
   require_autodarts_link: boolean;
   webhook_enabled: boolean;
 }
