@@ -153,6 +153,14 @@ async function fetchMatchData(matchId: string, token: string) {
   const p1Name = players[0].name || players[0].username || "Player 1";
   const p2Name = players[1].name || players[1].username || "Player 2";
 
+  // Build playerId -> index map (Autodarts uses UUIDs in turns, not numeric indices)
+  const playerIdMap: Record<string, number> = {};
+  for (let i = 0; i < players.length; i++) {
+    const pid = players[i].userId || players[i].id || players[i].playerId;
+    if (pid) playerIdMap[pid] = i;
+  }
+  console.log("Player ID map:", JSON.stringify(playerIdMap));
+
   // Extract scores from match.scores (nested objects)
   let legsWon1 = 0, legsWon2 = 0;
   if (Array.isArray(match.scores) && match.scores.length >= 2) {
@@ -259,18 +267,29 @@ async function fetchMatchData(matchId: string, token: string) {
       }
 
       for (const turn of turns) {
-        const pIdx = turn.player ?? turn.playerIndex ?? turn.p ?? 0;
+        // Resolve player index: use playerId UUID mapped to match.players order
+        let pIdx = 0;
+        if (turn.playerId && playerIdMap[turn.playerId] !== undefined) {
+          pIdx = playerIdMap[turn.playerId];
+        } else if (typeof turn.player === "number") {
+          pIdx = turn.player;
+        } else if (typeof turn.playerIndex === "number") {
+          pIdx = turn.playerIndex;
+        } else if (typeof turn.turn === "number") {
+          // In some Autodarts formats, turn.turn alternates 0/1 within a round
+          pIdx = turn.turn % 2;
+        }
+        // Clamp to 0 or 1
+        pIdx = pIdx === 1 ? 1 : 0;
 
-        // Extract darts array - could be in turn.darts or turn.throws
-        const dartsArr = Array.isArray(turn.darts) ? turn.darts : 
-                         Array.isArray(turn.throws) ? turn.throws : null;
+        // Extract darts array - Autodarts uses "throws" not "darts"
+        const dartsArr = Array.isArray(turn.throws) ? turn.throws :
+                         Array.isArray(turn.darts) ? turn.darts : null;
 
         // Calculate points from turn
         let points = 0;
         if (typeof turn.points === "number") {
           points = turn.points;
-        } else if (typeof turn.score === "number") {
-          points = turn.score;
         } else if (dartsArr) {
           for (const d of dartsArr) {
             const segment = d.segment || d;
@@ -281,13 +300,11 @@ async function fetchMatchData(matchId: string, token: string) {
         }
 
         // Count darts - ensure it's always a number
-        let dartsCount = 3; // default
+        let dartsCount = 3;
         if (dartsArr) {
           dartsCount = dartsArr.length;
         } else if (typeof turn.dartsThrown === "number") {
           dartsCount = turn.dartsThrown;
-        } else if (typeof turn.throws === "number") {
-          dartsCount = turn.throws;
         }
 
         const st = pIdx === 0 ? s1 : s2;
@@ -306,28 +323,33 @@ async function fetchMatchData(matchId: string, token: string) {
         else if (points >= 80) st.ton80++;
         else if (points >= 60) st.ton60++;
 
-        // Checkout detection
-        const isCheckout = turn.isCheckout || turn.checkout || turn.bupiResult === "D" ||
-          (dartsArr && dartsArr.length > 0 && (() => {
+        // Checkout detection - score field = remaining score, so score === 0 means checkout
+        const remainingScore = typeof turn.score === "number" ? turn.score : -1;
+        const isCheckout = remainingScore === 0 || turn.isCheckout || turn.checkout ||
+          (dartsArr && dartsArr.length > 0 && !turn.busted && (() => {
             const lastDart = dartsArr[dartsArr.length - 1];
             const seg = lastDart.segment || lastDart;
-            return (seg.bed === "D" || seg.multiplier === 2) && points > 0;
-          })());
+            return seg.bed === "D" || seg.bed === "Double" || seg.multiplier === 2 || seg.name === "BULL";
+          })() && points > 0);
 
         if (isCheckout && points > 0) {
           st.checkoutHits++;
           if (points > st.highCheckout) st.highCheckout = points;
         }
 
-        // Checkout attempts
+        // Checkout attempts - count doubles thrown when remaining score <= 170
         if (typeof turn.checkoutAttempts === "number") {
           st.checkoutAttempts += turn.checkoutAttempts;
         } else if (typeof turn.doublesThrown === "number") {
           st.checkoutAttempts += turn.doublesThrown;
         } else if (dartsArr) {
+          // In Autodarts, remaining score before throw is (score + points)
+          // Check if any dart targeted a double/bull for checkout
           for (const d of dartsArr) {
             const seg = d.segment || d;
-            if (seg.bed === "D" || seg.multiplier === 2) st.checkoutAttempts++;
+            if (seg.bed === "D" || seg.bed === "Double" || seg.multiplier === 2 || seg.name === "BULL") {
+              st.checkoutAttempts++;
+            }
           }
         }
       }
