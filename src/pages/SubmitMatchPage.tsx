@@ -371,6 +371,8 @@ const SubmitMatchPage = () => {
       ton80_2: optNum("ton80_2"),
       tonPlus1: optNum("tonPlus1"),
       tonPlus2: optNum("tonPlus2"),
+      ton40_1: optNum("ton40_1"),
+      ton40_2: optNum("ton40_2"),
       dartsThrown1: optNum("darts1"),
       dartsThrown2: optNum("darts2"),
       checkoutAttempts1: attemptsP1,
