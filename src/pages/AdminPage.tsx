@@ -388,8 +388,23 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
       const lt = league.league_type || "league";
 
       if (lt === "league") {
-        // Round-robin
-        const schedule = generateRoundRobin(playerIds);
+        // Round-robin with meetings_per_pair support
+        const baseSchedule = generateRoundRobin(playerIds);
+        const mpp = league.meetings_per_pair ?? 1;
+        const totalBaseRounds = Math.max(...baseSchedule.map(m => m.round), 0);
+        
+        // Duplicate schedule for each meeting cycle
+        const schedule: typeof baseSchedule = [];
+        for (let cycle = 0; cycle < mpp; cycle++) {
+          baseSchedule.forEach(m => {
+            schedule.push({
+              player1Id: cycle % 2 === 0 ? m.player1Id : m.player2Id,
+              player2Id: cycle % 2 === 0 ? m.player2Id : m.player1Id,
+              round: m.round + cycle * totalBaseRounds,
+            });
+          });
+        }
+        
         const existingRounds = getExistingRounds(league.id);
         const roundsToGenerate = generateMode === "all"
           ? [...new Set(schedule.map(m => m.round))].filter(r => !existingRounds.includes(r))
