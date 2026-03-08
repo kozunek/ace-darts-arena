@@ -542,9 +542,22 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   </div>
 
                   {l.league_type === "group_bracket" && (
-                    <div className="space-y-2">
-                      <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Liczba grup</Label>
-                      <Input type="number" min={1} max={8} value={numGroups} onChange={e => setNumGroups(parseInt(e.target.value) || 2)} className="bg-muted/30 border-border w-32" />
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Liczba grup</Label>
+                        <Input type="number" min={1} max={8} value={numGroups} onChange={e => setNumGroups(parseInt(e.target.value) || 2)} className="bg-muted/30 border-border w-32" />
+                      </div>
+                      {selectedPlayers.length > 0 && numGroups > 0 && (
+                        <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground font-body space-y-1">
+                          <div>👥 <strong className="text-foreground">{selectedPlayers.length}</strong> graczy w <strong className="text-foreground">{numGroups}</strong> grupach</div>
+                          <div>📊 ~<strong className="text-foreground">{Math.ceil(selectedPlayers.length / numGroups)}</strong> graczy na grupę</div>
+                          <div>⚽ ~<strong className="text-foreground">{(() => {
+                            const perGroup = Math.ceil(selectedPlayers.length / numGroups);
+                            return perGroup * (perGroup - 1) / 2;
+                          })()}</strong> meczów w grupie (każdy z każdym)</div>
+                          <div>🏆 Po fazie grupowej — drabinka z najlepszymi z każdej grupy</div>
+                        </div>
+                      )}
                     </div>
                   )}
 

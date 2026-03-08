@@ -1,5 +1,7 @@
 import { useLeague } from "@/contexts/LeagueContext";
 import LeagueTable from "@/components/LeagueTable";
+import BracketView from "@/components/BracketView";
+import GroupBracketView from "@/components/GroupBracketView";
 import HeroSection from "@/components/HeroSection";
 import UpcomingMatchesPreview from "@/components/UpcomingMatchesPreview";
 import LeagueSelector from "@/components/LeagueSelector";
@@ -7,6 +9,7 @@ import LeagueSelector from "@/components/LeagueSelector";
 const Index = () => {
   const { activeLeagueId, leagues } = useLeague();
   const league = leagues.find(l => l.id === activeLeagueId);
+  const leagueType = league?.league_type ?? "league";
 
   return (
     <div className="min-h-screen">
@@ -18,7 +21,9 @@ const Index = () => {
             <span className="text-foreground font-semibold">{league.name}</span> · {league.season} — {league.description}
           </div>
         )}
-        <LeagueTable />
+        {leagueType === "league" && <LeagueTable />}
+        {leagueType === "bracket" && <BracketView />}
+        {leagueType === "group_bracket" && <GroupBracketView />}
         <UpcomingMatchesPreview />
       </div>
     </div>
