@@ -251,8 +251,8 @@ function processGameTurns(
         if (runningRemaining <= 0) break; // busted or finished
       }
     } else if (!dartsArr && scoreBeforeTurn != null && isFinishableWithOneDouble(scoreBeforeTurn)) {
-      // No dart detail available — estimate 1 attempt if on a finish
-      st.checkoutAttempts += 1;
+      // No per-dart detail available: count all darts thrown in this visit as attempts
+      st.checkoutAttempts += dartsCount;
     }
 
     // Checkout hit detection
