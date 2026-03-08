@@ -92,7 +92,7 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-48">
-                {moreNavItems.map((item) => (
+                {moreNavItems.filter(item => !item.authOnly || user).map((item) => (
                   <Link key={item.href} to={item.href}>
                     <DropdownMenuItem className={`font-display uppercase tracking-wider text-xs cursor-pointer ${location.pathname === item.href ? "bg-accent" : ""}`}>
                       {item.icon && <span className="mr-2">{item.icon}</span>}
