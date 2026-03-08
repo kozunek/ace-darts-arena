@@ -68,8 +68,10 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
+            <ThemeToggle />
             {user ? (
-              <div className="flex items-center gap-2 ml-2">
+              <div className="flex items-center gap-1 ml-2">
+                <NotificationBell />
                 <Link to="/settings">
                   <Button variant="ghost" size="sm" className="font-display uppercase tracking-wider text-xs">
                     <Settings className="h-3.5 w-3.5 mr-1" /> {profile?.name || user.email}
