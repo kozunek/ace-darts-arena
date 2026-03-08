@@ -308,6 +308,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0,
       ton80_1: 0, ton80_2: 0, ton_plus1: 0, ton_plus2: 0,
       darts_thrown1: 0, darts_thrown2: 0,
+      checkout_attempts1: 0, checkout_attempts2: 0,
+      checkout_hits1: 0, checkout_hits2: 0,
       autodarts_link: null,
     }).eq("id", matchId);
 
@@ -318,6 +320,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       oneEighties1: 0, oneEighties2: 0, highCheckout1: 0, highCheckout2: 0,
       ton40_1: 0, ton40_2: 0, ton60_1: 0, ton60_2: 0, ton80_1: 0, ton80_2: 0,
       tonPlus1: 0, tonPlus2: 0, dartsThrown1: 0, dartsThrown2: 0,
+      checkoutAttempts1: 0, checkoutAttempts2: 0, checkoutHits1: 0, checkoutHits2: 0,
       autodartsLink: undefined,
     } : m));
   }, []);
