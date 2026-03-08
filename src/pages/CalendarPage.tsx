@@ -155,9 +155,13 @@ const CalendarPage = () => {
                   <div className="flex items-center gap-2">
                     {m.status === "completed" ? (
                       <span className="text-xl font-display font-bold text-foreground">{m.score1}:{m.score2}</span>
+                    ) : m.confirmedDate ? (
+                      <Badge variant="outline" className="text-primary border-primary/30 text-[10px] font-display uppercase">
+                        Termin ustalony
+                      </Badge>
                     ) : (
                       <Badge variant="outline" className="text-accent border-accent/30 text-[10px] font-display uppercase">
-                        Zaplanowany
+                        Do rozegrania
                       </Badge>
                     )}
                   </div>
