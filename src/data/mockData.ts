@@ -251,7 +251,7 @@ export const achievements: Achievement[] = [
   { id: "x14", name: "Pierwszy Punkty", description: "Zdobądź pierwsze punkty w lidze", icon: "⭐", rarity: "common", condition: (s) => s.points >= 1 },
   { id: "x15", name: "Pierwszy Bonus", description: "Zdobądź pierwszy punkt bonusowy", icon: "🎁", rarity: "common", condition: (s) => s.bonusPoints >= 1 },
   { id: "x16", name: "180 i Checkout 100+", description: "Rzuć 180 i zamknij checkoutem 100+ w jednej lidze", icon: "🎯", rarity: "epic", condition: (s) => s.oneEighties >= 1 && s.highestCheckout >= 100 },
-  { id: "x17", name: "Wszechstronny", description: "Tony 60, 80 i 100+ w jednej lidze", icon: "🌈", rarity: "rare", condition: (s) => s.ton60 >= 1 && s.ton80 >= 1 && s.tonPlus >= 1 },
+  { id: "x17", name: "Wszechstronny", description: "Tony 60+, 100+, 140+ i 170+ w jednej lidze", icon: "🌈", rarity: "rare", condition: (s) => s.ton60 >= 1 && s.ton80 >= 1 && s.tonPlus >= 1 && s.ton40 >= 1 },
   { id: "x18", name: "Ligowy Weteran", description: "Rozegraj 20 meczów i zdobądź 20 punktów", icon: "🎖️", rarity: "rare", condition: (s) => s.matchesPlayed >= 20 && s.points >= 20 },
   { id: "x19", name: "Punkty za Wszystko", description: "Zdobądź punkty bazowe i bonusowe", icon: "🎯", rarity: "common", condition: (s) => s.basePoints >= 3 && s.bonusPoints >= 1 },
   { id: "x20", name: "Leg Dominator", description: "Stosunek legów wygranych do przegranych 2:1 (min. 30 legów)", icon: "⚖️", rarity: "epic", condition: (s) => s.legsWon >= 30 && s.legsLost > 0 && (s.legsWon / s.legsLost) >= 2 },

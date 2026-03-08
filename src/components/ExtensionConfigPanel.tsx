@@ -105,7 +105,7 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
     { key: "require_high_checkout" as const, label: "Najwyższy checkout", desc: "Najwyższe zamknięcie w meczu" },
     { key: "require_checkout_stats" as const, label: "Statystyki checkoutów", desc: "Próby i trafienia checkout" },
     { key: "require_darts_thrown" as const, label: "Rzucone lotki", desc: "Łączna liczba rzuconych lotek" },
-    { key: "require_ton_ranges" as const, label: "Zakresy ton (60/80/+)", desc: "Ton 60, Ton 80, Ton+" },
+    { key: "require_ton_ranges" as const, label: "Zakresy ton (60/100/140/170)", desc: "60+, 100+, 140+, 170+, 180" },
     
     { key: "require_autodarts_link" as const, label: "Link Autodarts", desc: "Link do meczu na Autodarts" },
   ];

@@ -175,7 +175,7 @@ const SubmitMatchPage = () => {
         setSelectedMatchId(matchedUpcoming.id);
       }
 
-      // Just populate as-is — user can swap manually
+      // Populate exactly as returned
       populateForm(payload);
 
       if (allowAutoSubmit && autoSubmitFromExtension && matchedUpcoming) {
