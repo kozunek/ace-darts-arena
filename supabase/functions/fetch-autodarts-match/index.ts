@@ -246,52 +246,48 @@ function processGameTurns(
     // can be finished with exactly one double (remaining ≤40 even, or =50)
     if (dartsArr && scoreBeforeTurn != null) {
       let runningRemaining = scoreBeforeTurn;
+      const visitInCheckoutRange = scoreBeforeTurn <= 170 && scoreBeforeTurn > 1;
+
       for (const d of dartsArr) {
         const seg = d.segment || d;
         const dartValue = getDartPoints(d);
-        
-        if (runningRemaining <= 61 && runningRemaining > 1) {
-          st.altAttempts61++;
+
+        const bed = String(seg?.bed ?? "").toLowerCase();
+        const name = String(seg?.name ?? "").toLowerCase();
+        const number = Number(seg?.number ?? seg?.value ?? 0);
+        const multiplier = Number(seg?.multiplier ?? 1);
+
+        const isDoubleHit = multiplier === 2 && number >= 1 && number <= 20;
+        const isBullHit = number === 25 && multiplier === 2;
+        const isMiss = bed.includes("miss") || name.includes("miss");
+        const isMarkedDoubleTarget = bed.includes("double") || name.includes("double") || bed.includes("bull") || name.includes("bull");
+
+        // Single hit on required double number (e.g. S20 while on 40) also counts as attempt
+        const requiredDouble = runningRemaining % 2 === 0 ? runningRemaining / 2 : -1;
+        const isSingleAtRequiredDouble =
+          runningRemaining <= 40 &&
+          runningRemaining > 1 &&
+          multiplier === 1 &&
+          number === requiredDouble;
+
+        const oneDartFinishWindow = isFinishableWithOneDouble(runningRemaining);
+        const shouldCountAttempt =
+          oneDartFinishWindow ||
+          (visitInCheckoutRange && (isDoubleHit || isBullHit || isMarkedDoubleTarget || isMiss || isSingleAtRequiredDouble));
+
+        if (shouldCountAttempt) {
+          st.checkoutAttempts++;
         }
 
-        if (isFinishableWithOneDouble(runningRemaining)) {
-          st.checkoutAttempts++;
-          if (pIdx === 1) {
-            console.log(`[DEBUG_P2_DART] rem_before=${runningRemaining} dart=${JSON.stringify(seg)} val=${dartValue} attempts=${st.checkoutAttempts}`);
-          }
-          
-          // Check if this dart actually finished (hit the double)
-          if (runningRemaining - dartValue === 0 && (seg.multiplier === 2 || (seg.number === 25 && seg.multiplier === 2))) {
-            // Checkout hit is already counted below via remainingAfter === 0
-          }
-        }
-        
         runningRemaining -= dartValue;
-        if (runningRemaining <= 0) break; // busted or finished
+        if (runningRemaining <= 0) break;
       }
     } else if (!dartsArr && scoreBeforeTurn != null) {
-      const remainingAfterNoDarts = typeof turn.score === "number" ? turn.score : null;
-      const bustedNoDarts = turn.busted === true;
-
-      // alt heuristic for diagnostics
-      if (scoreBeforeTurn <= 61 && scoreBeforeTurn > 1) {
-        st.altAttempts61 += dartsCount;
-      }
-
-      // No per-dart detail available. Try best effort from start/end score of the visit.
+      // No per-dart detail available: best effort fallback
       if (isFinishableWithOneDouble(scoreBeforeTurn)) {
-        // Already on double finish for whole visit
         st.checkoutAttempts += dartsCount;
-      } else if (!bustedNoDarts && remainingAfterNoDarts != null) {
-        // If visit moved into double-finish zone, at least one dart was likely a double attempt.
-        // Use up to 2 attempts here to reduce undercount (common missing-details case in Autodarts payloads).
-        if (isFinishableWithOneDouble(remainingAfterNoDarts)) {
-          st.checkoutAttempts += Math.min(2, dartsCount);
-        }
-      }
-
-      if (pIdx === 1 && scoreBeforeTurn <= 170) {
-        console.log(`[DEBUG_CO_FALLBACK] p2 scoreBefore=${scoreBeforeTurn} scoreAfter=${remainingAfterNoDarts} darts=${dartsCount} busted=${bustedNoDarts} attemptsNow=${st.checkoutAttempts}`);
+      } else if (scoreBeforeTurn <= 170 && scoreBeforeTurn > 1) {
+        st.checkoutAttempts += 1;
       }
     }
 
