@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import LeagueSelector from "@/components/LeagueSelector";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 const HeadToHeadPage = () => {
   const { players, matches, activeLeagueId, getLeagueMatches } = useLeague();
