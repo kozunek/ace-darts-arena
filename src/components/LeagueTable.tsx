@@ -108,6 +108,23 @@ const LeagueTable = () => {
           </table>
         </div>
       </div>
+
+      {/* Bonus points legend */}
+      <div className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
+        <h3 className="text-xs font-display uppercase tracking-wider text-muted-foreground mb-2">System punktowy</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-body text-muted-foreground">
+          <span>🏆 Wygrana: <strong className="text-foreground">+3 pkt</strong></span>
+          <span>🤝 Remis: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>🎯 Za każde 180: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💎 9-darter: <strong className="text-foreground">+3 pkt</strong></span>
+          <span>✅ Checkout 100+: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💫 Checkout 150+: <strong className="text-foreground">+2 pkt</strong></span>
+          <span>📊 Średnia 90+: <strong className="text-foreground">+1 pkt</strong></span>
+          <span>📈 Średnia 100+: <strong className="text-foreground">+2 pkt</strong></span>
+          <span>🥈 Bliska przegrana (1 leg): <strong className="text-foreground">+1 pkt</strong></span>
+          <span>💪 Clean sweep (0 dla rywala): <strong className="text-foreground">+1 pkt</strong></span>
+        </div>
+      </div>
     </section>
   );
 };
