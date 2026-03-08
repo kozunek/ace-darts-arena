@@ -100,46 +100,71 @@ async function fetchGameDetail(matchId: string, gameId: string, token: string) {
 async function loginToAutodarts(): Promise<string | null> {
   const email = Deno.env.get("AUTODARTS_EMAIL");
   const password = Deno.env.get("AUTODARTS_PASSWORD");
+  const configuredClientId = Deno.env.get("AUTODARTS_CLIENT_ID")?.trim();
+  const clientSecret = Deno.env.get("AUTODARTS_CLIENT_SECRET")?.trim();
 
   if (!email || !password) {
     console.log("No AUTODARTS_EMAIL/PASSWORD configured");
     return null;
   }
 
-  try {
-    // Autodarts uses Keycloak OpenID Connect
-    const tokenUrl = "https://login.autodarts.io/realms/autodarts/protocol/openid-connect/token";
-    const params = new URLSearchParams({
-      grant_type: "password",
-      client_id: "autodarts-app",
-      username: email,
-      password: password,
-    });
+  const tokenUrl = "https://login.autodarts.io/realms/autodarts/protocol/openid-connect/token";
+  const candidateClientIds = configuredClientId
+    ? [configuredClientId]
+    : ["autodarts-desktop", "autodarts-app"];
 
-    const res = await fetch(tokenUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
+  let lastAuthError = "";
 
-    if (!res.ok) {
+  for (const clientId of candidateClientIds) {
+    try {
+      const params = new URLSearchParams({
+        grant_type: "password",
+        client_id: clientId,
+        username: email,
+        password,
+        scope: "openid",
+      });
+
+      if (clientSecret) {
+        params.set("client_secret", clientSecret);
+      }
+
+      const res = await fetch(tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.access_token) {
+          console.log("Server-side Autodarts login successful with client:", clientId);
+          return data.access_token;
+        }
+        lastAuthError = "No access_token in login response";
+        continue;
+      }
+
       const errText = await res.text();
-      console.log("Autodarts login failed:", res.status, errText);
-      return null;
-    }
+      lastAuthError = `${res.status} ${errText}`;
+      console.log(`Autodarts login failed for client ${clientId}:`, lastAuthError);
 
-    const data = await res.json();
-    if (data.access_token) {
-      console.log("Server-side Autodarts login successful");
-      return data.access_token;
-    }
+      const invalidClient =
+        res.status === 401 && /(invalid_client|unauthorized_client)/i.test(errText);
 
-    console.log("No access_token in login response");
-    return null;
-  } catch (err) {
-    console.error("Autodarts login error:", err);
-    return null;
+      if (!invalidClient || configuredClientId) {
+        break;
+      }
+    } catch (err) {
+      lastAuthError = String(err);
+      console.error(`Autodarts login error for client ${clientId}:`, err);
+    }
   }
+
+  console.log(
+    `Autodarts login failed for all clients (${candidateClientIds.join(", ")}): ${lastAuthError}`
+  );
+  return null;
 }
 
 async function fetchMatchData(matchId: string, token: string) {
