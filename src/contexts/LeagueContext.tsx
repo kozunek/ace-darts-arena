@@ -126,6 +126,9 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
     checkoutAttempts2: m.checkout_attempts2,
     checkoutHits1: m.checkout_hits1,
     checkoutHits2: m.checkout_hits2,
+    bracketRound: m.bracket_round,
+    bracketPosition: m.bracket_position,
+    groupName: m.group_name,
   };
 };
 
