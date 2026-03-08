@@ -250,9 +250,19 @@ function processGameTurns(
         runningRemaining -= dartValue;
         if (runningRemaining <= 0) break; // busted or finished
       }
-    } else if (!dartsArr && scoreBeforeTurn != null && isFinishableWithOneDouble(scoreBeforeTurn)) {
-      // No per-dart detail available: count all darts thrown in this visit as attempts
-      st.checkoutAttempts += dartsCount;
+    } else if (!dartsArr && scoreBeforeTurn != null) {
+      // No per-dart detail available: best-effort approximation.
+      // 1) if already on a single-dart finish, all darts in visit are attempts
+      if (isFinishableWithOneDouble(scoreBeforeTurn)) {
+        st.checkoutAttempts += dartsCount;
+      } else {
+        // 2) if visit ended on a single-dart finish (without bust), count at least one attempt
+        const remainingAfterNoDarts = typeof turn.score === "number" ? turn.score : null;
+        const bustedNoDarts = turn.busted === true;
+        if (!bustedNoDarts && remainingAfterNoDarts != null && isFinishableWithOneDouble(remainingAfterNoDarts)) {
+          st.checkoutAttempts += 1;
+        }
+      }
     }
 
     // Checkout hit detection
