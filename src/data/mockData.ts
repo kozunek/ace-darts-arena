@@ -152,10 +152,10 @@ export const achievements: Achievement[] = [
 
   // ─── 180-tki ───
   { id: "e1", name: "Pierwsza 180", description: "Rzuć swoją pierwszą 180-tkę", icon: "🎲", rarity: "common", condition: (s) => s.oneEighties >= 1 },
-  { id: "e2", name: "180 Adept", description: "Rzuć 5 setek osiemdziesiątek", icon: "🎯", rarity: "rare", condition: (s) => s.oneEighties >= 5 },
-  { id: "e3", name: "180 Master", description: "Rzuć 10 setek osiemdziesiątek", icon: "💯", rarity: "epic", condition: (s) => s.oneEighties >= 10 },
-  { id: "e4", name: "180 Bóg", description: "Rzuć 25 setek osiemdziesiątek", icon: "👁️", rarity: "legendary", condition: (s) => s.oneEighties >= 25 },
-  { id: "e5", name: "180 Legenda", description: "Rzuć 50 setek osiemdziesiątek", icon: "🌟", rarity: "legendary", condition: (s) => s.oneEighties >= 50 },
+  { id: "e2", name: "180 Adept", description: "Rzuć 5x 180", icon: "🎯", rarity: "rare", condition: (s) => s.oneEighties >= 5 },
+  { id: "e3", name: "180 Master", description: "Rzuć 10x 180", icon: "💯", rarity: "epic", condition: (s) => s.oneEighties >= 10 },
+  { id: "e4", name: "180 Bóg", description: "Rzuć 25x 180", icon: "👁️", rarity: "legendary", condition: (s) => s.oneEighties >= 25 },
+  { id: "e5", name: "180 Legenda", description: "Rzuć 50x 180", icon: "🌟", rarity: "legendary", condition: (s) => s.oneEighties >= 50 },
 
   // ─── CHECKOUTY ───
   { id: "c1", name: "Checkout Snajper", description: "Zamknij lega powyżej 100", icon: "🎯", rarity: "rare", condition: (s) => s.highestCheckout >= 100 },
