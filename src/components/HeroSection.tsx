@@ -38,7 +38,7 @@ const HeroSection = () => {
           </motion.h1>
 
           <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="text-lg md:text-xl text-muted-foreground font-body max-w-xl mb-8">
-            Profesjonalna liga darta z integracją Autodarts.io. 
+            Profesjonalna liga darta. 
             Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
           </motion.p>
 

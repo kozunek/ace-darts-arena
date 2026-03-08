@@ -565,10 +565,23 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Data startu</Label>
-                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-muted/30 border-border w-48" />
-                  </div>
+                  {/* Show existing generated rounds */}
+                  {l.league_type === "league" && (() => {
+                    const existingRounds = getExistingRounds(l.id);
+                    if (existingRounds.length === 0) return null;
+                    return (
+                      <div className="rounded-lg bg-secondary/5 border border-secondary/20 p-3 space-y-2">
+                        <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Już wygenerowane kolejki</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {existingRounds.map(r => (
+                            <span key={r} className="text-xs font-display uppercase px-3 py-1.5 rounded-full bg-secondary/20 border border-secondary/30 text-secondary">
+                              ✅ Kolejka {r}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {l.league_type === "group_bracket" && (
                     <div className="space-y-3">
@@ -618,12 +631,98 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                     </div>
                   </div>
 
+                  {/* Round selection for league type */}
+                  {l.league_type === "league" && selectedPlayers.length >= 2 && (() => {
+                    const totalRounds = getTotalRounds(selectedPlayers.length);
+                    const existingRounds = getExistingRounds(l.id);
+                    const allRoundNumbers = Array.from({ length: totalRounds }, (_, i) => i + 1);
+                    const availableRounds = allRoundNumbers.filter(r => !existingRounds.includes(r));
+
+                    return (
+                      <div className="space-y-3">
+                        <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Które kolejki wygenerować?</Label>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => { setGenerateMode("all"); setSelectedRounds([]); }}
+                            className={`text-xs font-display uppercase px-3 py-1.5 rounded-full border transition-all ${generateMode === "all" ? "bg-primary/20 border-primary/30 text-primary" : "bg-muted/30 border-border text-muted-foreground"}`}>
+                            Wszystkie ({availableRounds.length})
+                          </button>
+                          <button type="button" onClick={() => setGenerateMode("selected")}
+                            className={`text-xs font-display uppercase px-3 py-1.5 rounded-full border transition-all ${generateMode === "selected" ? "bg-primary/20 border-primary/30 text-primary" : "bg-muted/30 border-border text-muted-foreground"}`}>
+                            Wybrane kolejki
+                          </button>
+                        </div>
+
+                        {generateMode === "selected" && (
+                          <div className="flex flex-wrap gap-2">
+                            {availableRounds.map(r => {
+                              const sel = selectedRounds.includes(r);
+                              return (
+                                <button key={r} type="button" onClick={() => setSelectedRounds(prev => sel ? prev.filter(x => x !== r) : [...prev, r])}
+                                  className={`text-xs font-display uppercase px-3 py-1.5 rounded-full border transition-all ${sel ? "bg-accent/20 border-accent/30 text-accent" : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"}`}>
+                                  {sel ? <Check className="h-3 w-3 inline mr-1" /> : <Plus className="h-3 w-3 inline mr-1" />}
+                                  Kolejka {r}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {availableRounds.length === 0 && (
+                          <div className="rounded-lg bg-secondary/5 border border-secondary/20 p-3 text-xs text-secondary font-body">
+                            ✅ Wszystkie kolejki zostały już wygenerowane!
+                          </div>
+                        )}
+
+                        {/* Deadline per round */}
+                        {(() => {
+                          const roundsToShow = generateMode === "all" ? availableRounds : selectedRounds;
+                          if (roundsToShow.length === 0) return null;
+                          return (
+                            <div className="space-y-2">
+                              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
+                                Termin rozegrania (deadline) per kolejka
+                              </Label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {roundsToShow.sort((a, b) => a - b).map(r => (
+                                  <div key={r} className="flex items-center gap-2">
+                                    <span className="text-xs font-display text-muted-foreground w-24">Kolejka {r}:</span>
+                                    <Input
+                                      type="date"
+                                      value={roundDeadlines[r] || startDate}
+                                      onChange={e => setRoundDeadlines(prev => ({ ...prev, [r]: e.target.value }))}
+                                      className="bg-muted/30 border-border text-sm flex-1"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Ustaw domyślny termin dla wszystkich</Label>
+                                <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-muted/30 border-border w-48" />
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Date for non-league types */}
+                  {l.league_type !== "league" && (
+                    <div className="space-y-2">
+                      <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Termin rozegrania</Label>
+                      <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-muted/30 border-border w-48" />
+                    </div>
+                  )}
+
                   {selectedPlayers.length >= 2 && (
                     <div className="rounded-lg bg-muted/30 border border-border p-3 text-xs text-muted-foreground font-body">
                       {l.league_type === "league" && (() => {
                         const matchCount = (selectedPlayers.length * (selectedPlayers.length - 1)) / 2;
                         const rounds = selectedPlayers.length % 2 === 0 ? selectedPlayers.length - 1 : selectedPlayers.length;
-                        return `📊 ${selectedPlayers.length} graczy → ${matchCount} meczów w ${rounds} kolejkach`;
+                        const existingRounds = getExistingRounds(l.id);
+                        const availableRounds = rounds - existingRounds.length;
+                        const roundsToGen = generateMode === "all" ? availableRounds : selectedRounds.length;
+                        return `📊 ${selectedPlayers.length} graczy → ${matchCount} meczów w ${rounds} kolejkach (do wygenerowania: ${roundsToGen} kolejek)`;
                       })()}
                       {l.league_type === "bracket" && `🏆 ${selectedPlayers.length} graczy → drabinka eliminacyjna`}
                       {l.league_type === "group_bracket" && `🎪 ${selectedPlayers.length} graczy w ${numGroups} grupach → faza grupowa + drabinka`}
@@ -631,7 +730,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   )}
 
                   <div className="flex gap-3">
-                    <Button variant="hero" disabled={generating || selectedPlayers.length < 2} onClick={() => handleGenerateSchedule(l)}>
+                    <Button variant="hero" disabled={generating || selectedPlayers.length < 2 || (l.league_type === "league" && generateMode === "selected" && selectedRounds.length === 0)} onClick={() => handleGenerateSchedule(l)}>
                       {generating ? "Generowanie..." : "⚡ Generuj harmonogram"}
                     </Button>
                     <Button variant="outline" onClick={() => setShowGenerate(null)}>Anuluj</Button>

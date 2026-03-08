@@ -27,7 +27,7 @@ const MatchesPage = () => {
             <div key={match.id} className="rounded-lg border border-border bg-card p-5 card-glow">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Calendar className="h-3.5 w-3.5" />
-                <span className="font-body">{new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
+                <span className="font-body">Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
                 {match.round && <span className="text-[10px] font-display uppercase">Kolejka {match.round}</span>}
                 <Badge variant="outline" className="ml-auto text-accent border-accent/30 font-display text-[10px] uppercase">Zaplanowany</Badge>
               </div>
