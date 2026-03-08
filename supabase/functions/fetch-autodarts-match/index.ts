@@ -364,6 +364,12 @@ async function fetchMatchData(matchId: string, token: string) {
     processGameTurns(games[gi], playerIdMap, st, gi);
   }
 
+  // Prefer direct checkout stats from Autodarts payload when available
+  if (directCo1.hits != null) st[0].checkoutHits = directCo1.hits;
+  if (directCo1.attempts != null) st[0].checkoutAttempts = directCo1.attempts;
+  if (directCo2.hits != null) st[1].checkoutHits = directCo2.hits;
+  if (directCo2.attempts != null) st[1].checkoutAttempts = directCo2.attempts;
+
   // Log stats for debugging
   for (let i = 0; i < 2; i++) {
     console.log(`P${i + 1} (${i === 0 ? p1Name : p2Name}): darts=${st[i].totalDarts}, score=${st[i].totalScore}, co=${st[i].checkoutHits}/${st[i].checkoutAttempts}, hc=${st[i].highCheckout}, 60+=${st[i].ton60}, 100+=${st[i].ton100}, 140+=${st[i].ton140}, 180=${st[i].oneEighties}`);
