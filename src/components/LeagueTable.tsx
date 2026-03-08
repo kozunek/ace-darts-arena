@@ -1,9 +1,5 @@
-import { Player } from "@/data/mockData";
+import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Medal, Award } from "lucide-react";
-
-interface LeagueTableProps {
-  players: Player[];
-}
 
 const FormBadge = ({ result }: { result: "W" | "L" | "D" }) => {
   const styles = {
@@ -25,15 +21,22 @@ const RankIcon = ({ rank }: { rank: number }) => {
   return <span className="text-sm text-muted-foreground font-display w-5 text-center">{rank}</span>;
 };
 
-const LeagueTable = ({ players }: LeagueTableProps) => {
-  const sorted = [...players].sort((a, b) => b.points - a.points);
+const LeagueTable = () => {
+  const { activeLeagueId, getLeagueStandings, getPlayerAchievements } = useLeague();
+  const standings = getLeagueStandings(activeLeagueId);
+
+  if (standings.length === 0) {
+    return (
+      <section>
+        <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-6">Tabela Ligi</h2>
+        <p className="text-muted-foreground font-body">Brak graczy w tej lidze.</p>
+      </section>
+    );
+  }
 
   return (
     <section>
-      <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-6">
-        Tabela Ligi
-      </h2>
-
+      <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-6">Tabela Ligi</h2>
       <div className="rounded-lg border border-border overflow-hidden card-glow">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -41,6 +44,7 @@ const LeagueTable = ({ players }: LeagueTableProps) => {
               <tr className="bg-muted/50 border-b border-border">
                 <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground w-12">#</th>
                 <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Gracz</th>
+                <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">M</th>
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">W</th>
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">R</th>
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">P</th>
@@ -49,54 +53,50 @@ const LeagueTable = ({ players }: LeagueTableProps) => {
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground hidden md:table-cell">180</th>
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground hidden lg:table-cell">HC</th>
                 <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground hidden md:table-cell">Forma</th>
-                <th className="text-left px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground hidden lg:table-cell">Odznaki</th>
+                <th className="text-left px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground hidden lg:table-cell">Osiągnięcia</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((player, index) => (
-                <tr
-                  key={player.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <td className="px-4 py-3">
-                    <RankIcon rank={index + 1} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
-                        {player.avatar}
+              {standings.map((entry, index) => {
+                const achiev = getPlayerAchievements(entry.id, activeLeagueId);
+                return (
+                  <tr key={entry.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3"><RankIcon rank={index + 1} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary">
+                          {entry.avatar}
+                        </div>
+                        <span className="font-body font-medium text-foreground text-sm">{entry.name}</span>
                       </div>
-                      <span className="font-body font-medium text-foreground text-sm">{player.name}</span>
-                    </div>
-                  </td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-secondary font-semibold">{player.wins}</td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-accent font-semibold">{player.draws}</td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-destructive font-semibold">{player.losses}</td>
-                  <td className="text-center px-3 py-3">
-                    <span className="font-display font-bold text-foreground text-lg">{player.points}</span>
-                  </td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{player.avg.toFixed(1)}</td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{player.oneEighties}</td>
-                  <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden lg:table-cell">{player.highestCheckout}</td>
-                  <td className="text-center px-3 py-3 hidden md:table-cell">
-                    <div className="flex gap-1 justify-center">
-                      {player.form.map((f, i) => (
-                        <FormBadge key={i} result={f} />
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 hidden lg:table-cell">
-                    <div className="flex gap-1 flex-wrap">
-                      {player.badges.map((badge, i) => (
-                        <span key={i} className="text-xs bg-muted/50 border border-border rounded-full px-2 py-0.5">
-                          {badge}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground">{entry.stats.matchesPlayed}</td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-secondary font-semibold">{entry.stats.wins}</td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-accent font-semibold">{entry.stats.draws}</td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-destructive font-semibold">{entry.stats.losses}</td>
+                    <td className="text-center px-3 py-3">
+                      <span className="font-display font-bold text-foreground text-lg">{entry.stats.points}</span>
+                    </td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.avg.toFixed(1)}</td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden md:table-cell">{entry.stats.oneEighties}</td>
+                    <td className="text-center px-3 py-3 text-sm font-body text-muted-foreground hidden lg:table-cell">{entry.stats.highestCheckout}</td>
+                    <td className="text-center px-3 py-3 hidden md:table-cell">
+                      <div className="flex gap-1 justify-center">
+                        {entry.stats.form.map((f, i) => <FormBadge key={i} result={f} />)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 hidden lg:table-cell">
+                      <div className="flex gap-1 flex-wrap">
+                        {achiev.slice(0, 3).map((a) => (
+                          <span key={a.id} className="text-xs bg-muted/50 border border-border rounded-full px-2 py-0.5" title={a.description}>
+                            {a.icon} {a.name}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
