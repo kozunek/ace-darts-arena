@@ -58,6 +58,10 @@ export interface MatchResultData {
   tonPlus2?: number;
   dartsThrown1?: number;
   dartsThrown2?: number;
+  checkoutAttempts1?: number;
+  checkoutAttempts2?: number;
+  checkoutHits1?: number;
+  checkoutHits2?: number;
   autodartsLink?: string;
 }
 
@@ -77,6 +81,9 @@ export interface TonLeaderEntry {
   losses: number;
   matchesPlayed: number;
   winRate: number;
+  checkoutAttempts: number;
+  checkoutHits: number;
+  checkoutRate: number;
 }
 
 const LeagueContext = createContext<LeagueContextType | null>(null);
