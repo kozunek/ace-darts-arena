@@ -154,7 +154,6 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
     if (myAvg > 0) { avgValues.push(myAvg); if (myAvg > bestAvg) bestAvg = myAvg; }
     totalDarts += isP1 ? (m.dartsThrown1 ?? 0) : (m.dartsThrown2 ?? 0);
-    ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
