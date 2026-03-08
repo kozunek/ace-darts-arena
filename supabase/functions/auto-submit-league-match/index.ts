@@ -225,6 +225,7 @@ Deno.serve(async (req) => {
   try {
     const {
       autodarts_match_id,
+      autodarts_token,
       player1_name,
       player2_name,
       player1_autodarts_id,
