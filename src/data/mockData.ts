@@ -109,6 +109,10 @@ export interface Match {
   bracketRound?: string;
   bracketPosition?: number;
   groupName?: string;
+  first9Avg1?: number;
+  first9Avg2?: number;
+  avgUntil170_1?: number;
+  avgUntil170_2?: number;
 }
 
 export interface Achievement {
