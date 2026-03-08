@@ -1,0 +1,4 @@
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS avg_until_170_1 numeric NULL DEFAULT NULL;
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS avg_until_170_2 numeric NULL DEFAULT NULL;
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS first_9_avg1 numeric NULL DEFAULT NULL;
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS first_9_avg2 numeric NULL DEFAULT NULL;

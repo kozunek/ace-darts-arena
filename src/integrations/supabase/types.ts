@@ -175,6 +175,8 @@ export type Database = {
       matches: {
         Row: {
           autodarts_link: string | null
+          avg_until_170_1: number | null
+          avg_until_170_2: number | null
           avg1: number | null
           avg2: number | null
           bracket_position: number | null
@@ -187,6 +189,8 @@ export type Database = {
           darts_thrown1: number | null
           darts_thrown2: number | null
           date: string
+          first_9_avg1: number | null
+          first_9_avg2: number | null
           group_name: string | null
           high_checkout1: number | null
           high_checkout2: number | null
@@ -215,6 +219,8 @@ export type Database = {
         }
         Insert: {
           autodarts_link?: string | null
+          avg_until_170_1?: number | null
+          avg_until_170_2?: number | null
           avg1?: number | null
           avg2?: number | null
           bracket_position?: number | null
@@ -227,6 +233,8 @@ export type Database = {
           darts_thrown1?: number | null
           darts_thrown2?: number | null
           date: string
+          first_9_avg1?: number | null
+          first_9_avg2?: number | null
           group_name?: string | null
           high_checkout1?: number | null
           high_checkout2?: number | null
@@ -255,6 +263,8 @@ export type Database = {
         }
         Update: {
           autodarts_link?: string | null
+          avg_until_170_1?: number | null
+          avg_until_170_2?: number | null
           avg1?: number | null
           avg2?: number | null
           bracket_position?: number | null
@@ -267,6 +277,8 @@ export type Database = {
           darts_thrown1?: number | null
           darts_thrown2?: number | null
           date?: string
+          first_9_avg1?: number | null
+          first_9_avg2?: number | null
           group_name?: string | null
           high_checkout1?: number | null
           high_checkout2?: number | null
