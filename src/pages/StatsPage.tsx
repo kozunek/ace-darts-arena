@@ -109,8 +109,7 @@ const StatsPage = () => {
                   <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Gracz</th>
                   {activeTab === "tons" && (
                     <>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-accent">T40</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">T60</th>
+                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">T60</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-primary">T80</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">T+</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-destructive">180</th>
@@ -161,8 +160,7 @@ const StatsPage = () => {
                     </td>
                     {activeTab === "tons" && (
                       <>
-                        <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-accent/10 text-accent text-sm font-display font-bold border border-accent/20">{entry.ton40}</span></td>
-                        <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-secondary/10 text-secondary text-sm font-display font-bold border border-secondary/20">{entry.ton60}</span></td>
+                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-secondary/10 text-secondary text-sm font-display font-bold border border-secondary/20">{entry.ton60}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-display font-bold border border-primary/20">{entry.ton80}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-muted text-foreground text-sm font-display font-bold border border-border">{entry.tonPlus}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-destructive/10 text-destructive text-sm font-display font-bold border border-destructive/20">{entry.oneEighties}</span></td>
@@ -215,8 +213,7 @@ const StatsPage = () => {
         )}
 
         {activeTab === "tons" && (
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-3">
-            <LegendItem label="Ton 40" desc="Rzuty 40-59 pkt" color="bg-accent/10 border-accent/20 text-accent" />
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
             <LegendItem label="Ton 60" desc="Rzuty 60-79 pkt" color="bg-secondary/10 border-secondary/20 text-secondary" />
             <LegendItem label="Ton 80" desc="Rzuty 80-99 pkt" color="bg-primary/10 border-primary/20 text-primary" />
             <LegendItem label="Ton+" desc="Rzuty 100+ pkt" color="bg-muted border-border text-foreground" />

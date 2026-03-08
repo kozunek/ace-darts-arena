@@ -48,8 +48,6 @@ export interface MatchResultData {
   oneEighties2?: number;
   highCheckout1?: number;
   highCheckout2?: number;
-  ton40_1?: number;
-  ton40_2?: number;
   ton60_1?: number;
   ton60_2?: number;
   ton80_1?: number;
@@ -69,7 +67,6 @@ export interface TonLeaderEntry {
   playerId: string;
   playerName: string;
   avatar: string;
-  ton40: number;
   ton60: number;
   ton80: number;
   tonPlus: number;
@@ -112,8 +109,6 @@ const mapDbMatch = (m: any, players: Player[]): Match => {
     oneEighties2: m.one_eighties2,
     highCheckout1: m.high_checkout1,
     highCheckout2: m.high_checkout2,
-    ton40_1: m.ton40_1,
-    ton40_2: m.ton40_2,
     ton60_1: m.ton60_1,
     ton60_2: m.ton60_2,
     ton80_1: m.ton80_1,
@@ -139,7 +134,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
 
   let wins = 0, losses = 0, draws = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
   let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
-  let ton40 = 0, ton60 = 0, ton80 = 0, tonPlus = 0;
+  let ton60 = 0, ton80 = 0, tonPlus = 0;
   let checkoutAttempts = 0, checkoutHits = 0;
   const avgValues: number[] = [];
   const form: ("W" | "L" | "D")[] = [];
@@ -159,7 +154,6 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
     if (myAvg > 0) { avgValues.push(myAvg); if (myAvg > bestAvg) bestAvg = myAvg; }
     totalDarts += isP1 ? (m.dartsThrown1 ?? 0) : (m.dartsThrown2 ?? 0);
-    ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
@@ -186,7 +180,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[]): Player
     matchesPlayed: completed.length,
     bestAvg: Math.round(bestAvg * 10) / 10,
     totalDartsThrown: totalDarts,
-    ton40, ton60, ton80, tonPlus,
+    ton60, ton80, tonPlus,
     winRate,
     checkoutAttempts,
     checkoutHits,
@@ -271,7 +265,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       avg1: data.avg1, avg2: data.avg2,
       one_eighties1: data.oneEighties1 ?? 0, one_eighties2: data.oneEighties2 ?? 0,
       high_checkout1: data.highCheckout1 ?? 0, high_checkout2: data.highCheckout2 ?? 0,
-      ton40_1: data.ton40_1 ?? 0, ton40_2: data.ton40_2 ?? 0,
+      ton40_1: 0, ton40_2: 0,
       ton60_1: data.ton60_1 ?? 0, ton60_2: data.ton60_2 ?? 0,
       ton80_1: data.ton80_1 ?? 0, ton80_2: data.ton80_2 ?? 0,
       ton_plus1: data.tonPlus1 ?? 0, ton_plus2: data.tonPlus2 ?? 0,
@@ -448,16 +442,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     filtered.forEach((m) => {
       [
-        { id: m.player1Id, name: m.player1Name, t40: m.ton40_1 ?? 0, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0, attempts: m.checkoutAttempts1 ?? 0, hits: m.checkoutHits1 ?? 0 },
-        { id: m.player2Id, name: m.player2Name, t40: m.ton40_2 ?? 0, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0, attempts: m.checkoutAttempts2 ?? 0, hits: m.checkoutHits2 ?? 0 },
-      ].forEach(({ id, name, t40, t60, t80, tp, e, hc, avg, score, oppScore, attempts, hits }) => {
+      { id: m.player1Id, name: m.player1Name, t60: m.ton60_1 ?? 0, t80: m.ton80_1 ?? 0, tp: m.tonPlus1 ?? 0, e: m.oneEighties1 ?? 0, hc: m.highCheckout1 ?? 0, avg: m.avg1 ?? 0, score: m.score1 ?? 0, oppScore: m.score2 ?? 0, attempts: m.checkoutAttempts1 ?? 0, hits: m.checkoutHits1 ?? 0 },
+        { id: m.player2Id, name: m.player2Name, t60: m.ton60_2 ?? 0, t80: m.ton80_2 ?? 0, tp: m.tonPlus2 ?? 0, e: m.oneEighties2 ?? 0, hc: m.highCheckout2 ?? 0, avg: m.avg2 ?? 0, score: m.score2 ?? 0, oppScore: m.score1 ?? 0, attempts: m.checkoutAttempts2 ?? 0, hits: m.checkoutHits2 ?? 0 },
+      ].forEach(({ id, name, t60, t80, tp, e, hc, avg, score, oppScore, attempts, hits }) => {
         const existing = playerMap.get(id);
         const player = playerList.find(p => p.id === id);
         const won = score > oppScore ? 1 : 0;
         const lost = score < oppScore ? 1 : 0;
         if (existing) {
-          existing.ton40 += t40; existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
-          existing.oneEighties += e; existing.totalTons += t40 + t60 + t80 + tp + e;
+          existing.ton60 += t60; existing.ton80 += t80; existing.tonPlus += tp;
+          existing.oneEighties += e; existing.totalTons += t60 + t80 + tp + e;
           if (hc > existing.highestCheckout) existing.highestCheckout = hc;
           if (avg > existing.bestAvg) existing.bestAvg = avg;
           existing.wins += won; existing.losses += lost; existing.matchesPlayed += 1;
@@ -469,8 +463,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
           playerMap.set(id, {
             playerId: id, playerName: name,
             avatar: player?.avatar || name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
-            ton40: t40, ton60: t60, ton80: t80, tonPlus: tp,
-            oneEighties: e, totalTons: t40 + t60 + t80 + tp + e,
+            ton60: t60, ton80: t80, tonPlus: tp,
+            oneEighties: e, totalTons: t60 + t80 + tp + e,
             highestCheckout: hc, bestAvg: avg,
             wins: won, losses: lost, matchesPlayed: 1,
             winRate: won ? 100 : 0,

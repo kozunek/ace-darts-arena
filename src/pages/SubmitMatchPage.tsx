@@ -24,8 +24,6 @@ const SubmitMatchPage = () => {
   const [oneEighties2, setOneEighties2] = useState("");
   const [hc1, setHc1] = useState("");
   const [hc2, setHc2] = useState("");
-  const [ton40_1, setTon40_1] = useState("");
-  const [ton40_2, setTon40_2] = useState("");
   const [ton60_1, setTon60_1] = useState("");
   const [ton60_2, setTon60_2] = useState("");
   const [ton80_1, setTon80_1] = useState("");
@@ -67,8 +65,6 @@ const SubmitMatchPage = () => {
     setOneEighties2("");
     setHc1("");
     setHc2("");
-    setTon40_1("");
-    setTon40_2("");
     setTon60_1("");
     setTon60_2("");
     setTon80_1("");
@@ -119,8 +115,6 @@ const SubmitMatchPage = () => {
       oneEighties2: optNum(oneEighties2),
       highCheckout1: optNum(hc1),
       highCheckout2: optNum(hc2),
-      ton40_1: optNum(ton40_1),
-      ton40_2: optNum(ton40_2),
       ton60_1: optNum(ton60_1),
       ton60_2: optNum(ton60_2),
       ton80_1: optNum(ton80_1),
@@ -232,7 +226,6 @@ const SubmitMatchPage = () => {
                   <StatRow label="Średnia (3 darts)" v1={avg1} v2={avg2} s1={setAvg1} s2={setAvg2} step="0.1" p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="180-tki" v1={oneEighties1} v2={oneEighties2} s1={setOneEighties1} s2={setOneEighties2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Najw. checkout" v1={hc1} v2={hc2} s1={setHc1} s2={setHc2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
-                  <StatRow label="Ton 40 (40-59)" v1={ton40_1} v2={ton40_2} s1={setTon40_1} s2={setTon40_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Ton 60 (60-79)" v1={ton60_1} v2={ton60_2} s1={setTon60_1} s2={setTon60_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Ton 80 (80-99)" v1={ton80_1} v2={ton80_2} s1={setTon80_1} s2={setTon80_2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
                   <StatRow label="Ton+ (100+)" v1={tonPlus1} v2={tonPlus2} s1={setTonPlus1} s2={setTonPlus2} p1={selectedMatch.player1Name} p2={selectedMatch.player2Name} />
