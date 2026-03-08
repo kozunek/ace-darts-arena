@@ -76,6 +76,14 @@ function handleAutoSubmitResult(result, matchPayload) {
   const p1 = matchPayload.player1_name || "Gracz 1";
   const p2 = matchPayload.player2_name || "Gracz 2";
 
+  if (result.already_submitted) {
+    // Other player already submitted — no notification needed
+    console.log("[eDART] Match already submitted by the other player, skipping.");
+    return;
+  }
+  const p1 = matchPayload.player1_name || "Gracz 1";
+  const p2 = matchPayload.player2_name || "Gracz 2";
+
   if (result.is_league_match && result.submitted) {
     // ✅ Successfully auto-submitted
     const statusText = result.status === "completed"
