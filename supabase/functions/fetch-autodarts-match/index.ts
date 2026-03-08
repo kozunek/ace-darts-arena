@@ -9,17 +9,13 @@ const corsHeaders = {
 const API_BASE = "https://api.autodarts.io";
 
 function extractMatchId(input: string): string {
-  // Handle full URLs like https://play.autodarts.io/history/matches/UUID
   const urlMatch = input.match(/matches\/([a-f0-9-]+)/i);
   if (urlMatch) return urlMatch[1];
-  // Handle lobby URLs like https://play.autodarts.io/lobbies/UUID
   const lobbyMatch = input.match(/lobbies\/([a-f0-9-]+)/i);
   if (lobbyMatch) return lobbyMatch[1];
-  // Handle raw UUID match IDs
   if (/^[a-f0-9-]{20,}$/i.test(input.trim())) return input.trim();
-  // Reject JWT tokens and other invalid inputs
   if (input.startsWith("eyJ") || input.length > 200) {
-    throw new Error("Podano token zamiast linku do meczu. Wklej link np. https://play.autodarts.io/history/matches/...");
+    throw new Error("Podano token zamiast linku do meczu.");
   }
   throw new Error("Nieprawidłowy link lub ID meczu Autodarts");
 }
@@ -64,37 +60,12 @@ async function fetchJson(url: string, token: string) {
   return res.json();
 }
 
-function unwrapGamePayload(payload: any) {
-  if (!payload) return null;
-  if (Array.isArray(payload)) return payload[0] ?? null;
-  if (payload.game && typeof payload.game === "object") return payload.game;
-  if (payload.data && typeof payload.data === "object") return payload.data;
-  return payload;
-}
-
-async function fetchGameDetail(matchId: string, gameId: string, token: string) {
-  const urls = [
-    `${API_BASE}/as/v0/matches/${matchId}/games/${gameId}`,
-    `${API_BASE}/gs/v0/matches/${matchId}/games/${gameId}`,
-    `${API_BASE}/as/v0/games/${gameId}`,
-    `${API_BASE}/gs/v0/games/${gameId}`,
-  ];
-
-  for (const url of urls) {
-    try {
-      const payload = await fetchJson(url, token);
-      const game = unwrapGamePayload(payload);
-      if (game && typeof game === "object") {
-        console.log("Fetched game details from:", url);
-        return game;
-      }
-    } catch (err) {
-      console.log("Failed endpoint", url, String(err));
-    }
+async function tryFetchJson(url: string, token: string): Promise<any | null> {
+  try {
+    return await fetchJson(url, token);
+  } catch {
+    return null;
   }
-
-  console.log("No game detail endpoint worked for game", gameId);
-  return null;
 }
 
 async function loginToAutodarts(): Promise<string | null> {
@@ -124,10 +95,7 @@ async function loginToAutodarts(): Promise<string | null> {
         password,
         scope: "openid",
       });
-
-      if (clientSecret) {
-        params.set("client_secret", clientSecret);
-      }
+      if (clientSecret) params.set("client_secret", clientSecret);
 
       const res = await fetch(tokenUrl, {
         method: "POST",
@@ -151,20 +119,106 @@ async function loginToAutodarts(): Promise<string | null> {
 
       const invalidClient =
         res.status === 401 && /(invalid_client|unauthorized_client)/i.test(errText);
-
-      if (!invalidClient || configuredClientId) {
-        break;
-      }
+      if (!invalidClient || configuredClientId) break;
     } catch (err) {
       lastAuthError = String(err);
       console.error(`Autodarts login error for client ${clientId}:`, err);
     }
   }
 
-  console.log(
-    `Autodarts login failed for all clients (${candidateClientIds.join(", ")}): ${lastAuthError}`
-  );
+  console.log(`Autodarts login failed for all clients: ${lastAuthError}`);
   return null;
+}
+
+// ── Compute per-leg stats from turns ──────────────────────────────
+function processGameTurns(
+  game: any,
+  playerIdMap: Record<string, number>,
+  s1: PlayerStats,
+  s2: PlayerStats,
+) {
+  const turns = game.turns || game.visits || game.rounds || [];
+  let turnIdx1 = 0, turnIdx2 = 0;
+
+  for (const turn of turns) {
+    let pIdx = 0;
+    if (turn.playerId && playerIdMap[turn.playerId] !== undefined) {
+      pIdx = playerIdMap[turn.playerId];
+    } else if (typeof turn.player === "number") {
+      pIdx = turn.player;
+    } else if (typeof turn.playerIndex === "number") {
+      pIdx = turn.playerIndex;
+    }
+    pIdx = pIdx === 1 ? 1 : 0;
+
+    const dartsArr = Array.isArray(turn.throws) ? turn.throws :
+                     Array.isArray(turn.darts) ? turn.darts : null;
+
+    let points = 0;
+    if (typeof turn.points === "number") {
+      points = turn.points;
+    } else if (dartsArr) {
+      for (const d of dartsArr) {
+        const seg = d.segment || d;
+        points += (seg.number ?? seg.value ?? 0) * (seg.multiplier ?? 1);
+      }
+    }
+
+    let dartsCount = 3;
+    if (dartsArr) dartsCount = dartsArr.length;
+    else if (typeof turn.dartsThrown === "number") dartsCount = turn.dartsThrown;
+
+    const st = pIdx === 0 ? s1 : s2;
+    const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
+
+    const scoreBeforeTurn = typeof turn.score === "number" ? turn.score + points : null;
+
+    st.totalScore += points;
+    st.totalDarts += dartsCount;
+
+    if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
+      st.until170Score += points;
+      st.until170Darts += dartsCount;
+    }
+
+    if (tidx < 3) {
+      st.first9Score += points;
+      st.first9Darts += dartsCount;
+    }
+
+    if (points === 180) st.oneEighties++;
+    if (points >= 100) st.tonPlus++;
+    else if (points >= 80) st.ton80++;
+    else if (points >= 60) st.ton60++;
+
+    // Checkout detection
+    const remainingScore = typeof turn.score === "number" ? turn.score : -1;
+    const isBusted = turn.busted === true;
+    const isCheckout = !isBusted && (remainingScore === 0 || turn.isCheckout === true || turn.checkout === true);
+
+    if (isCheckout && points > 0) {
+      st.checkoutHits++;
+      if (points > st.highCheckout) st.highCheckout = points;
+    }
+
+    // Checkout attempts
+    const canAttemptCheckout = scoreBeforeTurn != null && scoreBeforeTurn <= 170 && scoreBeforeTurn > 1;
+
+    if (typeof turn.checkoutAttempts === "number") {
+      st.checkoutAttempts += turn.checkoutAttempts;
+    } else if (typeof turn.doublesThrown === "number") {
+      st.checkoutAttempts += turn.doublesThrown;
+    } else if (dartsArr && canAttemptCheckout) {
+      // Only count double/bull attempts when the player could check out
+      for (const d of dartsArr) {
+        const seg = d.segment || d;
+        const bed = seg.bed || "";
+        if (bed === "D" || bed === "Double" || seg.multiplier === 2 || seg.name === "BULL") {
+          st.checkoutAttempts++;
+        }
+      }
+    }
+  }
 }
 
 async function fetchMatchData(matchId: string, token: string) {
@@ -178,20 +232,24 @@ async function fetchMatchData(matchId: string, token: string) {
   const players = match.players || [];
   if (players.length < 2) throw new Error("Match does not have 2 players");
 
+  // Log full player structure for debugging
+  console.log("Player[0] keys:", Object.keys(players[0]));
+  console.log("Player[1] keys:", Object.keys(players[1]));
+  console.log("Player[0] full:", JSON.stringify(players[0]).substring(0, 800));
+  console.log("Player[1] full:", JSON.stringify(players[1]).substring(0, 800));
+
   const p1Name = players[0].name || players[0].username || "Player 1";
   const p2Name = players[1].name || players[1].username || "Player 2";
   const p1AutoId = players[0].userId || players[0].id || players[0].playerId || null;
   const p2AutoId = players[1].userId || players[1].id || players[1].playerId || null;
 
-  // Build playerId -> index map (Autodarts uses UUIDs in turns, not numeric indices)
   const playerIdMap: Record<string, number> = {};
   for (let i = 0; i < players.length; i++) {
     const pid = players[i].userId || players[i].id || players[i].playerId;
     if (pid) playerIdMap[pid] = i;
   }
-  console.log("Player ID map:", JSON.stringify(playerIdMap));
 
-  // Extract scores from match.scores (nested objects)
+  // Extract scores
   let legsWon1 = 0, legsWon2 = 0;
   if (Array.isArray(match.scores) && match.scores.length >= 2) {
     const s1 = match.scores[0];
@@ -205,19 +263,35 @@ async function fetchMatchData(matchId: string, token: string) {
     }
   }
 
-  // Try pre-calculated stats from players first
-  const ps1 = players[0].stats || {};
-  const ps2 = players[1].stats || {};
+  // ── Try Autodarts stats endpoint first ──
+  const statsEndpoints = [
+    `${API_BASE}/as/v0/matches/${matchId}/stats`,
+    `${API_BASE}/gs/v0/matches/${matchId}/stats`,
+  ];
+  for (const url of statsEndpoints) {
+    const statsData = await tryFetchJson(url, token);
+    if (statsData) {
+      console.log("Got match stats from endpoint:", url);
+      console.log("Stats data keys:", Object.keys(statsData));
+      console.log("Stats data:", JSON.stringify(statsData).substring(0, 2000));
+    }
+  }
+
+  // ── Check pre-calculated stats on players ──
+  const ps1 = players[0].stats || players[0].matchStats || players[0].gameStats || {};
+  const ps2 = players[1].stats || players[1].matchStats || players[1].gameStats || {};
   const hasPreCalc = Object.keys(ps1).length > 2 || Object.keys(ps2).length > 2;
 
-  let s1 = emptyStats(), s2 = emptyStats();
-  s1.legsWon = legsWon1;
-  s2.legsWon = legsWon2;
+  let st1 = emptyStats(), st2 = emptyStats();
+  st1.legsWon = legsWon1;
+  st2.legsWon = legsWon2;
 
   if (hasPreCalc) {
-    console.log("Using pre-calculated stats");
-    s1 = {
-      ...s1,
+    console.log("Using pre-calculated player stats");
+    console.log("ps1:", JSON.stringify(ps1));
+    console.log("ps2:", JSON.stringify(ps2));
+    st1 = {
+      ...st1,
       totalScore: 0, totalDarts: ps1.dartsThrown ?? ps1.darts ?? 0,
       first9Score: 0, first9Darts: 0,
       oneEighties: ps1.oneEighties ?? ps1["180s"] ?? 0,
@@ -228,8 +302,8 @@ async function fetchMatchData(matchId: string, token: string) {
       checkoutAttempts: ps1.checkoutAttempts ?? ps1.checkoutDarts ?? 0,
       checkoutHits: ps1.checkoutHits ?? ps1.checkouts ?? 0,
     };
-    s2 = {
-      ...s2,
+    st2 = {
+      ...st2,
       totalScore: 0, totalDarts: ps2.dartsThrown ?? ps2.darts ?? 0,
       first9Score: 0, first9Darts: 0,
       oneEighties: ps2.oneEighties ?? ps2["180s"] ?? 0,
@@ -247,199 +321,39 @@ async function fetchMatchData(matchId: string, token: string) {
     const a170_1 = ps1.avgUntil170 ?? ps1.averageUntil170 ?? ps1.avg_u170 ?? null;
     const a170_2 = ps2.avgUntil170 ?? ps2.averageUntil170 ?? ps2.avg_u170 ?? null;
 
-    return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
+    return buildResult(st1, st2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
   }
 
-  // No pre-calculated stats - parse from games array
-  const gameIds: string[] = [];
+  // ── Parse from embedded games ──
   const embeddedGames: any[] = [];
-
   if (Array.isArray(match.games)) {
     console.log("Games count:", match.games.length);
     for (const g of match.games) {
-      if (typeof g === "string") {
-        gameIds.push(g);
-      } else if (g && typeof g === "object") {
+      if (g && typeof g === "object") {
         embeddedGames.push(g);
-        if (g.id) gameIds.push(g.id);
       }
     }
-
     if (embeddedGames.length > 0) {
-      console.log("Embedded game sample keys:", Object.keys(embeddedGames[0] || {}));
+      console.log("Embedded game[0] keys:", Object.keys(embeddedGames[0]));
     }
   }
 
-  // Also check legs/sets arrays
-  const legArrays = match.legs || match.sets?.[0]?.legs || [];
-  
-  if (gameIds.length > 0 || embeddedGames.length > 0) {
-    console.log("Processing games...");
-    const fetchedGames = gameIds.length > 0
-      ? await Promise.all(gameIds.map((gid) => fetchGameDetail(matchId, gid, token)))
-      : [];
-
-    const games = [...embeddedGames, ...fetchedGames].filter(Boolean);
-
-    for (const game of games) {
-      console.log("Game keys:", Object.keys(game));
-
-      if (typeof game.winner === "number") {
-        if (game.winner === 0) s1.legsWon = Math.max(s1.legsWon, legsWon1);
-        else if (game.winner === 1) s2.legsWon = Math.max(s2.legsWon, legsWon2);
-      }
-
-      const turns = game.turns || game.visits || game.rounds || [];
-      let turnIdx1 = 0, turnIdx2 = 0;
-
-      // Log first turn structure for debugging
-      if (turns.length > 0) {
-        console.log("Sample turn keys:", Object.keys(turns[0]));
-        console.log("Sample turn:", JSON.stringify(turns[0]).substring(0, 500));
-      }
-
-      for (const turn of turns) {
-        // Resolve player index: use playerId UUID mapped to match.players order
-        let pIdx = 0;
-        if (turn.playerId && playerIdMap[turn.playerId] !== undefined) {
-          pIdx = playerIdMap[turn.playerId];
-        } else if (typeof turn.player === "number") {
-          pIdx = turn.player;
-        } else if (typeof turn.playerIndex === "number") {
-          pIdx = turn.playerIndex;
-        } else if (typeof turn.turn === "number") {
-          // In some Autodarts formats, turn.turn alternates 0/1 within a round
-          pIdx = turn.turn % 2;
-        }
-        // Clamp to 0 or 1
-        pIdx = pIdx === 1 ? 1 : 0;
-
-        // Extract darts array - Autodarts uses "throws" not "darts"
-        const dartsArr = Array.isArray(turn.throws) ? turn.throws :
-                         Array.isArray(turn.darts) ? turn.darts : null;
-
-        // Calculate points from turn
-        let points = 0;
-        if (typeof turn.points === "number") {
-          points = turn.points;
-        } else if (dartsArr) {
-          for (const d of dartsArr) {
-            const segment = d.segment || d;
-            const mul = segment.multiplier ?? d.multiplier ?? 1;
-            const val = segment.number ?? segment.value ?? d.number ?? d.value ?? 0;
-            points += val * mul;
-          }
-        }
-
-        // Count darts - ensure it's always a number
-        let dartsCount = 3;
-        if (dartsArr) {
-          dartsCount = dartsArr.length;
-        } else if (typeof turn.dartsThrown === "number") {
-          dartsCount = turn.dartsThrown;
-        }
-
-        const st = pIdx === 0 ? s1 : s2;
-        const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
-
-        // Avg until 170: count turns where score before throw is > 170
-        // In Autodarts, turn.score is remaining score AFTER the throw
-        const scoreBeforeTurn = typeof turn.score === "number" ? turn.score + points : null;
-
-        st.totalScore += points;
-        st.totalDarts += dartsCount;
-
-        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
-          st.until170Score += points;
-          st.until170Darts += dartsCount;
-        }
-
-        if (tidx < 3) {
-          st.first9Score += points;
-          st.first9Darts += dartsCount;
-        }
-
-        if (points === 180) st.oneEighties++;
-        if (points >= 100) st.tonPlus++;
-        else if (points >= 80) st.ton80++;
-        else if (points >= 60) st.ton60++;
-
-        // Checkout detection - score field = remaining score after the throw
-        const remainingScore = typeof turn.score === "number" ? turn.score : -1;
-        const isCheckout = remainingScore === 0 || turn.isCheckout === true || turn.checkout === true;
-
-        if (isCheckout && points > 0) {
-          st.checkoutHits++;
-          if (points > st.highCheckout) st.highCheckout = points;
-        }
-
-        // Checkout attempts: only count darts at doubles/bull when player had a finish (<=170) before throw
-        const canAttemptCheckout = scoreBeforeTurn != null && scoreBeforeTurn <= 170 && scoreBeforeTurn > 1;
-
-        if (typeof turn.checkoutAttempts === "number") {
-          st.checkoutAttempts += turn.checkoutAttempts;
-        } else if (typeof turn.doublesThrown === "number") {
-          st.checkoutAttempts += turn.doublesThrown;
-        } else if (dartsArr && canAttemptCheckout) {
-          for (const d of dartsArr) {
-            const seg = d.segment || d;
-            if (seg.bed === "D" || seg.bed === "Double" || seg.multiplier === 2 || seg.name === "BULL") {
-              st.checkoutAttempts++;
-            }
-          }
-        }
-      }
-
-      if (game.stats) {
-        console.log("Game has stats:", JSON.stringify(game.stats));
-      }
-      if (Array.isArray(game.players)) {
-        for (let pi = 0; pi < game.players.length && pi < 2; pi++) {
-          const gp = game.players[pi];
-          if (gp?.stats && Object.keys(gp.stats).length > 0) {
-            console.log(`Game player ${pi} stats:`, JSON.stringify(gp.stats));
-          }
-        }
-      }
-    }
-
-  } else if (legArrays.length > 0) {
-    console.log("Parsing", legArrays.length, "legs from match data");
-    for (const leg of legArrays) {
-      const turns = leg.turns || leg.visits || leg.rounds || [];
-      let turnIdx1 = 0, turnIdx2 = 0;
-      for (const turn of turns) {
-        const pIdx = turn.player ?? turn.playerIndex ?? 0;
-        const points = turn.points ?? 0;
-        const remaining = typeof turn.score === "number" ? turn.score : null;
-        const darts = turn.darts?.length ?? turn.throws?.length ?? turn.dartsThrown ?? 3;
-        const st = pIdx === 0 ? s1 : s2;
-        const tidx = pIdx === 0 ? turnIdx1++ : turnIdx2++;
-        st.totalScore += points;
-        st.totalDarts += darts;
-        const scoreBeforeTurn = remaining != null ? remaining + points : null;
-        if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
-          st.until170Score += points;
-          st.until170Darts += darts;
-        }
-        if (tidx < 3) { st.first9Score += points; st.first9Darts += darts; }
-        if (points === 180) st.oneEighties++;
-        if (points >= 100) st.tonPlus++;
-        else if (points >= 80) st.ton80++;
-        else if (points >= 60) st.ton60++;
-      }
+  if (embeddedGames.length > 0) {
+    console.log("Processing", embeddedGames.length, "embedded games...");
+    for (const game of embeddedGames) {
+      processGameTurns(game, playerIdMap, st1, st2);
     }
   }
 
-  // Calculate averages
-  const avg1 = s1.totalDarts > 0 ? Math.round((s1.totalScore / s1.totalDarts) * 3 * 100) / 100 : null;
-  const avg2 = s2.totalDarts > 0 ? Math.round((s2.totalScore / s2.totalDarts) * 3 * 100) / 100 : null;
-  const f9a1 = s1.first9Darts > 0 ? Math.round((s1.first9Score / s1.first9Darts) * 3 * 100) / 100 : null;
-  const f9a2 = s2.first9Darts > 0 ? Math.round((s2.first9Score / s2.first9Darts) * 3 * 100) / 100 : null;
-  const a170_1 = s1.until170Darts > 0 ? Math.round((s1.until170Score / s1.until170Darts) * 3 * 100) / 100 : null;
-  const a170_2 = s2.until170Darts > 0 ? Math.round((s2.until170Score / s2.until170Darts) * 3 * 100) / 100 : null;
+  // Calculate averages from accumulated turn data
+  const avg1 = st1.totalDarts > 0 ? Math.round((st1.totalScore / st1.totalDarts) * 3 * 100) / 100 : null;
+  const avg2 = st2.totalDarts > 0 ? Math.round((st2.totalScore / st2.totalDarts) * 3 * 100) / 100 : null;
+  const f9a1 = st1.first9Darts > 0 ? Math.round((st1.first9Score / st1.first9Darts) * 3 * 100) / 100 : null;
+  const f9a2 = st2.first9Darts > 0 ? Math.round((st2.first9Score / st2.first9Darts) * 3 * 100) / 100 : null;
+  const a170_1 = st1.until170Darts > 0 ? Math.round((st1.until170Score / st1.until170Darts) * 3 * 100) / 100 : null;
+  const a170_2 = st2.until170Darts > 0 ? Math.round((st2.until170Score / st2.until170Darts) * 3 * 100) / 100 : null;
 
-  return buildResult(s1, s2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
+  return buildResult(st1, st2, avg1, avg2, f9a1, f9a2, a170_1, a170_2, p1Name, p2Name, p1AutoId, p2AutoId, matchId);
 }
 
 function buildResult(
@@ -449,7 +363,7 @@ function buildResult(
   a170_1: number | null, a170_2: number | null,
   p1Name: string, p2Name: string,
   p1AutoId: string | null, p2AutoId: string | null,
-  matchId: string
+  matchId: string,
 ) {
   const result = {
     score1: s1.legsWon,
@@ -512,12 +426,10 @@ Deno.serve(async (req) => {
 
     const matchId = extractMatchId(input);
 
-    // Try user-provided token first, then fallback to server-side login
     let adToken = autodarts_token || null;
     let tokenSource = "extension";
 
     if (adToken) {
-      // Test if token is still valid
       try {
         const testRes = await fetch(`${API_BASE}/as/v0/matches/${matchId}`, {
           headers: { Authorization: `Bearer ${adToken}` },
@@ -526,7 +438,6 @@ Deno.serve(async (req) => {
           console.log("Extension token expired, falling back to server-side login");
           adToken = null;
         } else {
-          // consume the body so we don't leak
           await testRes.text();
         }
       } catch {
@@ -535,13 +446,12 @@ Deno.serve(async (req) => {
     }
 
     if (!adToken) {
-      // Server-side login to Autodarts using stored credentials
       adToken = await loginToAutodarts();
       tokenSource = "server";
       if (!adToken) {
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           error: "Nie udało się zalogować do Autodarts",
-          message: "Token z rozszerzenia wygasł, a logowanie serwerowe nie powiodło się. Odśwież play.autodarts.io i spróbuj ponownie."
+          message: "Token z rozszerzenia wygasł, a logowanie serwerowe nie powiodło się. Odśwież play.autodarts.io i spróbuj ponownie.",
         }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -558,7 +468,7 @@ Deno.serve(async (req) => {
     console.error("Error:", err);
     return new Response(
       JSON.stringify({ error: "Failed to fetch Autodarts data", details: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
