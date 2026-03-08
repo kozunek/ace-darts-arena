@@ -242,8 +242,38 @@ const SubmitMatchPage = () => {
                       if (!autodartsLink) return;
                       setFetchingAutodarts(true);
                       try {
+                        // Try to get token from Chrome extension via window message
+                        let adToken: string | null = null;
+                        
+                        // Method 1: Check if extension injected token into page
+                        const extTokenEl = document.getElementById('edart-autodarts-token') as HTMLInputElement | null;
+                        if (extTokenEl?.value) {
+                          adToken = extTokenEl.value;
+                        }
+                        
+                        // Method 2: Prompt user to paste token manually if no extension
+                        if (!adToken) {
+                          adToken = prompt(
+                            "🎯 Token Autodarts wymagany!\n\n" +
+                            "Aby pobrać statystyki, potrzebny jest token z Twojej sesji Autodarts.\n\n" +
+                            "Jak go zdobyć:\n" +
+                            "1. Otwórz play.autodarts.io i zaloguj się\n" +
+                            "2. Naciśnij F12 → zakładka Network\n" +
+                            "3. Kliknij dowolny request do api.autodarts.io\n" +
+                            "4. Skopiuj wartość 'Authorization: Bearer ...' (sam token bez 'Bearer ')\n\n" +
+                            "Lub zainstaluj rozszerzenie Chrome eDART z zakładki Ustawienia.\n\n" +
+                            "Wklej token:"
+                          );
+                        }
+                        
+                        if (!adToken) {
+                          toast({ title: "Anulowano", description: "Nie podano tokena Autodarts", variant: "destructive" });
+                          setFetchingAutodarts(false);
+                          return;
+                        }
+
                         const { data: fnData, error: fnError } = await supabase.functions.invoke("fetch-autodarts-match", {
-                          body: { autodarts_link: autodartsLink },
+                          body: { autodarts_link: autodartsLink, autodarts_token: adToken.trim() },
                         });
                         if (fnError || !fnData?.success) {
                           toast({ title: "Błąd", description: fnData?.error || fnError?.message || "Nie udało się pobrać danych", variant: "destructive" });
