@@ -62,14 +62,6 @@ const PlayerProfilePage = () => {
 
             {/* Progress chart */}
             <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
-        );
-
-        return (
-          <div key={league.id} className="mb-10">
-            <h2 className="text-xl font-display font-bold text-foreground mb-4 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-accent" />
-              {league.name} <span className="text-sm text-muted-foreground font-body font-normal">· {league.season}</span>
-            </h2>
 
             {/* Main stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
