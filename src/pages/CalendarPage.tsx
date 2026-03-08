@@ -112,6 +112,7 @@ const CalendarPage = () => {
                     {dayMatches.length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {hasUpcoming && <span className="h-2 w-2 rounded-full bg-accent" />}
+                        {hasConfirmed && <span className="h-2 w-2 rounded-full bg-primary" />}
                         {hasCompleted && <span className="h-2 w-2 rounded-full bg-secondary" />}
                         {dayMatches.length > 1 && (
                           <span className="text-[9px] text-muted-foreground font-display">{dayMatches.length}</span>
