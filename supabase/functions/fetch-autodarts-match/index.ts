@@ -158,26 +158,35 @@ async function fetchMatchData(matchId: string, token: string) {
 
   // No pre-calculated stats - parse from games array
   const gameIds: string[] = [];
+  const embeddedGames: any[] = [];
+
   if (Array.isArray(match.games)) {
     console.log("Games count:", match.games.length);
     for (const g of match.games) {
-      if (typeof g === "string") gameIds.push(g);
-      else if (g?.id) gameIds.push(g.id);
+      if (typeof g === "string") {
+        gameIds.push(g);
+      } else if (g && typeof g === "object") {
+        embeddedGames.push(g);
+        if (g.id) gameIds.push(g.id);
+      }
+    }
+
+    if (embeddedGames.length > 0) {
+      console.log("Embedded game sample keys:", Object.keys(embeddedGames[0] || {}));
     }
   }
 
   // Also check legs/sets arrays
   const legArrays = match.legs || match.sets?.[0]?.legs || [];
   
-  if (gameIds.length > 0) {
-    console.log("Fetching", gameIds.length, "individual games...");
-    const gamePromises = gameIds.map((gid) => fetchGameDetail(matchId, gid, token));
-    const games = await Promise.all(gamePromises);
+  if (gameIds.length > 0 || embeddedGames.length > 0) {
+    console.log("Processing games...");
+    const fetchedGames = gameIds.length > 0
+      ? await Promise.all(gameIds.map((gid) => fetchGameDetail(matchId, gid, token)))
+      : [];
 
-    let legIdx = 0;
-    for (const game of games) {
-      if (!game) continue;
-      console.log("Game keys:", Object.keys(game));
+    const games = [...embeddedGames, ...fetchedGames].filter(Boolean);
+
       
       // Determine leg winner
       if (typeof game.winner === "number") {
