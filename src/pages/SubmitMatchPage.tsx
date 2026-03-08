@@ -40,7 +40,7 @@ const readScore = (scoreLike: unknown): number => {
   return asNumber(scoreLike, 0);
 };
 
-const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
+const STAT_LABELS: { key1: string; key2: string; label: string; format?: "checkout" }[] = [
   { key1: "avg1", key2: "avg2", label: "Średnia" },
   { key1: "first_9_avg1", key2: "first_9_avg2", label: "Średnia z 9" },
   { key1: "avg_until_170_1", key2: "avg_until_170_2", label: "Śr. do 170" },
@@ -51,9 +51,12 @@ const STAT_LABELS: { key1: string; key2: string; label: string }[] = [
   { key1: "ton_plus1", key2: "ton_plus2", label: "140+" },
   { key1: "ton40_1", key2: "ton40_2", label: "170+" },
   { key1: "darts_thrown1", key2: "darts_thrown2", label: "Rzuty" },
-  { key1: "checkout_attempts1", key2: "checkout_attempts2", label: "Checkout próby" },
-  { key1: "checkout_hits1", key2: "checkout_hits2", label: "Checkout traf." },
 ];
+
+const formatCheckout = (hits: number, attempts: number): string => {
+  if (attempts <= 0) return "0.00% (0/0)";
+  return `${((hits / attempts) * 100).toFixed(2)}% (${hits}/${attempts})`;
+};
 
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
