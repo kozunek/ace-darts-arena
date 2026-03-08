@@ -86,8 +86,8 @@ const StatsPage = () => {
               return (
                 <motion.div key={entry.playerId} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.15, duration: 0.5 }} className="flex flex-col items-center">
                   <Link to={`/players/${entry.playerId}`} className="flex flex-col items-center group">
-                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary/20 border-2 ${rank === 1 ? "border-accent" : "border-border"} flex items-center justify-center text-sm md:text-base font-display font-bold text-primary group-hover:scale-110 transition-transform mb-2`}>
-                      {entry.avatar}
+                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary/20 border-2 ${rank === 1 ? "border-accent" : "border-border"} flex items-center justify-center text-sm md:text-base font-display font-bold text-primary group-hover:scale-110 transition-transform mb-2 overflow-hidden`}>
+                      {entry.avatarUrl ? <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" /> : entry.avatar}
                     </div>
                     <span className="font-body font-medium text-foreground text-xs md:text-sm text-center">{entry.playerName}</span>
                   </Link>
