@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap } from "lucide-react";
+import { achievements } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import PlayerProgressChart from "@/components/PlayerProgressChart";
 import PlayerAvatar from "@/components/PlayerAvatar";
