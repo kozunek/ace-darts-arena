@@ -327,6 +327,20 @@ async function fetchMatchData(matchId: string, token: string) {
   const players = match.players || [];
   if (players.length < 2) throw new Error("Match does not have 2 players");
 
+  // DEBUG: Log full player objects and match-level keys to discover checkout fields
+  console.log("=== MATCH TOP-LEVEL KEYS ===", Object.keys(match));
+  console.log("=== MATCH.variant ===", match.variant);
+  console.log("=== MATCH.gameMode ===", match.gameMode);
+  for (let pi = 0; pi < Math.min(players.length, 2); pi++) {
+    console.log(`=== PLAYER ${pi} FULL ===`, JSON.stringify(players[pi]).substring(0, 2000));
+  }
+  // Check if match has stats/statistics at top level
+  for (const statsKey of ["stats", "statistics", "playerStats", "matchStats", "summary"]) {
+    if (match[statsKey]) {
+      console.log(`=== MATCH.${statsKey} ===`, JSON.stringify(match[statsKey]).substring(0, 2000));
+    }
+  }
+
   console.log("Players:", players.map((p: any) => ({ name: p.name, id: p.id, userId: p.userId })));
 
   const p1Name = players[0].name || "Player 1";
@@ -379,6 +393,18 @@ async function fetchMatchData(matchId: string, token: string) {
   const f9 = (s: PlayerStats) => s.first9Darts > 0 ? Math.round((s.first9Score / s.first9Darts) * 3 * 100) / 100 : null;
   const a170 = (s: PlayerStats) => s.until170Darts > 0 ? Math.round((s.until170Score / s.until170Darts) * 3 * 100) / 100 : null;
 
+  // Build debug info with raw player data keys for checkout discovery
+  const debugPlayers = players.map((p: any) => {
+    const result: Record<string, unknown> = { name: p.name };
+    // Include all keys from player object  
+    for (const key of Object.keys(p)) {
+      if (key !== "name") result[key] = p[key];
+    }
+    return result;
+  });
+
+  const debugMatchKeys = Object.keys(match).filter(k => k !== "games");
+
   return {
     score1: st[0].legsWon, score2: st[1].legsWon,
     avg1: avg(st[0]), avg2: avg(st[1]),
@@ -396,6 +422,8 @@ async function fetchMatchData(matchId: string, token: string) {
     player1_name: p1Name, player2_name: p2Name,
     player1_autodarts_id: p1AutoId, player2_autodarts_id: p2AutoId,
     autodarts_link: `https://play.autodarts.io/history/matches/${matchId}`,
+    _debug_match_keys: debugMatchKeys,
+    _debug_players: debugPlayers,
   };
 }
 

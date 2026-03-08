@@ -635,6 +635,16 @@ const SubmitMatchPage = () => {
                   <p className="text-[10px] text-muted-foreground text-center">
                     Dane z Autodarts uzupełniły formularz poniżej.
                   </p>
+
+                  {/* Debug: show raw player structure from Autodarts API */}
+                  {rawPreview._debug_players && (
+                    <details className="mt-2">
+                      <summary className="text-[10px] text-muted-foreground cursor-pointer">🔍 Debug: surowe dane z API</summary>
+                      <pre className="text-[9px] text-muted-foreground bg-muted/50 rounded p-2 mt-1 overflow-auto max-h-60 whitespace-pre-wrap">
+                        {JSON.stringify({ match_keys: rawPreview._debug_match_keys, players: rawPreview._debug_players }, null, 2)}
+                      </pre>
+                    </details>
+                  )}
                 </div>
               )}
 
