@@ -327,6 +327,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       checkout_hits1: data.checkoutHits1 ?? 0,
       checkout_hits2: data.checkoutHits2 ?? 0,
       autodarts_link: data.autodartsLink,
+      nine_darters1: data.nineDarters1 ?? 0,
+      nine_darters2: data.nineDarters2 ?? 0,
     }).eq("id", matchId);
 
     setMatchList((prev) =>
