@@ -525,6 +525,19 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   </SelectContent>
                 </Select>
               </div>
+              {leagueType === "league" && (
+                <div className="space-y-2">
+                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Spotkania na parę</Label>
+                  <Select value={String(meetingsPerPair)} onValueChange={(v) => setMeetingsPerPair(parseInt(v))}>
+                    <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map(n => (
+                        <SelectItem key={n} value={String(n)}>{n}x (każdy z każdym {n} {n === 1 ? "raz" : "razy"})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Opis</Label>
