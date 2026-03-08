@@ -162,7 +162,7 @@ const Navbar = () => {
 
         {mobileOpen && (
           <div className="lg:hidden pb-4 animate-fade-in">
-            {allMobileItems.map((item) => (
+            {allMobileItems.filter(item => !item.authOnly || user).map((item) => (
               <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}>
                 <Button
                   variant={location.pathname === item.href ? "default" : "ghost"}
@@ -176,11 +176,6 @@ const Navbar = () => {
             {user && (
               <>
                 <div className="my-2 border-t border-border" />
-                <Link to="/my-matches" onClick={() => setMobileOpen(false)}>
-                  <Button variant={location.pathname === "/my-matches" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
-                    <Handshake className="h-4 w-4 mr-1" /> Moje Mecze
-                  </Button>
-                </Link>
                 <Link to="/settings" onClick={() => setMobileOpen(false)}>
                   <Button variant={location.pathname === "/settings" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
                     <Settings className="h-4 w-4 mr-1" /> Ustawienia
