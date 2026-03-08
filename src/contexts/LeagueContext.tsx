@@ -364,6 +364,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       darts_thrown1: 0, darts_thrown2: 0,
       checkout_attempts1: 0, checkout_attempts2: 0,
       checkout_hits1: 0, checkout_hits2: 0,
+      nine_darters1: 0, nine_darters2: 0,
       autodarts_link: null,
     }).eq("id", matchId);
 
