@@ -110,11 +110,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
-    setIsModerator(false);
+    try {
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+      setIsModerator(false);
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
   };
 
   const resetPassword = async (email: string) => {

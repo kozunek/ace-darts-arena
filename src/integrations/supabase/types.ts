@@ -21,6 +21,7 @@ export type Database = {
           format: string | null
           id: string
           is_active: boolean
+          league_type: string
           max_legs: number | null
           name: string
           season: string
@@ -31,6 +32,7 @@ export type Database = {
           format?: string | null
           id?: string
           is_active?: boolean
+          league_type?: string
           max_legs?: number | null
           name: string
           season: string
@@ -41,6 +43,7 @@ export type Database = {
           format?: string | null
           id?: string
           is_active?: boolean
+          league_type?: string
           max_legs?: number | null
           name?: string
           season?: string
@@ -52,6 +55,8 @@ export type Database = {
           autodarts_link: string | null
           avg1: number | null
           avg2: number | null
+          bracket_position: number | null
+          bracket_round: string | null
           checkout_attempts1: number
           checkout_attempts2: number
           checkout_hits1: number
@@ -60,6 +65,7 @@ export type Database = {
           darts_thrown1: number | null
           darts_thrown2: number | null
           date: string
+          group_name: string | null
           high_checkout1: number | null
           high_checkout2: number | null
           id: string
@@ -87,6 +93,8 @@ export type Database = {
           autodarts_link?: string | null
           avg1?: number | null
           avg2?: number | null
+          bracket_position?: number | null
+          bracket_round?: string | null
           checkout_attempts1?: number
           checkout_attempts2?: number
           checkout_hits1?: number
@@ -95,6 +103,7 @@ export type Database = {
           darts_thrown1?: number | null
           darts_thrown2?: number | null
           date: string
+          group_name?: string | null
           high_checkout1?: number | null
           high_checkout2?: number | null
           id?: string
@@ -122,6 +131,8 @@ export type Database = {
           autodarts_link?: string | null
           avg1?: number | null
           avg2?: number | null
+          bracket_position?: number | null
+          bracket_round?: string | null
           checkout_attempts1?: number
           checkout_attempts2?: number
           checkout_hits1?: number
@@ -130,6 +141,7 @@ export type Database = {
           darts_thrown1?: number | null
           darts_thrown2?: number | null
           date?: string
+          group_name?: string | null
           high_checkout1?: number | null
           high_checkout2?: number | null
           id?: string
