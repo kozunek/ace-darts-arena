@@ -327,6 +327,20 @@ async function fetchMatchData(matchId: string, token: string) {
   const players = match.players || [];
   if (players.length < 2) throw new Error("Match does not have 2 players");
 
+  // DEBUG: Log full player objects and match-level keys to discover checkout fields
+  console.log("=== MATCH TOP-LEVEL KEYS ===", Object.keys(match));
+  console.log("=== MATCH.variant ===", match.variant);
+  console.log("=== MATCH.gameMode ===", match.gameMode);
+  for (let pi = 0; pi < Math.min(players.length, 2); pi++) {
+    console.log(`=== PLAYER ${pi} FULL ===`, JSON.stringify(players[pi]).substring(0, 2000));
+  }
+  // Check if match has stats/statistics at top level
+  for (const statsKey of ["stats", "statistics", "playerStats", "matchStats", "summary"]) {
+    if (match[statsKey]) {
+      console.log(`=== MATCH.${statsKey} ===`, JSON.stringify(match[statsKey]).substring(0, 2000));
+    }
+  }
+
   console.log("Players:", players.map((p: any) => ({ name: p.name, id: p.id, userId: p.userId })));
 
   const p1Name = players[0].name || "Player 1";
