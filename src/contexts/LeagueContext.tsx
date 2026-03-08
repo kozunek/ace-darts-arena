@@ -200,6 +200,7 @@ const calcStats = (playerId: string, leagueId: string, matches: Match[], rules: 
     ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
     ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
     tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+    ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
     checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
     checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
     const myFirst9 = isP1 ? (m.first9Avg1 ?? 0) : (m.first9Avg2 ?? 0);
