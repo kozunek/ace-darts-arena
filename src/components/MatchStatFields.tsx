@@ -10,8 +10,8 @@ interface MatchStatFieldsProps {
 
 const STAT_ROWS = [
   { label: "Średnia (3 darts)", k1: "avg1", k2: "avg2", step: "0.1" },
-  { label: "First 9 Average", k1: "first9Avg1", k2: "first9Avg2", step: "0.1" },
-  { label: "Avg Until 170", k1: "avgUntil170_1", k2: "avgUntil170_2", step: "0.1" },
+  { label: "Średnia z pierwszych 9 rzutów", k1: "first9Avg1", k2: "first9Avg2", step: "0.1" },
+  { label: "Średnia do 170", k1: "avgUntil170_1", k2: "avgUntil170_2", step: "0.1" },
   { label: "180-tki", k1: "oneEighties1", k2: "oneEighties2" },
   { label: "Najw. checkout", k1: "hc1", k2: "hc2" },
   { label: "Ton 60 (60-79)", k1: "ton60_1", k2: "ton60_2" },
