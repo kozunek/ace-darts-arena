@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const features = [
   { icon: <Zap className="h-5 w-5" />, title: "Szybki dostęp", desc: "Aplikacja działa jak natywna — uruchamia się z ekranu głównego, bez otwierania przeglądarki." },
-  { icon: <Wifi className="h-5 w-5" />, title: "Tryb offline", desc: "Przeglądaj tabelę i wyniki nawet bez połączenia z internetem." },
+  { icon: <Bell className="h-5 w-5" />, title: "Powiadomienia", desc: "Otrzymuj powiadomienia o nadchodzących meczach i wynikach na żywo." },
   { icon: <Bell className="h-5 w-5" />, title: "Powiadomienia", desc: "Otrzymuj powiadomienia o nadchodzących meczach i wynikach na żywo." },
   { icon: <Shield className="h-5 w-5" />, title: "Bezpieczeństwo", desc: "Plik APK pochodzi bezpośrednio z eDART Polska — bez reklam i zbędnych uprawnień." },
 ];
