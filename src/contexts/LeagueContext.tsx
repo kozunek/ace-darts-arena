@@ -425,6 +425,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, [matchList]);
 
   const rejectMatch = useCallback(async (matchId: string) => {
+    const match = matchList.find(m => m.id === matchId);
     // Reset match back to upcoming, clear stats
     await supabase.from("matches").update({
       status: "upcoming",
@@ -442,6 +443,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       autodarts_link: null,
     }).eq("id", matchId);
 
+    // Audit log
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("match_audit_log").insert({
+        match_id: matchId,
+        user_id: user.id,
+        action: "reject",
+        old_data: match ? { status: match.status, score1: match.score1, score2: match.score2 } : null,
+        new_data: { status: "upcoming" },
+      });
+    }
+
     setMatchList((prev) => prev.map((m) => m.id === matchId ? {
       ...m, status: "upcoming" as const,
       score1: undefined, score2: undefined, legsWon1: undefined, legsWon2: undefined,
@@ -454,7 +467,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       avgUntil170_1: undefined, avgUntil170_2: undefined,
       autodartsLink: undefined,
     } : m));
-  }, []);
+  }, [matchList]);
 
   const getPendingApprovalMatches = useCallback(() => {
     return matchList.filter(m => m.status === "pending_approval");
