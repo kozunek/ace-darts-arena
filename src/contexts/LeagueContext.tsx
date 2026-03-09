@@ -408,9 +408,21 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const approveMatch = useCallback(async (matchId: string) => {
+    const match = matchList.find(m => m.id === matchId);
     await supabase.from("matches").update({ status: "completed" }).eq("id", matchId);
+    // Audit log
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("match_audit_log").insert({
+        match_id: matchId,
+        user_id: user.id,
+        action: "approve",
+        old_data: match ? { status: match.status, score1: match.score1, score2: match.score2 } : null,
+        new_data: { status: "completed" },
+      });
+    }
     setMatchList((prev) => prev.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m));
-  }, []);
+  }, [matchList]);
 
   const rejectMatch = useCallback(async (matchId: string) => {
     // Reset match back to upcoming, clear stats
