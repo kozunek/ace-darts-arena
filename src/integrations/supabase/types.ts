@@ -172,6 +172,85 @@ export type Database = {
         }
         Relationships: []
       }
+      live_matches: {
+        Row: {
+          autodarts_link: string
+          autodarts_match_id: string
+          id: string
+          match_id: string | null
+          player1_score: number | null
+          player2_score: number | null
+          started_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          autodarts_link: string
+          autodarts_match_id: string
+          id?: string
+          match_id?: string | null
+          player1_score?: number | null
+          player2_score?: number | null
+          started_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          autodarts_link?: string
+          autodarts_match_id?: string
+          id?: string
+          match_id?: string | null
+          player1_score?: number | null
+          player2_score?: number | null
+          started_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_matches_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          match_id: string
+          new_data: Json | null
+          old_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          match_id: string
+          new_data?: Json | null
+          old_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_audit_log_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_proposals: {
         Row: {
           created_at: string
@@ -216,6 +295,38 @@ export type Database = {
             columns: ["proposer_player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          match_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          match_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          match_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_reactions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
             referencedColumns: ["id"]
           },
         ]
