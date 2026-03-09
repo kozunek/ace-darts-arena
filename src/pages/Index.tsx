@@ -7,6 +7,8 @@ import UpcomingMatchesPreview from "@/components/UpcomingMatchesPreview";
 import LeagueSelector from "@/components/LeagueSelector";
 import OpenLeagues from "@/components/OpenLeagues";
 import LeagueWinners from "@/components/LeagueWinners";
+import MyNextMatchWidget from "@/components/MyNextMatchWidget";
+import LiveMatchesWidget from "@/components/LiveMatchesWidget";
 
 const Index = () => {
   const { activeLeagueId, leagues } = useLeague();
@@ -17,6 +19,8 @@ const Index = () => {
     <div className="min-h-screen">
       <HeroSection />
       <div className="container mx-auto px-4 py-8 space-y-8">
+        <MyNextMatchWidget />
+        <LiveMatchesWidget />
         <LeagueWinners />
         <OpenLeagues />
         <LeagueSelector />

@@ -2,6 +2,7 @@ import { useLeague } from "@/contexts/LeagueContext";
 import { Calendar, Trophy, Clock, ExternalLink, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import LeagueSelector from "@/components/LeagueSelector";
+import MatchReactions from "@/components/MatchReactions";
 
 const MatchesPage = () => {
   const { activeLeagueId, getLeagueMatches } = useLeague();
@@ -69,6 +70,7 @@ const MatchesPage = () => {
                     <div className="font-body font-medium text-foreground">{match.player2Name}</div>
                   </div>
                 </div>
+                <MatchReactions matchId={match.id} />
               </div>
             ))}
           </div>
@@ -115,6 +117,7 @@ const MatchesPage = () => {
                   )}
                 </div>
               </div>
+              <MatchReactions matchId={match.id} />
             </div>
           ))}
           {completed.length === 0 && <p className="text-muted-foreground font-body">Brak rozegranych meczów.</p>}
