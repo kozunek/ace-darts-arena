@@ -1,0 +1,52 @@
+{
+  "manifest_version": 2,
+  "name": "eDART Polska - Autodarts Stats",
+  "version": "1.4.0",
+  "description": "Automatycznie pobiera token Autodarts i wysyła statystyki do eDART Polska",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "edart-polska@autodarts.pl",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "cookies",
+    "storage",
+    "webRequest",
+    "notifications",
+    "https://login.autodarts.io/*",
+    "https://play.autodarts.io/*",
+    "https://api.autodarts.io/*",
+    "https://ace-darts-arena.lovable.app/*",
+    "https://*.lovableproject.com/*",
+    "https://*.lovable.app/*",
+    "https://uiolhzctnbskdjteufkj.supabase.co/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.autodarts.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://ace-darts-arena.lovable.app/*",
+        "https://*.lovableproject.com/*",
+        "https://*.lovable.app/*"
+      ],
+      "js": ["inject-token.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon48.png"
+  }
+}
