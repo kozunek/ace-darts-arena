@@ -23,6 +23,8 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <MyNextMatchWidget />
         <LiveMatchesWidget />
+        <ApkDownloadSection />
+        <ExtensionDownloadSection />
         <LeagueWinners />
         <OpenLeagues />
         <LeagueSelector />
@@ -35,8 +37,6 @@ const Index = () => {
         {leagueType === "bracket" && <BracketView />}
         {leagueType === "group_bracket" && <GroupBracketView />}
         <UpcomingMatchesPreview />
-        <ApkDownloadSection />
-        <ExtensionDownloadSection />
       </div>
     </div>
   );
