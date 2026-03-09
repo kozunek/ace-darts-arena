@@ -12,8 +12,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } =
-      await req.json();
+    const body = await req.json();
+    const { action, autodarts_match_id, player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } = body;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Handle live match end action
+    if (action === "end_live_match" && autodarts_match_id) {
+      await supabase.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
+      return new Response(
+        JSON.stringify({ ok: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!player1_name && !player1_autodarts_id) {
       return new Response(
@@ -21,10 +34,6 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
 
     // Find player 1 - by autodarts_user_id first, then by name
     let p1Id: string | null = null;

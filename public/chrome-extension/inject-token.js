@@ -75,8 +75,15 @@
     }
   });
 
-  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.4.0" }, "*");
+  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.0" }, "*");
   postToken();
   postLastMatch();
   postLeagueMatch();
+
+  // Store eDART user ID for auto-fill functionality
+  window.addEventListener("message", (event) => {
+    if (event.data?.type === "EDART_STORE_USER_ID" && event.data?.userId) {
+      chrome.storage.local.set({ edart_user_id: event.data.userId });
+    }
+  });
 })();
