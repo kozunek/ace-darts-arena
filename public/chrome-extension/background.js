@@ -213,18 +213,12 @@ async function handleLiveMatchUpdate(payload) {
 
 async function handleLiveMatchEnded(autodartsMatchId) {
   try {
-    const stored = await new Promise((resolve) => {
-      chrome.storage.local.get(["edart_session_token"], resolve);
-    });
-    const edartToken = stored.edart_session_token || null;
-    const authToken = edartToken || SUPABASE_ANON_KEY;
-
     await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${authToken}`,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         action: "end_live_match",
