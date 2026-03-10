@@ -309,22 +309,16 @@ async function autoSubmitLeagueMatch(matchPayload) {
 
     console.log("[eDART] ✅ League match confirmed:", checkData.league_name, "match_id:", checkData.match_id);
 
-    // Step 2: Try auto-submit (requires eDART session)
+    // Step 2: Auto-submit (use eDART session if available, anon key as fallback)
     const stored = await new Promise((resolve) => {
       chrome.storage.local.get(["autodarts_token", "edart_session_token"], resolve);
     });
     const playerToken = stored.autodarts_token || null;
     const edartToken = stored.edart_session_token || null;
+    const authToken = edartToken || SUPABASE_ANON_KEY;
 
     if (!edartToken) {
-      console.error("[eDART] No eDART session token — user must be logged in to auto-submit");
-      return {
-        is_league_match: true,
-        submitted: false,
-        reason: "Nie jesteś zalogowany na eDART. Zaloguj się i wyślij wynik ręcznie.",
-        match_id: checkData.match_id,
-        league_name: checkData.league_name,
-      };
+      console.log("[eDART] No eDART session — submitting with autodarts_user_id verification");
     }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/auto-submit-league-match`, {
@@ -332,7 +326,7 @@ async function autoSubmitLeagueMatch(matchPayload) {
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${edartToken}`,
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         autodarts_match_id: matchPayload.match_id,
