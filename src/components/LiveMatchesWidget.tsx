@@ -41,7 +41,7 @@ const LiveMatchesWidget = () => {
           ...new Set(matchData.flatMap((m) => [m.player1_id, m.player2_id])),
         ];
         const { data: playersData } = await supabase
-          .from("players")
+          .from("players_public" as any)
           .select("id, name")
           .in("id", playerIds);
 

@@ -269,7 +269,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       setActiveLeagueId(leagues.find(l => l.is_active)?.id || leagues[0].id);
     }
 
-    const { data: playersData } = await supabase.from("players").select("*").order("name");
+    const { data: playersData } = await supabase.from("players_public" as any).select("*").order("name");
     const { data: plData } = await supabase.from("player_leagues").select("*");
     const playerLeagues = plData || [];
 

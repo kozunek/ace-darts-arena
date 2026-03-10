@@ -64,7 +64,7 @@ const MyMatchesPage = () => {
 
     // Get user_ids for chat links
     supabase
-      .from("players")
+      .from("players_public" as any)
       .select("id, user_id")
       .in("id", uniqueIds)
       .then(({ data }) => {
