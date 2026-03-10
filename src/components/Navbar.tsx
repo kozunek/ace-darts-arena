@@ -18,6 +18,8 @@ const primaryNavItems = [
   { label: "Mecze", href: "/matches", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Gracze", href: "/players", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-3.5 w-3.5" /> },
+  { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
+  { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" /> },
 ];
 
 const moreNavItems = [
