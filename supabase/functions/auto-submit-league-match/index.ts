@@ -59,6 +59,7 @@ interface PlayerStats {
   ton60: number; ton100: number; ton140: number; ton170: number;
   checkoutAttempts: number; checkoutHits: number;
   legsWon: number;
+  nineDarters: number;
 }
 
 function emptyStats(): PlayerStats {
@@ -70,6 +71,7 @@ function emptyStats(): PlayerStats {
     ton60: 0, ton100: 0, ton140: 0, ton170: 0,
     checkoutAttempts: 0, checkoutHits: 0,
     legsWon: 0,
+    nineDarters: 0,
   };
 }
 
