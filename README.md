@@ -371,6 +371,71 @@ verify_jwt = false
 - `pending_approval` → wynik zgłoszony, czeka na zatwierdzenie admina
 - `completed` → wynik zatwierdzony
 
+### 5. `analyze-match-screenshot` (AI Vision)
+
+**Cel:** Automatyczne rozpoznawanie statystyk z zrzutów ekranu DartCounter/DartsMind przy użyciu AI (Gemini Vision).
+
+**Endpoint:** `POST /functions/v1/analyze-match-screenshot`  
+**Auth:** Bearer token (zalogowany użytkownik eDART)
+
+**Request:**
+```json
+{
+  "screenshot_urls": ["https://...storage.../screenshot1.png"],
+  "match_context": {
+    "player1_name": "Jan Kowalski",
+    "player2_name": "Anna Nowak"
+  }
+}
+```
+
+**Parametry:**
+- `screenshot_urls` (wymagane) — tablica URL-i do przesłanych screenshotów (1-5 sztuk)
+- `match_context` (opcjonalne) — kontekst meczu ligowego, dzięki któremu AI dopasowuje graczy ze screena do formularza
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "confidence": "high",
+    "platform": "dartcounter",
+    "matched_to_context": true,
+    "screenshot_player1_name": "JanK",
+    "screenshot_player2_name": "AnnaN",
+    "player1_name": "Jan Kowalski",
+    "player2_name": "Anna Nowak",
+    "score1": 3, "score2": 2,
+    "avg1": 85.42, "avg2": 78.15,
+    "one_eighties1": 2, "one_eighties2": 0,
+    "high_checkout1": 120, "high_checkout2": 96
+  }
+}
+```
+
+**Jak działa dopasowywanie graczy:**
+1. AI odczytuje nicki ze screenshota (np. „JanK" po lewej, „AnnaN" po prawej)
+2. Jeśli podano `match_context`, AI porównuje nicki z kontekstem i mapuje statystyki tak, że `player1_*` = gracz 1 z formularza
+3. Jeśli AI nie może dopasować, `matched_to_context = false` i frontend sam próbuje dopasować po nazwie
+4. Niezależnie od pozycji na screenie (lewa/prawa), statystyki trafiają do właściwego gracza
+
+**Confidence levels:**
+- `high` — dane czytelne → może być auto-zatwierdzone
+- `low` — niektóre dane nieczytelne → wymaga ręcznej weryfikacji
+- `none` — screenshot nie wygląda na podsumowanie meczu darta
+
+**Wymagane sekrety:**
+- `LOVABLE_API_KEY` — automatycznie konfigurowany przez Lovable Cloud
+
+**Limity i rate limiting:**
+- **Model:** `google/gemini-2.5-flash` — szybki, idealny do OCR ze screenshotów
+- **Screenshoty:** max 5 na mecz
+- **Rate limit:** ~30 żądań/min na workspace (Lovable AI Gateway)
+- **Koszt:** ~0.001-0.003 USD za analizę jednego meczu (1-3 screenshoty)
+- **Przy dużej liczbie graczy:** 30 meczy/min wystarczy nawet dla dużych lig
+- **Błąd 429:** Zbyt wiele żądań — komunikat „Spróbuj za chwilę"
+- **Błąd 402:** Brak kredytów — doładuj w Lovable → Settings → Workspace → Usage
+
 ---
 
 ## 🔌 Wtyczka przeglądarki
