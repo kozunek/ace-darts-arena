@@ -40,22 +40,13 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, autodarts_match_id, player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } = body;
 
-    // Use anon key for read-only lookups; service key only for privileged actions
-    const supabaseAnon = createClient(supabaseUrl, anonKey);
-    const supabaseService = createClient(supabaseUrl, serviceKey);
+    // Use service key for player lookups (players table has RLS restricting reads)
+    const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Handle live match end action — requires admin/moderator
+    // Handle live match end action
     if (action === "end_live_match" && autodarts_match_id) {
-      const userId = claimsData.claims.sub;
-      const { data: isModAdmin } = await supabaseService.rpc("is_moderator_or_admin", { _user_id: userId });
-      if (!isModAdmin) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      await supabaseService.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
+      await supabase.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
+      console.log(`[check-league-match] Deleted live match: ${autodarts_match_id}`);
       return new Response(
         JSON.stringify({ ok: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -69,12 +60,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find player 1 - by autodarts_user_id first, then by name
+    // Find players using service client (bypasses RLS on players table)
     let p1Id: string | null = null;
     let p2Id: string | null = null;
 
     if (player1_autodarts_id) {
-      const { data } = await supabaseAnon
+      const { data } = await supabase
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player1_autodarts_id)
@@ -82,7 +73,7 @@ Deno.serve(async (req) => {
       if (data) p1Id = data.id;
     }
     if (!p1Id && player1_name) {
-      const { data } = await supabaseAnon
+      const { data } = await supabase
         .from("players")
         .select("id")
         .ilike("name", player1_name)
@@ -91,7 +82,7 @@ Deno.serve(async (req) => {
     }
 
     if (player2_autodarts_id) {
-      const { data } = await supabaseAnon
+      const { data } = await supabase
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player2_autodarts_id)
@@ -99,7 +90,7 @@ Deno.serve(async (req) => {
       if (data) p2Id = data.id;
     }
     if (!p2Id && player2_name) {
-      const { data } = await supabaseAnon
+      const { data } = await supabase
         .from("players")
         .select("id")
         .ilike("name", player2_name)
@@ -107,17 +98,17 @@ Deno.serve(async (req) => {
       if (data) p2Id = data.id;
     }
 
+    console.log(`[check-league-match] Player lookup: p1=${p1Id} (name=${player1_name}, adId=${player1_autodarts_id}), p2=${p2Id} (name=${player2_name}, adId=${player2_autodarts_id})`);
+
     if (!p1Id || !p2Id) {
       return new Response(
-        JSON.stringify({
-          is_league_match: false,
-        }),
+        JSON.stringify({ is_league_match: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Check for upcoming match between these two players (either order)
-    const { data: matches } = await supabaseAnon
+    const { data: matches } = await supabase
       .from("matches")
       .select("id, league_id, round, date, leagues!inner(name)")
       .eq("status", "upcoming")
@@ -127,16 +118,17 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (!matches || matches.length === 0) {
+      console.log(`[check-league-match] No upcoming match found between ${p1Id} and ${p2Id}`);
       return new Response(
-        JSON.stringify({
-          is_league_match: false,
-        }),
+        JSON.stringify({ is_league_match: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const match = matches[0];
     const leagueName = (match as any).leagues?.name || "Liga";
+
+    console.log(`[check-league-match] Found league match: ${match.id}, league: ${leagueName}`);
 
     return new Response(
       JSON.stringify({
