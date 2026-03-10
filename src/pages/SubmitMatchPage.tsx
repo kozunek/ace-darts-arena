@@ -245,9 +245,9 @@ const SubmitMatchPage = () => {
     }
   }, []);
 
-  const applyAutoPayload = useCallback(
-    async (payload: AutoPayload, allowAutoSubmit: boolean) => {
-      if (!payload) return;
+   const applyAutoPayload = useCallback(
+    async (payload: AutoPayload, allowAutoSubmit: boolean): Promise<boolean> => {
+      if (!payload) return false;
 
       // If payload has autodarts link/match_id but no stats, fetch full stats from server
       const autodartsMatchId = payload.match_id || payload.autodarts_link?.match(/matches\/([a-f0-9-]+)/i)?.[1];
