@@ -70,6 +70,8 @@ export interface MatchResultData {
   avgUntil170_1?: number;
   avgUntil170_2?: number;
   autodartsLink?: string;
+  screenshotUrls?: string[];
+  sourcePlatform?: string;
 }
 
 export interface TonLeaderEntry {
