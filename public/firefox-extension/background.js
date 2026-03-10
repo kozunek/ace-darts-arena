@@ -131,12 +131,16 @@ function showManualFallbackNotification(matchPayload, errorMsg) {
 
 async function handleLiveMatchUpdate(payload) {
   try {
+    const stored = await browserAPI.storage.local.get(["edart_session_token"]);
+    const edartToken = stored.edart_session_token || null;
+    const authToken = edartToken || SUPABASE_ANON_KEY;
+
     const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         player1_autodarts_id: payload.player1_autodarts_id,
@@ -150,12 +154,17 @@ async function handleLiveMatchUpdate(payload) {
     const checkData = await checkRes.json();
     if (!checkData.is_league_match) return;
 
+    if (!edartToken) {
+      console.warn("[eDART] No session token for live match update — user must be logged in");
+      return;
+    }
+
     await fetch(`${SUPABASE_URL}/rest/v1/live_matches`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${edartToken}`,
         "Prefer": "resolution=merge-duplicates",
       },
       body: JSON.stringify({

@@ -664,7 +664,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("[auto-submit] Error:", err);
     return new Response(
-      JSON.stringify({ is_league_match: false, submitted: false, error: String(err) }),
+      JSON.stringify({ is_league_match: false, submitted: false, error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

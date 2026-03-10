@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("check-league-match error:", err);
     return new Response(
-      JSON.stringify({ is_league_match: false, error: String(err) }),
+      JSON.stringify({ is_league_match: false, error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -45,7 +45,7 @@ const SettingsPage = () => {
     });
     // Send user ID to extension for auto-fill
     if (typeof window !== "undefined") {
-      window.postMessage({ type: "EDART_STORE_USER_ID", userId: user.id }, "*");
+      window.postMessage({ type: "EDART_STORE_USER_ID", userId: user.id }, window.location.origin);
     }
   }, [user]);
 

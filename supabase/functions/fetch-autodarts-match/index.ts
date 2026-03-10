@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("Error:", err);
     return new Response(
-      JSON.stringify({ error: "Failed to fetch Autodarts data", details: String(err) }),
+      JSON.stringify({ error: "Failed to fetch Autodarts data" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
