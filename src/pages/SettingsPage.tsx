@@ -36,12 +36,14 @@ const SettingsPage = () => {
   useEffect(() => {
     if (!user) return;
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.from("players").select("id, phone, discord, avatar_url, autodarts_user_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      supabase.from("players").select("id, phone, discord, avatar_url, autodarts_user_id, dartcounter_id, dartsmind_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
         if (data) {
-          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "", avatar_url: (data as any).avatar_url || null, autodarts_user_id: (data as any).autodarts_user_id || "" });
+          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "", avatar_url: (data as any).avatar_url || null, autodarts_user_id: (data as any).autodarts_user_id || "", dartcounter_id: (data as any).dartcounter_id || "", dartsmind_id: (data as any).dartsmind_id || "" });
           setPhone(data.phone || "");
           setDiscord(data.discord || "");
           setAutodartsId((data as any).autodarts_user_id || "");
+          setDartcounterId((data as any).dartcounter_id || "");
+          setDartsmindId((data as any).dartsmind_id || "");
         }
       });
     });
