@@ -14,6 +14,7 @@ interface ExtensionSettings {
   league_id: string | null;
   auto_approve: boolean;
   auto_approve_manual: boolean;
+  auto_approve_screenshot: boolean;
   require_avg: boolean;
   require_180s: boolean;
   require_high_checkout: boolean;
