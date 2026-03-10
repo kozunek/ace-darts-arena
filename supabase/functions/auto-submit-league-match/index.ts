@@ -75,6 +75,14 @@ function emptyStats(): PlayerStats {
   };
 }
 
+// PDC/Autodarts "Darts at Double" — only counts when remaining IS a direct double finish
+function isDoubleAttempt(remaining: number): boolean {
+  if (remaining === 50) return true; // Bull
+  if (remaining < 2 || remaining > 40) return false;
+  return remaining % 2 === 0; // D1-D20 (2,4,6,...,40)
+}
+
+// Legacy: can the score be finished at all (used for other logic, NOT checkout attempts)
 function isFinishable(remaining: number): boolean {
   if (remaining <= 0 || remaining > 170) return false;
   const impossible = new Set([169, 168, 166, 165, 163, 162, 159]);
