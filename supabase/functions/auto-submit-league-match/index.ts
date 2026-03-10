@@ -565,6 +565,8 @@ Deno.serve(async (req) => {
               checkout_hits1: numOrNull((swapped ? p2ApiStats : p1ApiStats).checkoutHits, (swapped ? p2ApiStats : p1ApiStats).checkouts) ?? st[i1].checkoutHits,
               checkout_hits2: numOrNull((swapped ? p1ApiStats : p2ApiStats).checkoutHits, (swapped ? p1ApiStats : p2ApiStats).checkouts) ?? st[i2].checkoutHits,
               autodarts_link: `https://play.autodarts.io/history/matches/${autodarts_match_id}`,
+              nine_darters1: st[i1].nineDarters,
+              nine_darters2: st[i2].nineDarters,
             };
 
             console.log(`[auto-submit] Stats computed. Swapped=${swapped}. Score: ${statsData.score1}-${statsData.score2}`);
