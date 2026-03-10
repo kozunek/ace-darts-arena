@@ -534,15 +534,41 @@ const SubmitMatchPage = () => {
       ton_plus2: extractedStats.ton_plus2 ?? 0,
     };
 
-    // Try to match player names to the selected match and swap if needed
+    // AI already maps players to match context if match_context was provided
+    // If matched_to_context is true, stats are already in correct order
+    if (extractedStats.matched_to_context === true) {
+      // AI mapped correctly — show info about mapping
+      const screenP1 = extractedStats.screenshot_player1_name || "?";
+      const screenP2 = extractedStats.screenshot_player2_name || "?";
+      if (selectedMatch) {
+        toast({
+          title: "🔄 Gracze dopasowani",
+          description: `Screenshot: ${screenP1} vs ${screenP2} → Formularz: ${selectedMatch.player1Name} (P1) vs ${selectedMatch.player2Name} (P2)`,
+        });
+      }
+      populateForm(payload);
+      return;
+    }
+
+    // Fallback: try client-side name matching if AI didn't match
     if (selectedMatch) {
       const p1 = normalizeName(payload.player1_name);
       const p2 = normalizeName(payload.player2_name);
       const m1 = normalizeName(selectedMatch.player1Name);
       const m2 = normalizeName(selectedMatch.player2Name);
       
-      const reversed = m1 === p2 && m2 === p1;
+      // Check for exact match, partial match (one name contains the other), or fuzzy
+      const p1MatchesM1 = m1 === p1 || m1.includes(p1) || p1.includes(m1);
+      const p2MatchesM2 = m2 === p2 || m2.includes(p2) || p2.includes(m2);
+      const p1MatchesM2 = m2 === p1 || m2.includes(p1) || p1.includes(m2);
+      const p2MatchesM1 = m1 === p2 || m1.includes(p2) || p2.includes(m1);
+      
+      const reversed = p1MatchesM2 && p2MatchesM1 && !p1MatchesM1;
       if (reversed) {
+        toast({
+          title: "🔄 Zamieniono kolejność",
+          description: `Statystyki dopasowane do formularza: ${selectedMatch.player1Name} (P1) vs ${selectedMatch.player2Name} (P2)`,
+        });
         populateForm(swapPayload(payload));
         return;
       }
@@ -893,6 +919,10 @@ const SubmitMatchPage = () => {
                 <ScreenshotUpload
                   onStatsExtracted={handleScreenshotStats}
                   matchId={selectedMatchId}
+                  matchContext={selectedMatch ? {
+                    player1_name: selectedMatch.player1Name,
+                    player2_name: selectedMatch.player2Name,
+                  } : undefined}
                 />
               )}
 

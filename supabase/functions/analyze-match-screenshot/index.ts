@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const SYSTEM_PROMPT = `Jesteś ekspertem od darta. Analizujesz zrzuty ekranu z aplikacji do darta (DartCounter, DartsMind, Autodarts lub inne).
+const buildSystemPrompt = (matchContext?: { player1_name: string; player2_name: string }) => {
+  let prompt = `Jesteś ekspertem od darta. Analizujesz zrzuty ekranu z aplikacji do darta (DartCounter, DartsMind, Autodarts lub inne).
 Twoim zadaniem jest wyodrębnić statystyki meczu ze zrzutów ekranu.
 
 WAŻNE ZASADY:
@@ -17,7 +18,7 @@ WAŻNE ZASADY:
 - Jeśli nie jesteś pewny wartości (niewyraźny tekst), ustaw confidence na "low"
 - Jeśli zrzut ekranu jest czytelny i dane jasne, ustaw confidence na "high"
 - Jeśli zrzut nie wygląda na podsumowanie meczu darta, ustaw confidence na "none"
-- Nazwy graczy: wyodrębnij dokładnie jak są napisane
+- Nazwy graczy: wyodrębnij dokładnie jak są napisane na screenie
 - Wynik: to liczba wygranych legów (np. 3:2 oznacza score1=3, score2=2)
 - Średnia (average): 3-dart average, zazwyczaj liczba z dwoma miejscami po przecinku
 - 180s: liczba rzutów 180
@@ -31,6 +32,25 @@ Rozpoznaj platformę po wyglądzie interfejsu:
 - DartCounter: zwykle ciemny motyw, zielone/niebieskie akcenty
 - DartsMind: jasny lub ciemny motyw, minimalistyczny design
 - Autodarts: specyficzny interfejs webowy`;
+
+  if (matchContext) {
+    prompt += `
+
+KONTEKST MECZU LIGOWEGO:
+W systemie ligowym ten mecz jest zapisany jako:
+- Gracz 1 (player1): "${matchContext.player1_name}"
+- Gracz 2 (player2): "${matchContext.player2_name}"
+
+KRYTYCZNE ZADANIE - MAPOWANIE GRACZY:
+1. Odczytaj nicki/nazwy graczy widoczne na screenie (lewy/prawy lub góra/dół)
+2. Dopasuj je do graczy z kontekstu meczu (player1 i player2) — porównaj nicki, mogą się nieznacznie różnić (np. skróty, wielkie/małe litery, brak polskich znaków)
+3. Ustaw statystyki player1_* i player2_* TAK, aby odpowiadały graczom z kontekstu meczu, NIE pozycji na screenie
+4. Przykład: jeśli na screenie "Jan" jest po lewej a "Anna" po prawej, ale w kontekście player1="Anna" a player2="Jan", to statystyki "Anna" (prawa strona screena) powinny trafić do player1_*, a "Jan" (lewa) do player2_*
+5. Jeśli nie możesz jednoznacznie dopasować nicków, ustaw matched_to_context na false`;
+  }
+
+  return prompt;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -66,7 +86,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { screenshot_urls } = body;
+    const { screenshot_urls, match_context } = body;
 
     if (!screenshot_urls || !Array.isArray(screenshot_urls) || screenshot_urls.length === 0) {
       return new Response(JSON.stringify({ error: "screenshot_urls array is required" }), {
@@ -80,6 +100,12 @@ Deno.serve(async (req) => {
       image_url: { url },
     }));
 
+    const systemPrompt = buildSystemPrompt(match_context);
+
+    const userText = match_context
+      ? `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta. Mecz ligowy: "${match_context.player1_name}" vs "${match_context.player2_name}". Dopasuj graczy ze screena do tych z kontekstu i zwróć statystyki w odpowiedniej kolejności (player1_* = ${match_context.player1_name}, player2_* = ${match_context.player2_name}).`
+      : `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta i wyodrębnij statystyki.`;
+
     const response = await fetch(AI_GATEWAY, {
       method: "POST",
       headers: {
@@ -89,14 +115,11 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta i wyodrębnij statystyki.`,
-              },
+              { type: "text", text: userText },
               ...imageContents,
             ],
           },
@@ -120,10 +143,16 @@ Deno.serve(async (req) => {
                     enum: ["dartcounter", "dartsmind", "autodarts", "unknown"],
                     description: "Detected platform/app",
                   },
-                  player1_name: { type: "string", description: "Name of player 1 (left/top)" },
-                  player2_name: { type: "string", description: "Name of player 2 (right/bottom)" },
-                  score1: { type: "number", description: "Legs won by player 1" },
-                  score2: { type: "number", description: "Legs won by player 2" },
+                  matched_to_context: {
+                    type: "boolean",
+                    description: "True if player names from screenshot were successfully matched to the match context players. False if names couldn't be matched.",
+                  },
+                  screenshot_player1_name: { type: "string", description: "Raw name of player shown on left/top of screenshot (before mapping)" },
+                  screenshot_player2_name: { type: "string", description: "Raw name of player shown on right/bottom of screenshot (before mapping)" },
+                  player1_name: { type: "string", description: "Name mapped to match context player1 (or left/top if no context)" },
+                  player2_name: { type: "string", description: "Name mapped to match context player2 (or right/bottom if no context)" },
+                  score1: { type: "number", description: "Legs won by player 1 (mapped to context)" },
+                  score2: { type: "number", description: "Legs won by player 2 (mapped to context)" },
                   avg1: { type: "number", description: "3-dart average player 1" },
                   avg2: { type: "number", description: "3-dart average player 2" },
                   first_9_avg1: { type: "number", description: "First 9 darts average player 1" },

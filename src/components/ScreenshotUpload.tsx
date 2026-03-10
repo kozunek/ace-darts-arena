@@ -9,9 +9,10 @@ interface ScreenshotUploadProps {
   onStatsExtracted: (stats: Record<string, any>) => void;
   matchId?: string;
   disabled?: boolean;
+  matchContext?: { player1_name: string; player2_name: string };
 }
 
-const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled }: ScreenshotUploadProps) => {
+const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }: ScreenshotUploadProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -84,8 +85,12 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled }: ScreenshotUpl
 
     setAnalyzing(true);
     try {
+      const requestBody: Record<string, any> = { screenshot_urls: uploadedUrls };
+      if (matchContext) {
+        requestBody.match_context = matchContext;
+      }
       const { data, error } = await supabase.functions.invoke("analyze-match-screenshot", {
-        body: { screenshot_urls: uploadedUrls },
+        body: requestBody,
       });
 
       if (error) {
