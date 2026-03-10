@@ -1,7 +1,41 @@
 // Content script that runs on eDART pages
 // Provides token + latest finished match data + league match data to the app
+// Reads session from localStorage directly instead of receiving via postMessage
 
 (function () {
+  const STORAGE_KEY_PREFIX = "sb-";
+  const STORAGE_KEY_SUFFIX = "-auth-token";
+
+  // Read eDART/Supabase session from localStorage
+  const getSessionFromLocalStorage = () => {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_KEY_PREFIX) && key.endsWith(STORAGE_KEY_SUFFIX)) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            return parsed?.access_token || null;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    return null;
+  };
+
+  // Sync session token to extension storage whenever it changes
+  const syncSessionToExtension = () => {
+    const token = getSessionFromLocalStorage();
+    if (token) {
+      chrome.storage.local.set({
+        edart_session_token: token,
+        edart_session_timestamp: Date.now(),
+      });
+    }
+  };
+
   const postToken = () => {
     chrome.storage.local.get(["autodarts_token", "token_timestamp"], (result) => {
       window.postMessage(
@@ -46,6 +80,8 @@
     if (event.data?.type === "EDART_REQUEST_TOKEN") postToken();
     if (event.data?.type === "EDART_REQUEST_LAST_MATCH") postLastMatch();
     if (event.data?.type === "EDART_REQUEST_LEAGUE_MATCH") postLeagueMatch();
+    // When app signals auth state changed, re-read token from localStorage
+    if (event.data?.type === "EDART_AUTH_STATE_CHANGED") syncSessionToExtension();
   });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -80,17 +116,13 @@
   postLastMatch();
   postLeagueMatch();
 
+  // Initial session sync from localStorage
+  syncSessionToExtension();
+
   // Store eDART user ID for auto-fill functionality
   window.addEventListener("message", (event) => {
     if (event.data?.type === "EDART_STORE_USER_ID" && event.data?.userId) {
       chrome.storage.local.set({ edart_user_id: event.data.userId });
-    }
-    // Store eDART session token for authenticated API calls
-    if (event.data?.type === "EDART_STORE_SESSION_TOKEN" && event.data?.accessToken) {
-      chrome.storage.local.set({
-        edart_session_token: event.data.accessToken,
-        edart_session_timestamp: Date.now(),
-      });
     }
   });
 })();

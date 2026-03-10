@@ -1,7 +1,41 @@
 // Content script that runs on eDART pages (Firefox version)
+// Reads session from localStorage directly instead of receiving via postMessage
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 (function () {
+  const STORAGE_KEY_PREFIX = "sb-";
+  const STORAGE_KEY_SUFFIX = "-auth-token";
+
+  // Read eDART/Supabase session from localStorage
+  const getSessionFromLocalStorage = () => {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_KEY_PREFIX) && key.endsWith(STORAGE_KEY_SUFFIX)) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            return parsed?.access_token || null;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    return null;
+  };
+
+  // Sync session token to extension storage whenever it changes
+  const syncSessionToExtension = () => {
+    const token = getSessionFromLocalStorage();
+    if (token) {
+      browserAPI.storage.local.set({
+        edart_session_token: token,
+        edart_session_timestamp: Date.now(),
+      });
+    }
+  };
+
   const postToken = () => {
     browserAPI.storage.local.get(["autodarts_token", "token_timestamp"]).then((result) => {
       window.postMessage(
@@ -46,6 +80,8 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
     if (event.data?.type === "EDART_REQUEST_TOKEN") postToken();
     if (event.data?.type === "EDART_REQUEST_LAST_MATCH") postLastMatch();
     if (event.data?.type === "EDART_REQUEST_LEAGUE_MATCH") postLeagueMatch();
+    // When app signals auth state changed, re-read token from localStorage
+    if (event.data?.type === "EDART_AUTH_STATE_CHANGED") syncSessionToExtension();
   });
 
   browserAPI.storage.onChanged.addListener((changes, areaName) => {
@@ -80,15 +116,13 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   postLastMatch();
   postLeagueMatch();
 
+  // Initial session sync from localStorage
+  syncSessionToExtension();
+
+  // Store eDART user ID for auto-fill functionality
   window.addEventListener("message", (event) => {
     if (event.data?.type === "EDART_STORE_USER_ID" && event.data?.userId) {
       browserAPI.storage.local.set({ edart_user_id: event.data.userId });
-    }
-    if (event.data?.type === "EDART_STORE_SESSION_TOKEN" && event.data?.accessToken) {
-      browserAPI.storage.local.set({
-        edart_session_token: event.data.accessToken,
-        edart_session_timestamp: Date.now(),
-      });
     }
   });
 })();

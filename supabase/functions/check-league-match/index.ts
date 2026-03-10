@@ -12,38 +12,41 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const { action, autodarts_match_id, player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } = body;
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // All paths require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { action, autodarts_match_id, player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } = body;
+
     // Use anon key for read-only lookups; service key only for privileged actions
     const supabaseAnon = createClient(supabaseUrl, anonKey);
     const supabaseService = createClient(supabaseUrl, serviceKey);
 
-    // Handle live match end action — requires authenticated admin/moderator
+    // Handle live match end action — requires admin/moderator
     if (action === "end_live_match" && autodarts_match_id) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const userId = claimsData.claims.sub;
-      // Check admin/moderator role
       const { data: isModAdmin } = await supabaseService.rpc("is_moderator_or_admin", { _user_id: userId });
       if (!isModAdmin) {
         return new Response(
@@ -61,7 +64,7 @@ Deno.serve(async (req) => {
 
     if (!player1_name && !player1_autodarts_id) {
       return new Response(
-        JSON.stringify({ is_league_match: false, reason: "no player data" }),
+        JSON.stringify({ is_league_match: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -70,7 +73,6 @@ Deno.serve(async (req) => {
     let p1Id: string | null = null;
     let p2Id: string | null = null;
 
-    // Try autodarts_user_id first for player 1
     if (player1_autodarts_id) {
       const { data } = await supabaseAnon
         .from("players")
@@ -79,7 +81,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (data) p1Id = data.id;
     }
-    // Fallback to name
     if (!p1Id && player1_name) {
       const { data } = await supabaseAnon
         .from("players")
@@ -89,7 +90,6 @@ Deno.serve(async (req) => {
       if (data) p1Id = data.id;
     }
 
-    // Try autodarts_user_id first for player 2
     if (player2_autodarts_id) {
       const { data } = await supabaseAnon
         .from("players")
@@ -98,7 +98,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (data) p2Id = data.id;
     }
-    // Fallback to name
     if (!p2Id && player2_name) {
       const { data } = await supabaseAnon
         .from("players")
@@ -112,9 +111,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           is_league_match: false,
-          reason: "players not found in eDART",
-          found_p1: !!p1Id,
-          found_p2: !!p2Id,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -134,7 +130,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           is_league_match: false,
-          reason: "no upcoming match between these players",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

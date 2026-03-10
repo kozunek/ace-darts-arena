@@ -80,12 +80,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ─── Check if a live match is a league match and notify ───
 async function checkLeagueMatchLive(payload) {
   try {
+    const stored = await new Promise((resolve) => {
+      chrome.storage.local.get(["edart_session_token"], resolve);
+    });
+    const edartToken = stored.edart_session_token || null;
+    const authToken = edartToken || SUPABASE_ANON_KEY;
+
     const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         player1_autodarts_id: payload.player1_autodarts_id,
