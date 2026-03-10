@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      await supabase.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
+      await supabaseService.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
       return new Response(
         JSON.stringify({ ok: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
