@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy, Zap, MessageCircle, Megaphone, MoreHorizontal, ClipboardEdit, Target, Bug } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy, Zap, MessageCircle, Megaphone, MoreHorizontal, ClipboardEdit, Target, Bug, Download, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +29,8 @@ const moreNavItems = [
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
   { label: "Czat", href: "/chat", icon: <MessageCircle className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
+  { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
+  { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" /> },
   { label: "Zgłoś błąd", href: "/report-bug", icon: <Bug className="h-3.5 w-3.5" />, authOnly: true },
 ];
 
@@ -45,6 +47,8 @@ const allMobileItems = [
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-4 w-4" /> },
   { label: "Czat", href: "/chat", icon: <MessageCircle className="h-4 w-4" />, authOnly: true },
   { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-4 w-4" /> },
+  { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-4 w-4" /> },
+  { label: "Pobieranie", href: "/downloads", icon: <Download className="h-4 w-4" /> },
   { label: "Zgłoś błąd", href: "/report-bug", icon: <Bug className="h-4 w-4" />, authOnly: true },
 ];
 

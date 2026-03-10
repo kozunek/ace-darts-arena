@@ -25,6 +25,8 @@ import AchievementsPage from "./pages/AchievementsPage";
 import ChatPage from "./pages/ChatPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import ReportBugPage from "./pages/ReportBugPage";
+import DownloadsPage from "./pages/DownloadsPage";
+import HowToPlayPage from "./pages/HowToPlayPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +65,8 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/report-bug" element={<ReportBugPage />} />
+              <Route path="/downloads" element={<DownloadsPage />} />
+              <Route path="/how-to-play" element={<HowToPlayPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

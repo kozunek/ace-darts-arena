@@ -8,8 +8,6 @@ import LeagueSelector from "@/components/LeagueSelector";
 import OpenLeagues from "@/components/OpenLeagues";
 import LeagueWinners from "@/components/LeagueWinners";
 import MyNextMatchWidget from "@/components/MyNextMatchWidget";
-import ExtensionDownloadSection from "@/components/ExtensionDownloadSection";
-import ApkDownloadSection from "@/components/ApkDownloadSection";
 
 const Index = () => {
   const { activeLeagueId, leagues } = useLeague();
@@ -33,8 +31,6 @@ const Index = () => {
         {leagueType === "bracket" && <BracketView />}
         {leagueType === "group_bracket" && <GroupBracketView />}
         <UpcomingMatchesPreview />
-        <ExtensionDownloadSection />
-        <ApkDownloadSection />
       </div>
     </div>
   );
