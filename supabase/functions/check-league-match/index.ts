@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       }
       const userId = claimsData.claims.sub;
       // Check admin/moderator role
-      const { data: isModAdmin } = await supabase.rpc("is_moderator_or_admin", { _user_id: userId });
+      const { data: isModAdmin } = await supabaseService.rpc("is_moderator_or_admin", { _user_id: userId });
       if (!isModAdmin) {
         return new Response(
           JSON.stringify({ error: "Forbidden" }),
