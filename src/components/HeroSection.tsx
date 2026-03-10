@@ -1,4 +1,4 @@
-import { Target, TrendingUp, Trophy, BarChart3, Download } from "lucide-react";
+import { Crosshair, TrendingUp, Trophy, BarChart3, Users } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -8,7 +8,29 @@ const HeroSection = () => {
   const { players, matches } = useLeague();
   const totalPlayers = players.filter(p => p.approved).length;
   const totalCompleted = matches.filter(m => m.status === "completed").length;
-  const total180s = matches.reduce((sum, m) => sum + (m.oneEighties1 ?? 0) + (m.oneEighties2 ?? 0), 0);
+
+  // Najwyższa średnia z pojedynczego meczu
+  let bestAvg = 0;
+  matches.forEach(m => {
+    if (m.status === "completed") {
+      if (m.avg1 != null && m.avg1 > bestAvg) bestAvg = m.avg1;
+      if (m.avg2 != null && m.avg2 > bestAvg) bestAvg = m.avg2;
+    }
+  });
+
+  // Najwyższy checkout
+  let bestCheckout = 0;
+  matches.forEach(m => {
+    if (m.status === "completed") {
+      if (m.highCheckout1 != null && m.highCheckout1 > bestCheckout) bestCheckout = m.highCheckout1;
+      if (m.highCheckout2 != null && m.highCheckout2 > bestCheckout) bestCheckout = m.highCheckout2;
+    }
+  });
+
+  // Łączna liczba rozegranych legów
+  const totalLegs = matches
+    .filter(m => m.status === "completed")
+    .reduce((sum, m) => sum + (m.legsWon1 ?? m.score1 ?? 0) + (m.legsWon2 ?? m.score2 ?? 0), 0);
 
   return (
     <section className="relative overflow-hidden border-b border-border">
