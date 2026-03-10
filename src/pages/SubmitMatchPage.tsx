@@ -653,7 +653,8 @@ const SubmitMatchPage = () => {
         </p>
       </div>
 
-      {/* Extension status */}
+      {/* Extension status - only for Autodarts */}
+      {sourcePlatform === "autodarts" && (
       <div
         className={`rounded-lg border p-3 mb-4 flex items-center gap-3 text-sm ${
           extensionInstalled && extensionToken
