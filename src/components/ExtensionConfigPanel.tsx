@@ -95,7 +95,9 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
 
   const updateSetting = (key: keyof ExtensionSettings, value: any) => {
     if (!settings) return;
-    setSettings({ ...settings, [key]: value });
+    const updated = { ...settings, [key]: value };
+    setSettings(updated);
+    saveSettings(updated);
   };
 
   if (!settings) return null;

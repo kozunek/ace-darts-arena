@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
           // Match found! Fetch full details and update
           const matchDetailRes = await fetch(
             `${API_BASE}/as/v0/matches/${adMatch.id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${adToken}` } }
           );
 
           if (!matchDetailRes.ok) continue;
