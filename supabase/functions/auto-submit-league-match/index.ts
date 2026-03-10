@@ -746,6 +746,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Clean up live match entry
+    if (autodarts_match_id) {
+      await supabase.from("live_matches").delete().eq("autodarts_match_id", autodarts_match_id);
+      console.log(`[auto-submit] Cleaned up live match: ${autodarts_match_id}`);
+    }
+
     console.log(`[auto-submit] ✅ Match ${edartMatch.id} submitted as ${newStatus}. Score: ${statsData.score1}-${statsData.score2}`);
 
     return new Response(
