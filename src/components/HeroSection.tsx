@@ -1,4 +1,4 @@
-import { Target, TrendingUp, Trophy, BarChart3, Download } from "lucide-react";
+import { Crosshair, TrendingUp, Trophy, BarChart3, Users } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -8,7 +8,29 @@ const HeroSection = () => {
   const { players, matches } = useLeague();
   const totalPlayers = players.filter(p => p.approved).length;
   const totalCompleted = matches.filter(m => m.status === "completed").length;
-  const total180s = matches.reduce((sum, m) => sum + (m.oneEighties1 ?? 0) + (m.oneEighties2 ?? 0), 0);
+
+  // Najwyższa średnia z pojedynczego meczu
+  let bestAvg = 0;
+  matches.forEach(m => {
+    if (m.status === "completed") {
+      if (m.avg1 != null && m.avg1 > bestAvg) bestAvg = m.avg1;
+      if (m.avg2 != null && m.avg2 > bestAvg) bestAvg = m.avg2;
+    }
+  });
+
+  // Najwyższy checkout
+  let bestCheckout = 0;
+  matches.forEach(m => {
+    if (m.status === "completed") {
+      if (m.highCheckout1 != null && m.highCheckout1 > bestCheckout) bestCheckout = m.highCheckout1;
+      if (m.highCheckout2 != null && m.highCheckout2 > bestCheckout) bestCheckout = m.highCheckout2;
+    }
+  });
+
+  // Łączna liczba rozegranych legów
+  const totalLegs = matches
+    .filter(m => m.status === "completed")
+    .reduce((sum, m) => sum + (m.legsWon1 ?? m.score1 ?? 0) + (m.legsWon2 ?? m.score2 ?? 0), 0);
 
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -42,10 +64,11 @@ const HeroSection = () => {
             Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-wrap gap-4 mb-6">
-            <StatChip icon={<Trophy className="h-4 w-4" />} label="Graczy" value={totalPlayers.toString()} />
-            <StatChip icon={<TrendingUp className="h-4 w-4" />} label="Rozegranych" value={totalCompleted.toString()} />
-            <StatChip icon={<Target className="h-4 w-4" />} label="180-tek" value={total180s.toString()} />
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-wrap gap-3 mb-6">
+            <StatChip icon={<Users className="h-4 w-4" />} label="Graczy" value={totalPlayers.toString()} />
+            <StatChip icon={<Trophy className="h-4 w-4" />} label="Meczów" value={totalCompleted.toString()} />
+            <StatChip icon={<TrendingUp className="h-4 w-4" />} label="Najw. średnia" value={bestAvg > 0 ? bestAvg.toFixed(1) : "—"} />
+            <StatChip icon={<Crosshair className="h-4 w-4" />} label="Najw. checkout" value={bestCheckout > 0 ? bestCheckout.toString() : "—"} />
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-wrap gap-3">
