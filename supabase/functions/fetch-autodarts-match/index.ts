@@ -286,8 +286,8 @@ function processGameTurns(
         }
       }
     } else if (!dartsArr && scoreBeforeTurn != null) {
-      // No per-dart detail: only count if starting score is a one-dart finish
-      if (isFinishableWithOneDouble(scoreBeforeTurn)) {
+      // No per-dart detail: only count if starting score is finishable
+      if (isFinishable(scoreBeforeTurn)) {
         st.checkoutAttempts += dartsCount;
       }
     }
