@@ -965,11 +965,15 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
     const fetchProfiles = async () => {
       const { data } = await supabase.from("profiles").select("user_id, name");
       setProfiles(data || []);
-      // Fetch player->user_id mapping
-      const { data: playersWithUser } = await supabase.from("players").select("id, user_id");
+      const { data: playersWithUser } = await supabase.from("players").select("id, user_id, autodarts_user_id, dartcounter_id, dartsmind_id");
       const map: Record<string, string | null> = {};
-      (playersWithUser || []).forEach((p: any) => { map[p.id] = p.user_id; });
+      const extMap: Record<string, { autodarts_user_id: string; dartcounter_id: string; dartsmind_id: string }> = {};
+      (playersWithUser || []).forEach((p: any) => {
+        map[p.id] = p.user_id;
+        extMap[p.id] = { autodarts_user_id: p.autodarts_user_id || "", dartcounter_id: p.dartcounter_id || "", dartsmind_id: p.dartsmind_id || "" };
+      });
       setPlayerUserMap(map);
+      setPlayerExtIds(extMap);
     };
     fetchProfiles();
   }, [players]);
