@@ -124,7 +124,32 @@ const AdminPage = () => {
 };
 
 // ─── OVERVIEW TAB ───
-const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingPlayers, pendingApproval, approvePlayer, toast, isAdmin }: any) => (
+const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingPlayers, pendingApproval, approvePlayer, toast, isAdmin }: any) => {
+  const [autoSettings, setAutoSettings] = useState<{ id: string; auto_approve: boolean; auto_approve_manual: boolean; auto_approve_screenshot: boolean } | null>(null);
+  const [savingAuto, setSavingAuto] = useState(false);
+
+  useEffect(() => {
+    supabase.from("extension_settings").select("id, auto_approve, auto_approve_manual, auto_approve_screenshot").is("league_id", null).maybeSingle().then(({ data }) => {
+      if (data) setAutoSettings(data as any);
+    });
+  }, []);
+
+  const toggleAutoSetting = async (key: "auto_approve" | "auto_approve_manual" | "auto_approve_screenshot", value: boolean) => {
+    if (!autoSettings) return;
+    const updated = { ...autoSettings, [key]: value };
+    setAutoSettings(updated);
+    setSavingAuto(true);
+    const { error } = await supabase.from("extension_settings").update({ [key]: value, updated_at: new Date().toISOString() } as any).eq("id", autoSettings.id);
+    setSavingAuto(false);
+    if (error) {
+      setAutoSettings(autoSettings);
+      toast({ title: "Błąd zapisu", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Zapisano ✅" });
+    }
+  };
+
+  return (
   <div className="space-y-8">
     <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
       <SummaryBox label="Ligi" value={leagues.length} icon="🏆" />
@@ -134,6 +159,42 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
       <SummaryBox label="Oczekujących" value={pendingPlayers.length} icon="⏳" />
       <SummaryBox label="Do zatwierdzenia" value={pendingApproval.length} icon="📋" />
     </div>
+
+    {/* Auto-approval quick settings */}
+    {isAdmin && autoSettings && (
+      <section className="rounded-lg border border-border bg-card p-6 card-glow">
+        <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+          <Zap className="h-5 w-5 text-primary" /> Automatyczne zatwierdzanie wyników
+        </h2>
+        <p className="text-xs text-muted-foreground font-body mb-4">
+          Włącz lub wyłącz automatyczne zatwierdzanie wyników dla każdej z platform zgłoszeniowych.
+        </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-body font-medium text-foreground">Autodarts (wtyczka/automatyczne)</Label>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">Wyniki z wtyczki Chrome zatwierdzane automatycznie</p>
+            </div>
+            <Switch checked={autoSettings.auto_approve} onCheckedChange={(v) => toggleAutoSetting("auto_approve", v)} />
+          </div>
+          <div className="border-t border-border pt-4 flex items-center justify-between">
+            <div>
+              <Label className="font-body font-medium text-foreground">Ręczne (z linkiem Autodarts)</Label>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">Wyniki przesłane ręcznie przez graczy zatwierdzane automatycznie</p>
+            </div>
+            <Switch checked={autoSettings.auto_approve_manual} onCheckedChange={(v) => toggleAutoSetting("auto_approve_manual", v)} />
+          </div>
+          <div className="border-t border-border pt-4 flex items-center justify-between">
+            <div>
+              <Label className="font-body font-medium text-foreground">Screenshot AI (OCR)</Label>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">Wyniki ze screenshotów rozpoznane przez AI zatwierdzane automatycznie</p>
+            </div>
+            <Switch checked={autoSettings.auto_approve_screenshot} onCheckedChange={(v) => toggleAutoSetting("auto_approve_screenshot", v)} />
+          </div>
+        </div>
+      </section>
+    )}
+
     {pendingApproval.length > 0 && (
       <section className="rounded-lg border border-accent/30 bg-accent/5 p-6 card-glow">
         <h2 className="text-lg font-display font-bold text-foreground mb-2 flex items-center gap-2">
@@ -163,8 +224,8 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
       </section>
     )}
   </div>
-);
-
+  );
+};
 // ─── APPROVAL TAB ───
 const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchResult, toast }: any) => {
   const [editingId, setEditingId] = useState<string | null>(null);
