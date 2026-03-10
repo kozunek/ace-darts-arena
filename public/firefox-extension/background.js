@@ -189,7 +189,7 @@ async function handleLiveMatchUpdate(payload) {
 
 async function handleLiveMatchEnded(autodartsMatchId) {
   try {
-    const stored = await browser.storage.local.get(["edart_session_token"]);
+    const stored = await browserAPI.storage.local.get(["edart_session_token"]);
     const edartToken = stored.edart_session_token || null;
     const authToken = edartToken || SUPABASE_ANON_KEY;
 

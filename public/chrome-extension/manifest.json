@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "eDART Polska - Autodarts Stats",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Automatycznie pobiera token Autodarts i wysyła statystyki do eDART Polska",
   "permissions": ["cookies", "storage", "webRequest", "notifications"],
   "host_permissions": [

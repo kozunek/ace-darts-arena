@@ -1,8 +1,11 @@
-// Content script - runs on play.autodarts.io
+// Content script - runs on play.autodarts.io (Firefox MV2)
 // Captures auth token + finished match stats + live match tracking
 // After a finished match, sends to background for auto-submission to eDART
 
 (function () {
+  const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+  console.log("[eDART] Content script loaded on:", location.href);
+
   function safeJsonParse(value) {
     try {
       return JSON.parse(value);
@@ -78,13 +81,7 @@
     const state = String(match?.state || "").toLowerCase();
     if (["finished", "complete", "completed", "done", "ended"].includes(state)) return true;
     if (typeof match?.winner === "number") return true;
-
-    const hasScores = Array.isArray(match?.scores) && match.scores.length >= 2;
-    if (!hasScores) return false;
-
-    const a = normalizeScoreValue(match.scores[0]);
-    const b = normalizeScoreValue(match.scores[1]);
-    return a > 0 || b > 0;
+    return false;
   }
 
   function isLiveMatch(match) {
@@ -92,9 +89,7 @@
     return ["playing", "started", "running", "in_progress", "active"].includes(state);
   }
 
-  // Track already-processed match IDs
   const processedMatches = new Set();
-  // Track matches where we already notified about league detection
   const notifiedLeagueMatches = new Set();
 
   function captureFinishedMatch(match, sourceUrl) {
@@ -104,111 +99,165 @@
     const payload = buildPayloadFromMatch(match, idFromUrl);
     if (!payload?.match_id) return;
 
-    // Store last match for manual use
-    chrome.storage.local.set({
+    console.log("[eDART] 🏁 Captured finished match:", payload.match_id, payload.player1_name, "vs", payload.player2_name, "Score:", payload.score1, "-", payload.score2);
+
+    browserAPI.storage.local.set({
       autodarts_last_match: payload,
       autodarts_last_match_timestamp: Date.now(),
-    }, () => {
-      console.log("[eDART] Captured finished match:", payload.match_id, payload.player1_name, "vs", payload.player2_name);
     });
 
-    // Auto-submit to eDART (only once per match)
     if (!processedMatches.has(payload.match_id)) {
       processedMatches.add(payload.match_id);
-      console.log("[eDART] Sending to server for league match check + auto-submit...");
+      console.log("[eDART] 📤 Sending to server for league match check + auto-submit...");
 
-      chrome.runtime.sendMessage(
-        { type: "AUTO_SUBMIT_LEAGUE_MATCH", payload },
-        (response) => {
-          if (response?.is_league_match && response?.submitted) {
-            console.log("[eDART] ✅ Mecz ligowy zgłoszony automatycznie!", response.league_name, response.score);
-          } else if (response?.is_league_match) {
-            console.log("[eDART] ⚠️ Mecz ligowy wykryty, ale nie zgłoszony:", response.reason);
-          } else {
-            console.log("[eDART] Mecz towarzyski (nie ligowy)");
-          }
+      browserAPI.runtime.sendMessage(
+        { type: "AUTO_SUBMIT_LEAGUE_MATCH", payload }
+      ).then((response) => {
+        if (response?.is_league_match && response?.submitted) {
+          console.log("[eDART] ✅ Mecz ligowy zgłoszony automatycznie!", response.league_name, response.score);
+        } else if (response?.is_league_match) {
+          console.log("[eDART] ⚠️ Mecz ligowy wykryty, ale nie zgłoszony:", response.reason);
+        } else {
+          console.log("[eDART] ℹ️ Mecz towarzyski (nie ligowy)");
         }
-      );
-    }
-  }
-
-  // ─── Live match tracking ───
-  function handleMatchData(match, sourceUrl) {
-    if (!match) return;
-
-    if (isFinishedMatch(match)) {
-      captureFinishedMatch(match, sourceUrl);
-      // Notify background to remove live match
-      const matchId = match?.id || sourceUrl?.match(/matches\/([a-f0-9-]+)/i)?.[1];
-      if (matchId) {
-        chrome.runtime.sendMessage({ type: "LIVE_MATCH_ENDED", matchId });
-      }
-    } else if (isLiveMatch(match)) {
-      const players = Array.isArray(match?.players) ? match.players : [];
-      if (players.length < 2) return;
-      const p1 = players[0] || {};
-      const p2 = players[1] || {};
-      const matchId = match?.id || sourceUrl?.match(/matches\/([a-f0-9-]+)/i)?.[1];
-
-      // Notify about league match detection (once per match)
-      if (matchId && !notifiedLeagueMatches.has(matchId)) {
-        notifiedLeagueMatches.add(matchId);
-        chrome.runtime.sendMessage({
-          type: "CHECK_LEAGUE_MATCH_LIVE",
-          payload: {
-            autodarts_match_id: matchId,
-            player1_name: p1.name || p1.username || p1.displayName || "Player 1",
-            player2_name: p2.name || p2.username || p2.displayName || "Player 2",
-            player1_autodarts_id: p1.userId || p1.user_id || p1.id || null,
-            player2_autodarts_id: p2.userId || p2.user_id || p2.id || null,
-          },
-        });
-      }
-
-      chrome.runtime.sendMessage({
-        type: "LIVE_MATCH_UPDATE",
-        payload: {
-          autodarts_match_id: matchId,
-          autodarts_link: `https://play.autodarts.io/matches/${matchId}`,
-          player1_name: p1.name || p1.username || p1.displayName || "Player 1",
-          player2_name: p2.name || p2.username || p2.displayName || "Player 2",
-          player1_autodarts_id: p1.userId || p1.user_id || p1.id || null,
-          player2_autodarts_id: p2.userId || p2.user_id || p2.id || null,
-          player1_score: normalizeScoreValue(match?.scores?.[0]),
-          player2_score: normalizeScoreValue(match?.scores?.[1]),
-        },
+      }).catch((err) => {
+        console.error("[eDART] sendMessage error:", err);
       });
     }
   }
 
-  // ─── Detect navigation to history page (user clicked "Finish/Final") ───
-  let lastUrl = location.href;
-  const historyMatchIds = new Set();
+  function handleMatchData(match, sourceUrl) {
+    if (!match) return;
 
-  function checkForHistoryPage() {
+    const state = String(match?.state || "").toLowerCase();
+    console.log("[eDART] handleMatchData — state:", state, "url:", sourceUrl);
+
+    if (isFinishedMatch(match)) {
+      captureFinishedMatch(match, sourceUrl);
+      const matchId = match?.id || sourceUrl?.match(/matches\/([a-f0-9-]+)/i)?.[1];
+      if (matchId) {
+        browserAPI.runtime.sendMessage({ type: "LIVE_MATCH_ENDED", matchId });
+      }
+    } else if (isLiveMatch(match)) {
+      handleLiveMatchDetected(match, sourceUrl);
+    } else {
+      console.log("[eDART] Match in unknown state:", state);
+    }
+  }
+
+  function handleLiveMatchDetected(match, sourceUrl) {
+    const players = Array.isArray(match?.players) ? match.players : [];
+    if (players.length < 2) return;
+    const p1 = players[0] || {};
+    const p2 = players[1] || {};
+    const matchId = match?.id || sourceUrl?.match(/matches\/([a-f0-9-]+)/i)?.[1];
+
+    const p1Name = p1.name || p1.username || p1.displayName || "Player 1";
+    const p2Name = p2.name || p2.username || p2.displayName || "Player 2";
+    const p1AdId = p1.userId || p1.user_id || p1.id || null;
+    const p2AdId = p2.userId || p2.user_id || p2.id || null;
+
+    if (matchId && !notifiedLeagueMatches.has(matchId)) {
+      notifiedLeagueMatches.add(matchId);
+      console.log("[eDART] 🔍 Checking if live match is a league match:", matchId, p1Name, "vs", p2Name);
+
+      browserAPI.runtime.sendMessage({
+        type: "CHECK_LEAGUE_MATCH_LIVE",
+        payload: {
+          autodarts_match_id: matchId,
+          player1_name: p1Name,
+          player2_name: p2Name,
+          player1_autodarts_id: p1AdId,
+          player2_autodarts_id: p2AdId,
+        },
+      }).then((response) => {
+        if (response?.is_league_match) {
+          console.log("[eDART] 🎯 Liga wykryta na starcie meczu:", response.league_name);
+        } else {
+          console.log("[eDART] ℹ️ Mecz towarzyski (nie ligowy) — live check");
+        }
+      }).catch((err) => {
+        console.error("[eDART] CHECK_LEAGUE_MATCH_LIVE error:", err);
+      });
+    }
+
+    browserAPI.runtime.sendMessage({
+      type: "LIVE_MATCH_UPDATE",
+      payload: {
+        autodarts_match_id: matchId,
+        autodarts_link: `https://play.autodarts.io/matches/${matchId}`,
+        player1_name: p1Name,
+        player2_name: p2Name,
+        player1_autodarts_id: p1AdId,
+        player2_autodarts_id: p2AdId,
+        player1_score: normalizeScoreValue(match?.scores?.[0]),
+        player2_score: normalizeScoreValue(match?.scores?.[1]),
+      },
+    });
+  }
+
+  // ─── Detect navigation to match pages (live OR history) ───
+  let lastUrl = location.href;
+  const detectedMatchIds = new Set();
+  let activeMatchPollInterval = null;
+  let activeMatchId = null;
+
+  function extractMatchIdFromUrl(url) {
+    const m = url.match(/\/(?:history\/)?matches\/([a-f0-9-]+)/i);
+    return m ? m[1] : null;
+  }
+
+  function checkForMatchPage() {
     const url = location.href;
     if (url === lastUrl) return;
     lastUrl = url;
 
-    const historyMatch = url.match(/\/history\/matches\/([a-f0-9-]+)/i);
-    if (historyMatch && !historyMatchIds.has(historyMatch[1])) {
-      const matchId = historyMatch[1];
-      historyMatchIds.add(matchId);
-      console.log("[eDART] Detected history page for match:", matchId);
+    const matchId = extractMatchIdFromUrl(url);
+    if (!matchId) {
+      stopMatchPolling();
+      return;
+    }
 
-      // Wait a moment for Autodarts to load the match data, then fetch it
-      setTimeout(() => fetchHistoryMatch(matchId), 2000);
+    const isHistoryPage = url.includes("/history/matches/");
+
+    if (!detectedMatchIds.has(matchId)) {
+      detectedMatchIds.add(matchId);
+      console.log("[eDART] 📍 Detected match page:", matchId, isHistoryPage ? "(history)" : "(live)");
+
+      const delay = isHistoryPage ? 2000 : 1500;
+      setTimeout(() => fetchAndProcessMatch(matchId), delay);
+    }
+
+    if (!isHistoryPage) {
+      startMatchPolling(matchId);
     }
   }
 
-  async function fetchHistoryMatch(matchId) {
+  function startMatchPolling(matchId) {
+    stopMatchPolling();
+    activeMatchId = matchId;
+    console.log("[eDART] 🔄 Starting match poll for:", matchId);
+
+    activeMatchPollInterval = setInterval(() => {
+      fetchAndProcessMatch(matchId);
+    }, 10000);
+  }
+
+  function stopMatchPolling() {
+    if (activeMatchPollInterval) {
+      clearInterval(activeMatchPollInterval);
+      activeMatchPollInterval = null;
+      console.log("[eDART] ⏹️ Stopped polling for:", activeMatchId);
+      activeMatchId = null;
+    }
+  }
+
+  async function fetchAndProcessMatch(matchId) {
     try {
-      const stored = await new Promise((resolve) => {
-        chrome.storage.local.get(["autodarts_token"], resolve);
-      });
+      const stored = await browserAPI.storage.local.get(["autodarts_token"]);
       const token = stored.autodarts_token;
       if (!token) {
-        console.log("[eDART] No token available to fetch history match");
+        console.log("[eDART] ⚠️ No Autodarts token available to fetch match");
         return;
       }
 
@@ -217,33 +266,41 @@
       });
 
       if (!res.ok) {
-        console.log("[eDART] History match fetch failed:", res.status);
+        console.log("[eDART] Match fetch failed:", res.status, "for:", matchId);
         return;
       }
 
       const matchData = await res.json();
-      console.log("[eDART] History match data loaded, state:", matchData?.state);
-      handleMatchData(matchData, `https://play.autodarts.io/history/matches/${matchId}`);
+      const state = String(matchData?.state || "").toLowerCase();
+      const players = Array.isArray(matchData?.players) ? matchData.players : [];
+      console.log("[eDART] 📊 Match data loaded — state:", state, "players:", players.length,
+        players.map(p => p.name || p.username || "?").join(" vs "));
+
+      handleMatchData(matchData, `https://play.autodarts.io/matches/${matchId}`);
+
+      if (isFinishedMatch(matchData)) {
+        console.log("[eDART] 🏁 Match finished, stopping poll");
+        stopMatchPolling();
+      }
     } catch (err) {
-      console.error("[eDART] Error fetching history match:", err);
+      console.error("[eDART] Error fetching match:", err);
     }
   }
 
   // Monitor URL changes (SPA navigation)
-  setInterval(checkForHistoryPage, 1000);
+  setInterval(checkForMatchPage, 1000);
 
-  // Also detect via popstate/pushstate
   const origPushState = history.pushState;
   history.pushState = function () {
     origPushState.apply(this, arguments);
-    setTimeout(checkForHistoryPage, 500);
+    setTimeout(checkForMatchPage, 500);
   };
   const origReplaceState = history.replaceState;
   history.replaceState = function () {
     origReplaceState.apply(this, arguments);
-    setTimeout(checkForHistoryPage, 500);
+    setTimeout(checkForMatchPage, 500);
   };
-  window.addEventListener("popstate", () => setTimeout(checkForHistoryPage, 500));
+  window.addEventListener("popstate", () => setTimeout(checkForMatchPage, 500));
 
   // ─── Auto-detect Autodarts User ID ───
   function detectAutodartsUserId() {
@@ -284,6 +341,7 @@
     return null;
   }
 
+  // ─── Intercept fetch API calls ───
   const originalFetch = window.fetch;
   window.fetch = function (...args) {
     const request = args[0];
@@ -304,18 +362,21 @@
       }
       if (authHeader && authHeader.startsWith("Bearer ")) {
         const token = authHeader.replace("Bearer ", "");
-        chrome.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+        browserAPI.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
       }
     }
 
     const fetchPromise = originalFetch.apply(this, args);
 
-    if (url && /api\.autodarts\.io\/as\/v0\/matches\//i.test(url)) {
+    if (url && /api\.autodarts\.io\/as\/v0\/matches\/[a-f0-9-]+/i.test(url)) {
       fetchPromise
         .then(async (res) => {
           if (!res.ok) return;
           const data = await res.clone().json().catch(() => null);
-          if (data) handleMatchData(data, url);
+          if (data) {
+            console.log("[eDART] 🔎 Intercepted fetch match data, state:", data?.state);
+            handleMatchData(data, url);
+          }
         })
         .catch(() => {});
     }
@@ -323,6 +384,7 @@
     return fetchPromise;
   };
 
+  // ─── Intercept XMLHttpRequest ───
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
 
@@ -334,35 +396,47 @@
   XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
     if (this._url && this._url.includes("api.autodarts.io") && name.toLowerCase() === "authorization" && value.startsWith("Bearer ")) {
       const token = value.replace("Bearer ", "");
-      chrome.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+      browserAPI.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
     }
     return originalSetRequestHeader.apply(this, arguments);
   };
 
-  // Initial token + user ID capture
+  // ─── Initial setup ───
   const token = getAutodartsToken();
   if (token) {
-    chrome.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+    browserAPI.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+    console.log("[eDART] ✅ Initial Autodarts token captured");
+  } else {
+    console.log("[eDART] ⚠️ No Autodarts token found in storage on load");
   }
 
   const userId = detectAutodartsUserId();
   if (userId) {
-    chrome.storage.local.set({ autodarts_user_id: userId });
-    chrome.runtime.sendMessage({ type: "AUTODARTS_USER_ID_DETECTED", userId });
-    console.log("[eDART] Detected Autodarts User ID:", userId);
+    browserAPI.storage.local.set({ autodarts_user_id: userId });
+    browserAPI.runtime.sendMessage({ type: "AUTODARTS_USER_ID_DETECTED", userId });
+    console.log("[eDART] ✅ Detected Autodarts User ID:", userId);
   }
 
   setInterval(() => {
     const t = getAutodartsToken();
     if (t) {
-      chrome.storage.local.set({ autodarts_token: t, token_timestamp: Date.now() });
+      browserAPI.storage.local.set({ autodarts_token: t, token_timestamp: Date.now() });
     }
     const uid = detectAutodartsUserId();
     if (uid) {
-      chrome.storage.local.set({ autodarts_user_id: uid });
+      browserAPI.storage.local.set({ autodarts_user_id: uid });
     }
   }, 10000);
 
-  // Check for history page on initial load
-  checkForHistoryPage();
+  // Check for match page on initial load
+  const initialMatchId = extractMatchIdFromUrl(location.href);
+  if (initialMatchId) {
+    console.log("[eDART] 📍 Initial load on match page:", initialMatchId);
+    detectedMatchIds.add(initialMatchId);
+    const isHistory = location.href.includes("/history/matches/");
+    setTimeout(() => fetchAndProcessMatch(initialMatchId), 2000);
+    if (!isHistory) {
+      startMatchPolling(initialMatchId);
+    }
+  }
 })();
