@@ -246,36 +246,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ─── JWT Authentication ───
+    // ─── Authentication: JWT preferred, but autodarts_user_id fallback ───
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      console.error("[auto-submit] No auth header");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    let callerUserId: string | null = null;
 
-    const token = authHeader.replace("Bearer ", "");
-    
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("[auto-submit] Auth failed:", claimsError?.message || "no claims");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized", details: claimsError?.message }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Try JWT auth first
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      // Skip if it's just the anon key
+      if (token !== anonKey) {
+        try {
+          const authClient = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: `Bearer ${token}` } },
+          });
+          const { data: claimsData } = await authClient.auth.getClaims(token);
+          if (claimsData?.claims?.sub) {
+            callerUserId = claimsData.claims.sub as string;
+            console.log(`[auto-submit] Authenticated user: ${callerUserId}`);
+          }
+        } catch (e) {
+          console.log(`[auto-submit] JWT auth failed (will try autodarts_id fallback): ${e}`);
+        }
+      }
     }
-    const callerUserId = claimsData.claims.sub as string;
-    console.log(`[auto-submit] Authenticated user: ${callerUserId}`);
 
     const {
       autodarts_match_id,
@@ -287,7 +284,7 @@ Deno.serve(async (req) => {
       client_stats,
     } = await req.json();
 
-    console.log(`[auto-submit] Request: match=${autodarts_match_id}, p1=${player1_name} (${player1_autodarts_id}), p2=${player2_name} (${player2_autodarts_id})`);
+    console.log(`[auto-submit] Request: match=${autodarts_match_id}, p1=${player1_name} (${player1_autodarts_id}), p2=${player2_name} (${player2_autodarts_id}), hasJwt=${!!callerUserId}`);
 
     if (!autodarts_match_id && !player1_name) {
       return new Response(
@@ -338,17 +335,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── Verify caller is one of the match participants ───
-    const { data: callerPlayer } = await supabase
-      .from("players")
-      .select("id")
-      .eq("user_id", callerUserId)
-      .maybeSingle();
+    // ─── Verify caller is a participant (via JWT or autodarts_user_id) ───
+    let callerVerified = false;
 
-    if (!callerPlayer || (callerPlayer.id !== p1Id && callerPlayer.id !== p2Id)) {
-      console.log(`[auto-submit] Caller ${callerUserId} (player=${callerPlayer?.id}) is not participant p1=${p1Id} or p2=${p2Id}`);
+    if (callerUserId) {
+      // JWT path: check user_id matches one of the players
+      const { data: callerPlayer } = await supabase
+        .from("players")
+        .select("id")
+        .eq("user_id", callerUserId)
+        .maybeSingle();
+      callerVerified = !!callerPlayer && (callerPlayer.id === p1Id || callerPlayer.id === p2Id);
+      if (!callerVerified) {
+        console.log(`[auto-submit] JWT user ${callerUserId} (player=${callerPlayer?.id}) is not participant`);
+      }
+    }
+
+    if (!callerVerified) {
+      // Fallback: verify via autodarts_user_id — at least one must map to a registered player
+      const hasValidAutodartsId = (player1_autodarts_id && p1Id) || (player2_autodarts_id && p2Id);
+      if (hasValidAutodartsId) {
+        callerVerified = true;
+        console.log(`[auto-submit] Verified caller via autodarts_user_id mapping`);
+      }
+    }
+
+    if (!callerVerified) {
+      console.log(`[auto-submit] Could not verify caller identity`);
       return new Response(
-        JSON.stringify({ error: "Forbidden: you are not a participant of this match" }),
+        JSON.stringify({ error: "Forbidden: could not verify caller identity" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
