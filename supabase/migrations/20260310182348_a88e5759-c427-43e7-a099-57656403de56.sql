@@ -1,0 +1,2 @@
+UPDATE players SET autodarts_user_id = '01b9e06f-7d69-404b-b7eb-12ee2822546c' WHERE id = '5d0d289d-4af1-45d3-8b7b-1456821dca5c';
+UPDATE players SET autodarts_user_id = 'f9984772-fa5a-4333-9e03-3fba1a2fce42' WHERE id = '60a1bb3c-582b-42ad-8c18-3cb10a89d9e1';
