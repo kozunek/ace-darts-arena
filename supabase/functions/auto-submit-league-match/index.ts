@@ -223,6 +223,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ─── JWT Authentication ───
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const callerUserId = claimsData.claims.sub as string;
+
     const {
       autodarts_match_id,
       autodarts_token,
@@ -239,8 +265,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // ─── Step 1: Find eDART players ───
@@ -280,7 +304,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── Step 2: Find upcoming match between them (only status='upcoming' = not yet submitted) ───
+    // ─── Verify caller is one of the match participants ───
+    const { data: callerPlayer } = await supabase
+      .from("players")
+      .select("id")
+      .eq("user_id", callerUserId)
+      .maybeSingle();
+
+    if (!callerPlayer || (callerPlayer.id !== p1Id && callerPlayer.id !== p2Id)) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: you are not a participant of this match" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { data: matches } = await supabase
       .from("matches")
       .select("id, league_id, round, date, confirmed_date, player1_id, player2_id, status, leagues!inner(name)")

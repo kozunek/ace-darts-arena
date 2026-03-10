@@ -258,16 +258,22 @@ async function saveAutodartsUserId(autodartsUserId) {
 async function autoSubmitLeagueMatch(matchPayload) {
   try {
     const stored = await new Promise((resolve) => {
-      chrome.storage.local.get(["autodarts_token"], resolve);
+      chrome.storage.local.get(["autodarts_token", "edart_session_token"], resolve);
     });
     const playerToken = stored.autodarts_token || null;
+    const edartToken = stored.edart_session_token || null;
+
+    if (!edartToken) {
+      console.error("[eDART] No eDART session token — user must be logged in");
+      return { is_league_match: false, submitted: false, error: "Not logged in to eDART" };
+    }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/auto-submit-league-match`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${edartToken}`,
       },
       body: JSON.stringify({
         autodarts_match_id: matchPayload.match_id,
