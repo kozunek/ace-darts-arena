@@ -85,8 +85,12 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
 
     setAnalyzing(true);
     try {
+      const requestBody: Record<string, any> = { screenshot_urls: uploadedUrls };
+      if (matchContext) {
+        requestBody.match_context = matchContext;
+      }
       const { data, error } = await supabase.functions.invoke("analyze-match-screenshot", {
-        body: { screenshot_urls: uploadedUrls },
+        body: requestBody,
       });
 
       if (error) {
