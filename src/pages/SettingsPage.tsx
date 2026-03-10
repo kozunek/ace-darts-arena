@@ -164,6 +164,20 @@ const SettingsPage = () => {
               <Input value={autodartsId} onChange={(e) => setAutodartsId(e.target.value)} placeholder="Twój ID z autodarts.io" className="bg-muted/30 border-border" />
               <p className="text-xs text-muted-foreground font-body">Podaj swój Autodarts User ID, aby system automatycznie pobierał wyniki Twoich meczy.</p>
             </div>
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-1">
+                📱 Nick DartCounter
+              </Label>
+              <Input value={dartcounterId} onChange={(e) => setDartcounterId(e.target.value)} placeholder="Twój nick w DartCounter" className="bg-muted/30 border-border" />
+              <p className="text-xs text-muted-foreground font-body">Nick używany w aplikacji DartCounter — służy do dopasowania statystyk ze screenshotów.</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground flex items-center gap-1">
+                🧠 Nick DartsMind
+              </Label>
+              <Input value={dartsmindId} onChange={(e) => setDartsmindId(e.target.value)} placeholder="Twój nick w DartsMind" className="bg-muted/30 border-border" />
+              <p className="text-xs text-muted-foreground font-body">Nick używany w aplikacji DartsMind — służy do dopasowania statystyk ze screenshotów.</p>
+            </div>
             <Button type="submit" variant="hero" disabled={savingContact}>
               {savingContact ? "Zapisywanie..." : "Zapisz kontakt"}
             </Button>
