@@ -13,6 +13,7 @@ interface ExtensionSettings {
   id: string;
   league_id: string | null;
   auto_approve: boolean;
+  auto_approve_manual: boolean;
   require_avg: boolean;
   require_180s: boolean;
   require_high_checkout: boolean;
