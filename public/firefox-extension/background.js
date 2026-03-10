@@ -264,6 +264,36 @@ async function saveAutodartsUserId(autodartsUserId) {
 
 async function autoSubmitLeagueMatch(matchPayload) {
   try {
+    // Step 1: Check if it's a league match (no auth required)
+    const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        player1_autodarts_id: matchPayload.player1_autodarts_id || null,
+        player2_autodarts_id: matchPayload.player2_autodarts_id || null,
+        player1_name: matchPayload.player1_name,
+        player2_name: matchPayload.player2_name,
+      }),
+    });
+
+    if (!checkRes.ok) {
+      console.error("[eDART] check-league-match HTTP error:", checkRes.status);
+      return { is_league_match: false, submitted: false, error: `Check HTTP ${checkRes.status}` };
+    }
+
+    const checkData = await checkRes.json();
+    if (!checkData.is_league_match) {
+      console.log("[eDART] Not a league match according to check-league-match");
+      return { is_league_match: false, submitted: false };
+    }
+
+    console.log("[eDART] ✅ League match confirmed:", checkData.league_name, "match_id:", checkData.match_id);
+
+    // Step 2: Try auto-submit (requires eDART session)
     const stored = await new Promise((resolve) => {
       browserAPI.storage.local.get(["autodarts_token", "edart_session_token"], resolve);
     });
@@ -271,8 +301,14 @@ async function autoSubmitLeagueMatch(matchPayload) {
     const edartToken = stored.edart_session_token || null;
 
     if (!edartToken) {
-      console.error("[eDART] No eDART session token — user must be logged in");
-      return { is_league_match: false, submitted: false, error: "Not logged in to eDART" };
+      console.error("[eDART] No eDART session token — user must be logged in to auto-submit");
+      return {
+        is_league_match: true,
+        submitted: false,
+        reason: "Nie jesteś zalogowany na eDART. Zaloguj się i wyślij wynik ręcznie.",
+        match_id: checkData.match_id,
+        league_name: checkData.league_name,
+      };
     }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/auto-submit-league-match`, {
@@ -317,8 +353,15 @@ async function autoSubmitLeagueMatch(matchPayload) {
     });
 
     if (!response.ok) {
-      console.error("[eDART] auto-submit HTTP error:", response.status);
-      return { is_league_match: false, submitted: false, error: `HTTP ${response.status}` };
+      const errText = await response.text().catch(() => "");
+      console.error("[eDART] auto-submit HTTP error:", response.status, errText);
+      return {
+        is_league_match: true,
+        submitted: false,
+        reason: `Błąd wysyłania (${response.status}). Sesja mogła wygasnąć — zaloguj się ponownie na eDART.`,
+        match_id: checkData.match_id,
+        league_name: checkData.league_name,
+      };
     }
 
     return await response.json();
