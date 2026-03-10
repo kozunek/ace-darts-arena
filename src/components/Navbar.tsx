@@ -34,6 +34,7 @@ const moreNavItems = [
 
 const allMobileItems = [
   { label: "Tabela Ligi", href: "/", icon: <Target className="h-4 w-4" /> },
+  { label: "Live", href: "/live", icon: <Radio className="h-4 w-4" /> },
   { label: "Mecze", href: "/matches", icon: <Swords className="h-4 w-4" /> },
   { label: "Gracze", href: "/players", icon: <Trophy className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-4 w-4" /> },
