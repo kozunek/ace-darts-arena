@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player1_autodarts_id)
+        .limit(1)
         .maybeSingle();
       if (data) p1Id = data.id;
     }
@@ -79,8 +80,8 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .ilike("name", player1_name)
-        .maybeSingle();
-      if (data) p1Id = data.id;
+        .limit(1);
+      if (data && data.length > 0) p1Id = data[0].id;
     }
 
     if (player2_autodarts_id) {
@@ -88,6 +89,7 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player2_autodarts_id)
+        .limit(1)
         .maybeSingle();
       if (data) p2Id = data.id;
     }
@@ -96,8 +98,8 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .ilike("name", player2_name)
-        .maybeSingle();
-      if (data) p2Id = data.id;
+        .limit(1);
+      if (data && data.length > 0) p2Id = data[0].id;
     }
 
     console.log(`[check-league-match] Player lookup: p1=${p1Id} (name=${player1_name}, adId=${player1_autodarts_id}), p2=${p2Id} (name=${player2_name}, adId=${player2_autodarts_id})`);

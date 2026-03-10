@@ -306,6 +306,7 @@ Deno.serve(async (req) => {
           .from("players")
           .select("id")
           .eq("autodarts_user_id", autodartsId)
+          .limit(1)
           .maybeSingle();
         if (data) return data.id;
       }
@@ -314,8 +315,8 @@ Deno.serve(async (req) => {
           .from("players")
           .select("id")
           .ilike("name", name)
-          .maybeSingle();
-        if (data) return data.id;
+          .limit(1);
+        if (data && data.length > 0) return data[0].id;
       }
       return null;
     }
