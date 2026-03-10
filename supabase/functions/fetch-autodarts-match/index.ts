@@ -312,11 +312,13 @@ async function fetchMatchData(matchId: string, token: string) {
 
   // Extract legs won from scores
   let legsWon1 = 0, legsWon2 = 0;
+  console.log("match.scores:", JSON.stringify(match.scores));
+  console.log("match.winner:", match.winner, "match.state:", match.state);
   if (Array.isArray(match.scores) && match.scores.length >= 2) {
     const s1 = match.scores[0], s2 = match.scores[1];
     if (typeof s1 === "object" && s1 !== null) {
-      legsWon1 = s1.legs ?? s1.sets ?? 0;
-      legsWon2 = s2?.legs ?? s2?.sets ?? 0;
+      legsWon1 = s1.legs ?? s1.sets ?? s1.value ?? 0;
+      legsWon2 = s2?.legs ?? s2?.sets ?? s2?.value ?? 0;
     } else {
       legsWon1 = Number(s1) || 0;
       legsWon2 = Number(s2) || 0;
@@ -324,8 +326,6 @@ async function fetchMatchData(matchId: string, token: string) {
   }
 
   const st: [PlayerStats, PlayerStats] = [emptyStats(), emptyStats()];
-  st[0].legsWon = legsWon1;
-  st[1].legsWon = legsWon2;
 
   // Process embedded games (legs)
   const games = Array.isArray(match.games) ? match.games.filter((g: any) => g && typeof g === "object") : [];
@@ -334,6 +334,48 @@ async function fetchMatchData(matchId: string, token: string) {
   for (let gi = 0; gi < games.length; gi++) {
     processGameTurns(games[gi], playerIdMap, st, gi);
   }
+
+  // Fallback: count legs won from game winners if match.scores didn't provide them
+  if (legsWon1 === 0 && legsWon2 === 0 && games.length > 0) {
+    for (const game of games) {
+      // Check game.winner (index 0 or 1)
+      if (typeof game.winner === "number" && (game.winner === 0 || game.winner === 1)) {
+        if (game.winner === 0) legsWon1++;
+        else legsWon2++;
+        continue;
+      }
+      // Fallback: check who had a checkout in this leg (remaining=0 in last turn)
+      const turns = game.turns || game.visits || game.rounds || [];
+      for (let t = turns.length - 1; t >= 0; t--) {
+        const turn = turns[t];
+        if (turn.score === 0 && !turn.busted) {
+          const pIdx = resolvePlayerIndex(turn, playerIdMap);
+          if (pIdx === 0) legsWon1++;
+          else if (pIdx === 1) legsWon2++;
+          else {
+            // Fallback alternating
+            if (t % 2 === 0) legsWon1++;
+            else legsWon2++;
+          }
+          break;
+        }
+      }
+    }
+    console.log("Legs won from games fallback:", legsWon1, "-", legsWon2);
+  }
+
+  // Also try match.variant?.legs or similar
+  if (legsWon1 === 0 && legsWon2 === 0) {
+    // If single game/leg and someone checked out, use checkoutHits
+    if (games.length === 1) {
+      if (st[0].checkoutHits > 0 && st[1].checkoutHits === 0) { legsWon1 = 1; legsWon2 = 0; }
+      else if (st[1].checkoutHits > 0 && st[0].checkoutHits === 0) { legsWon1 = 0; legsWon2 = 1; }
+    }
+  }
+
+  st[0].legsWon = legsWon1;
+  st[1].legsWon = legsWon2;
+  console.log("Final scores:", legsWon1, "-", legsWon2);
 
   const numOrNull = (...values: any[]): number | null => {
     for (const v of values) {
