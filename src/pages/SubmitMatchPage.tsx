@@ -529,7 +529,7 @@ const SubmitMatchPage = () => {
     }
 
     setFetchingAutodarts(false);
-  }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
+  }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload, populateForm]);
 
   const resetForm = () => {
     setSelectedMatchId("");
