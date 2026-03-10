@@ -1,0 +1,1 @@
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS auto_submit_enabled boolean NOT NULL DEFAULT true;

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, User, ArrowLeft, Phone, MessageCircle, Gamepad2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { KeyRound, User, ArrowLeft, Phone, MessageCircle, Gamepad2, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,7 +26,7 @@ const SettingsPage = () => {
   })());
 
   // We need to get player by user_id from supabase directly
-  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string; avatar_url: string | null; autodarts_user_id: string; dartcounter_id: string; dartsmind_id: string } | null>(null);
+  const [playerData, setPlayerData] = useState<{ id: string; phone: string; discord: string; avatar_url: string | null; autodarts_user_id: string; dartcounter_id: string; dartsmind_id: string; auto_submit_enabled: boolean } | null>(null);
   const [phone, setPhone] = useState("");
   const [discord, setDiscord] = useState("");
   const [autodartsId, setAutodartsId] = useState("");
@@ -36,9 +37,9 @@ const SettingsPage = () => {
   useEffect(() => {
     if (!user) return;
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.from("players").select("id, phone, discord, avatar_url, autodarts_user_id, dartcounter_id, dartsmind_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      supabase.from("players").select("id, phone, discord, avatar_url, autodarts_user_id, dartcounter_id, dartsmind_id, auto_submit_enabled").eq("user_id", user.id).maybeSingle().then(({ data }) => {
         if (data) {
-          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "", avatar_url: (data as any).avatar_url || null, autodarts_user_id: (data as any).autodarts_user_id || "", dartcounter_id: (data as any).dartcounter_id || "", dartsmind_id: (data as any).dartsmind_id || "" });
+          setPlayerData({ id: data.id, phone: data.phone || "", discord: data.discord || "", avatar_url: (data as any).avatar_url || null, autodarts_user_id: (data as any).autodarts_user_id || "", dartcounter_id: (data as any).dartcounter_id || "", dartsmind_id: (data as any).dartsmind_id || "", auto_submit_enabled: (data as any).auto_submit_enabled !== false });
           setPhone(data.phone || "");
           setDiscord(data.discord || "");
           setAutodartsId((data as any).autodarts_user_id || "");
@@ -186,6 +187,37 @@ const SettingsPage = () => {
       ) : (
         <div className="rounded-lg border border-border bg-muted/20 p-4 mb-6 text-sm text-muted-foreground font-body">
           Twoje konto nie jest jeszcze powiązane z profilem gracza. Skontaktuj się z administratorem.
+        </div>
+      )}
+
+      {/* Auto-submit toggle */}
+      {playerData && (
+        <div className="rounded-lg border border-border bg-card p-6 card-glow mb-6">
+          <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" /> Automatyczne zgłaszanie
+          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-body font-medium text-foreground">Auto-zgłoszenie po zakończeniu meczu z Autodarts</Label>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">
+                Gdy włączone, wyniki Twoich meczów ligowych będą automatycznie przesyłane po zakończeniu gry na Autodarts.
+              </p>
+            </div>
+            <Switch
+              checked={playerData.auto_submit_enabled}
+              onCheckedChange={async (v) => {
+                setPlayerData({ ...playerData, auto_submit_enabled: v });
+                const { supabase } = await import("@/integrations/supabase/client");
+                const { error } = await supabase.from("players").update({ auto_submit_enabled: v } as any).eq("id", playerData.id);
+                if (error) {
+                  toast({ title: "Błąd", description: "Nie udało się zapisać ustawienia.", variant: "destructive" });
+                  setPlayerData({ ...playerData, auto_submit_enabled: !v });
+                } else {
+                  toast({ title: v ? "Włączono ✅" : "Wyłączono ❌", description: v ? "Wyniki będą zgłaszane automatycznie." : "Wyniki nie będą zgłaszane automatycznie." });
+                }
+              }}
+            />
+          </div>
         </div>
       )}
 

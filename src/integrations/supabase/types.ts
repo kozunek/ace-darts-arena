@@ -627,6 +627,7 @@ export type Database = {
       players: {
         Row: {
           approved: boolean
+          auto_submit_enabled: boolean
           autodarts_user_id: string | null
           avatar: string
           avatar_url: string | null
@@ -641,6 +642,7 @@ export type Database = {
         }
         Insert: {
           approved?: boolean
+          auto_submit_enabled?: boolean
           autodarts_user_id?: string | null
           avatar?: string
           avatar_url?: string | null
@@ -655,6 +657,7 @@ export type Database = {
         }
         Update: {
           approved?: boolean
+          auto_submit_enabled?: boolean
           autodarts_user_id?: string | null
           avatar?: string
           avatar_url?: string | null
