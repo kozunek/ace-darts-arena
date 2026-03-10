@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
       try {
         const res = await fetch(
           `${API_BASE}/as/v0/users/${player.autodarts_user_id}/matches?limit=5&finished=true`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${adToken}` } }
         );
 
         if (!res.ok) continue;
