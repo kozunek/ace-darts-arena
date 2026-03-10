@@ -9,7 +9,7 @@ interface AuthContextType {
   isModerator: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
-  register: (name: string, email: string, password: string) => Promise<{ error: string | null }>;
+  register: (name: string, email: string, password: string, gamingNick?: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
