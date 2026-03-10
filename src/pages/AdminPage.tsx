@@ -271,10 +271,9 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <div className="text-left flex-1">
                     <div className="font-body font-medium text-foreground">{m.player1Name}</div>
-                    {m.avg1 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg1?.toFixed(1)} · 180: {m.oneEighties1 ?? 0} · HC: {m.highCheckout1 ?? 0}</div>}
                   </div>
                   <div className="flex items-center gap-3 px-4">
                     <span className={`text-3xl font-display font-bold ${(m.score1 ?? 0) > (m.score2 ?? 0) ? "text-secondary" : "text-muted-foreground"}`}>{m.score1}</span>
@@ -283,9 +282,56 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
                   </div>
                   <div className="text-right flex-1">
                     <div className="font-body font-medium text-foreground">{m.player2Name}</div>
-                    {m.avg2 != null && <div className="text-xs text-muted-foreground mt-1">Śr. {m.avg2?.toFixed(1)} · 180: {m.oneEighties2 ?? 0} · HC: {m.highCheckout2 ?? 0}</div>}
                   </div>
                 </div>
+
+                {/* Stats table */}
+                {(m.avg1 != null || m.avg2 != null || m.dartsThrown1 || m.dartsThrown2) && (
+                  <div className="rounded-md bg-muted/30 border border-border p-3 mb-4 text-xs font-body">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-muted-foreground">
+                          <th className="text-left font-medium py-0.5">Statystyka</th>
+                          <th className="text-center font-medium py-0.5">{m.player1Name?.split(" ")[0]}</th>
+                          <th className="text-center font-medium py-0.5">{m.player2Name?.split(" ")[0]}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-foreground">
+                        {(m.avg1 != null || m.avg2 != null) && (
+                          <tr><td className="py-0.5 text-muted-foreground">Średnia</td><td className="text-center font-medium">{m.avg1?.toFixed(2) ?? "—"}</td><td className="text-center font-medium">{m.avg2?.toFixed(2) ?? "—"}</td></tr>
+                        )}
+                        {(m.first9Avg1 != null || m.first9Avg2 != null) && (
+                          <tr><td className="py-0.5 text-muted-foreground">First 9</td><td className="text-center">{m.first9Avg1?.toFixed(2) ?? "—"}</td><td className="text-center">{m.first9Avg2?.toFixed(2) ?? "—"}</td></tr>
+                        )}
+                        {(m.oneEighties1 || m.oneEighties2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">180s</td><td className="text-center">{m.oneEighties1 ?? 0}</td><td className="text-center">{m.oneEighties2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.highCheckout1 || m.highCheckout2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">High CO</td><td className="text-center">{m.highCheckout1 ?? 0}</td><td className="text-center">{m.highCheckout2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.ton60_1 || m.ton60_2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">60+</td><td className="text-center">{m.ton60_1 ?? 0}</td><td className="text-center">{m.ton60_2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.ton80_1 || m.ton80_2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">100+</td><td className="text-center">{m.ton80_1 ?? 0}</td><td className="text-center">{m.ton80_2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.tonPlus1 || m.tonPlus2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">140+</td><td className="text-center">{m.tonPlus1 ?? 0}</td><td className="text-center">{m.tonPlus2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.dartsThrown1 || m.dartsThrown2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">Lotki</td><td className="text-center">{m.dartsThrown1 ?? 0}</td><td className="text-center">{m.dartsThrown2 ?? 0}</td></tr>
+                        ) : null}
+                        {(m.checkoutHits1 || m.checkoutHits2 || m.checkoutAttempts1 || m.checkoutAttempts2) ? (
+                          <tr><td className="py-0.5 text-muted-foreground">CO %</td><td className="text-center">{m.checkoutHits1 ?? 0}/{m.checkoutAttempts1 ?? 0}</td><td className="text-center">{m.checkoutHits2 ?? 0}/{m.checkoutAttempts2 ?? 0}</td></tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {!(m.avg1 != null || m.avg2 != null || m.dartsThrown1 || m.dartsThrown2) && (
+                  <div className="text-xs text-muted-foreground mb-4 italic">Brak statystyk — tylko wynik</div>
+                )}
+
                 {m.autodartsLink && <div className="text-xs text-primary mb-4"><a href={m.autodartsLink} target="_blank" rel="noopener noreferrer" className="hover:underline">🔗 Link Autodarts</a></div>}
                 <div className="flex gap-3">
                   <Button variant="default" size="sm" className="flex-1" onClick={() => { approveMatch(m.id); toast({ title: "✅ Mecz zatwierdzony!", description: `${m.player1Name} vs ${m.player2Name}` }); }}>

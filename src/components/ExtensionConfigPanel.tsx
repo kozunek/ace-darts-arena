@@ -50,7 +50,7 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
     const s = updatedSettings || settings;
     if (!s) return;
     setSaving(true);
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("extension_settings")
       .update({
         auto_approve: s.auto_approve,
@@ -65,10 +65,14 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
         webhook_enabled: s.webhook_enabled,
         updated_at: new Date().toISOString(),
       } as any)
-      .eq("id", s.id);
+      .eq("id", s.id)
+      .select();
     setSaving(false);
     if (error) {
-      toast({ title: "Błąd", description: error.message, variant: "destructive" });
+      console.error("[ExtensionConfig] Save error:", error);
+      toast({ title: "Błąd zapisu", description: error.message, variant: "destructive" });
+      // Reload settings from DB to reflect actual state
+      loadSettings();
     }
   };
 
