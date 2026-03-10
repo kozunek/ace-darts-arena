@@ -103,6 +103,9 @@ const LiveMatchesWidget = () => {
         <span className="text-xs font-display uppercase text-destructive border border-destructive/30 rounded-full px-2 py-0.5 animate-pulse">
           Na żywo
         </span>
+        <Link to="/live" className="ml-auto flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-display uppercase tracking-wider">
+          Pokaż wszystkie <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

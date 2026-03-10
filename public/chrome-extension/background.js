@@ -392,7 +392,7 @@ chrome.notifications.onClicked.addListener((notificationId) => {
     });
     chrome.notifications.clear(notificationId);
   } else if (notificationId.startsWith("league-live-")) {
-    chrome.tabs.create({ url: `${EDART_URL}/matches`, active: true });
+    chrome.tabs.create({ url: `${EDART_URL}/live`, active: true });
     chrome.notifications.clear(notificationId);
   }
 });
