@@ -126,7 +126,14 @@ const LoginPage = () => {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Nazwa użytkownika</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="np. DartMaster123" className="bg-muted/30 border-border" required />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="np. Jan Kowalski" className="bg-muted/30 border-border" required />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
+                  Nick w grze <span className="text-muted-foreground/60">(opcjonalny)</span>
+                </Label>
+                <Input value={gamingNick} onChange={(e) => setGamingNick(e.target.value)} placeholder="Nick z Autodarts / DartCounter / DartsMind" className="bg-muted/30 border-border" />
+                <p className="text-[10px] text-muted-foreground">Jeśli twój nick różni się od nazwy, podaj go tutaj — ułatwi dopasowywanie wyników.</p>
               </div>
               <div className="space-y-2">
                 <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Email</Label>
