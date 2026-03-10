@@ -115,6 +115,8 @@ export interface Match {
   avgUntil170_1?: number;
   avgUntil170_2?: number;
   confirmedDate?: string | null;
+  screenshotUrls?: string[];
+  sourcePlatform?: string;
 }
 
 export interface Achievement {
