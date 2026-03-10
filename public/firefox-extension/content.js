@@ -3,7 +3,8 @@
 // After a finished match, sends to background for auto-submission to eDART
 
 (function () {
-  function safeJsonParse(value) {
+  const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+
     try {
       return JSON.parse(value);
     } catch {

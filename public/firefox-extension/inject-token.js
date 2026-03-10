@@ -3,6 +3,8 @@
 // Reads session from localStorage directly instead of receiving via postMessage
 
 (function () {
+  const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+
   const STORAGE_KEY_PREFIX = "sb-";
   const STORAGE_KEY_SUFFIX = "-auth-token";
 
