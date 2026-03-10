@@ -26,12 +26,14 @@ Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodar
 
 - **Liga i turnieje** — tworzenie lig (round-robin, puchar), automatyczne generowanie meczy, tabele punktowe z regułami bonusowymi
 - **Integracja Autodarts** — automatyczne pobieranie statystyk z API Autodarts (średnia, 180-tki, checkouty, zakresy tonów, etc.)
+- **Analiza screenshotów AI** — gracze DartCounter/DartsMind przesyłają zrzuty ekranu, AI (Gemini Vision) automatycznie odczytuje statystyki, dopasowuje graczy i uzupełnia formularz
 - **Wtyczka Chrome/Firefox** — przechwytuje token Autodarts, wykrywa mecze ligowe, automatycznie wysyła wyniki po zakończeniu meczu
 - **Mecze na żywo** — śledzenie wyników w czasie rzeczywistym (Supabase Realtime)
 - **Czat między graczami** — wiadomości z opcją ustalania terminów
 - **Propozycje terminów** — gracze mogą proponować i akceptować daty meczów
 - **System powiadomień** — powiadomienia o nowych meczach, propozycjach terminów, wynikach
 - **Statystyki i osiągnięcia** — szczegółowe statystyki graczy, Hall of Fame, Head-to-Head
+- **Ujednolicone statystyki** — te same statystyki (średnia, first 9, 180s, checkout, ton ranges, lotki) dla wszystkich platform
 - **System ról** — admin, moderator, user z RLS (Row Level Security)
 - **PWA** — aplikacja dostępna jako Progressive Web App
 - **APK** — wersja Android (WebView wrapper)
