@@ -48,12 +48,12 @@ const LiveMatchesPage = () => {
         const leagueIds = [...new Set(matchData.map((m) => m.league_id))];
 
         const [playersRes, leaguesRes] = await Promise.all([
-          supabase.from("players").select("id, name, avatar_url").in("id", playerIds),
+          supabase.from("players_public" as any).select("id, name, avatar_url").in("id", playerIds),
           supabase.from("leagues").select("id, name").in("id", leagueIds),
         ]);
 
         const nameMap: Record<string, { name: string; avatar_url: string | null }> = {};
-        (playersRes.data || []).forEach((p) => (nameMap[p.id] = { name: p.name, avatar_url: p.avatar_url }));
+        ((playersRes.data || []) as any[]).forEach((p: any) => (nameMap[p.id] = { name: p.name, avatar_url: p.avatar_url }));
 
         const leagueMap: Record<string, string> = {};
         (leaguesRes.data || []).forEach((l) => (leagueMap[l.id] = l.name));

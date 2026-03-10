@@ -300,6 +300,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "match_proposals_proposer_player_id_fkey"
+            columns: ["proposer_player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       match_reactions: {
@@ -486,10 +493,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "matches_player2_id_fkey"
             columns: ["player2_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -556,6 +577,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_leagues_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -643,7 +671,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      players_public: {
+        Row: {
+          approved: boolean | null
+          avatar: string | null
+          avatar_url: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          avatar?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          avatar?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_opponent_contact: {

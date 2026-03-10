@@ -41,12 +41,12 @@ const LiveMatchesWidget = () => {
           ...new Set(matchData.flatMap((m) => [m.player1_id, m.player2_id])),
         ];
         const { data: playersData } = await supabase
-          .from("players")
+          .from("players_public" as any)
           .select("id, name")
           .in("id", playerIds);
 
         const nameMap: Record<string, string> = {};
-        (playersData || []).forEach((p) => (nameMap[p.id] = p.name));
+        ((playersData || []) as any[]).forEach((p: any) => (nameMap[p.id] = p.name));
 
         matchData.forEach((m) => {
           matchPlayers[m.id] = {
