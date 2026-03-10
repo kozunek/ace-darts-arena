@@ -79,6 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       setLoading(true);
+      // Share session token with browser extension
+      if (session?.access_token) {
+        window.postMessage({ type: "EDART_STORE_SESSION_TOKEN", accessToken: session.access_token }, "*");
+      }
       void syncUserState(session?.user ?? null).finally(() => {
         if (mounted) setLoading(false);
       });

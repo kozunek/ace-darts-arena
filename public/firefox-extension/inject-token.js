@@ -84,5 +84,11 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
     if (event.data?.type === "EDART_STORE_USER_ID" && event.data?.userId) {
       browserAPI.storage.local.set({ edart_user_id: event.data.userId });
     }
+    if (event.data?.type === "EDART_STORE_SESSION_TOKEN" && event.data?.accessToken) {
+      browserAPI.storage.local.set({
+        edart_session_token: event.data.accessToken,
+        edart_session_timestamp: Date.now(),
+      });
+    }
   });
 })();
