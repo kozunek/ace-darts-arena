@@ -53,6 +53,7 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
       .from("extension_settings")
       .update({
         auto_approve: settings.auto_approve,
+        auto_approve_manual: settings.auto_approve_manual,
         require_avg: settings.require_avg,
         require_180s: settings.require_180s,
         require_high_checkout: settings.require_high_checkout,
