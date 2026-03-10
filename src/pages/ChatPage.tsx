@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, ArrowLeft, Users, Search } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
