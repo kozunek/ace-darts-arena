@@ -653,44 +653,70 @@ const SubmitMatchPage = () => {
         </p>
       </div>
 
-      {/* Extension status - only for Autodarts */}
-      {sourcePlatform === "autodarts" && (
-      <div
-        className={`rounded-lg border p-3 mb-4 flex items-center gap-3 text-sm ${
-          extensionInstalled && extensionToken
-            ? "border-primary/30 bg-primary/10 text-primary"
-            : extensionInstalled
-              ? "border-accent/30 bg-accent/10 text-accent"
-              : "border-border bg-muted/30 text-muted-foreground"
-        }`}
-      >
-        {extensionInstalled && extensionToken ? (
-          <>
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>Rozszerzenie aktywne — token Autodarts gotowy {tokenFresh ? "✅" : "(odśwież Autodarts)"}</span>
-          </>
-        ) : extensionInstalled ? (
-          <>
-            <XCircle className="h-4 w-4 shrink-0" />
-            <span>
-              Rozszerzenie działa, ale brak tokena. Zaloguj się na{" "}
-              <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">
-                play.autodarts.io
-              </a>
-            </span>
-          </>
-        ) : (
-          <>
-            <Zap className="h-4 w-4 shrink-0" />
-            <span>Zainstaluj rozszerzenie Chrome eDART, żeby pobierać i wysyłać wynik automatycznie.</span>
-          </>
-        )}
+      {/* Platform selector */}
+      <div className="rounded-lg border border-border bg-card p-4 mb-4">
+        <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground mb-3 block">
+          Platforma
+        </Label>
+        <div className="grid grid-cols-3 gap-2">
+          {(["autodarts", "dartcounter", "dartsmind"] as SourcePlatform[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setSourcePlatform(p)}
+              className={`rounded-lg border p-3 text-center text-sm font-display transition-all ${
+                sourcePlatform === p
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card hover:border-primary/30 text-muted-foreground"
+              }`}
+            >
+              {p === "autodarts" ? "🎯 Autodarts" : p === "dartcounter" ? "📱 DartCounter" : "🧠 DartsMind"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-3 mb-6 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">Auto-zgłoszenie po zakończeniu meczu z Autodarts</div>
-        <Switch checked={autoSubmitFromExtension} onCheckedChange={setAutoSubmitFromExtension} />
-      </div>
+      {/* Extension status - only for Autodarts */}
+      {sourcePlatform === "autodarts" && (
+        <>
+          <div
+            className={`rounded-lg border p-3 mb-4 flex items-center gap-3 text-sm ${
+              extensionInstalled && extensionToken
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : extensionInstalled
+                  ? "border-accent/30 bg-accent/10 text-accent"
+                  : "border-border bg-muted/30 text-muted-foreground"
+            }`}
+          >
+            {extensionInstalled && extensionToken ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Rozszerzenie aktywne — token Autodarts gotowy {tokenFresh ? "✅" : "(odśwież Autodarts)"}</span>
+              </>
+            ) : extensionInstalled ? (
+              <>
+                <XCircle className="h-4 w-4 shrink-0" />
+                <span>
+                  Rozszerzenie działa, ale brak tokena. Zaloguj się na{" "}
+                  <a href="https://play.autodarts.io" target="_blank" rel="noopener" className="underline">
+                    play.autodarts.io
+                  </a>
+                </span>
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4 shrink-0" />
+                <span>Zainstaluj rozszerzenie Chrome eDART, żeby pobierać i wysyłać wynik automatycznie.</span>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-3 mb-6 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Auto-zgłoszenie po zakończeniu meczu z Autodarts</div>
+            <Switch checked={autoSubmitFromExtension} onCheckedChange={setAutoSubmitFromExtension} />
+          </div>
+        </>
+      )}
 
       {/* Pending matches */}
       {pendingMatches.length > 0 && (
