@@ -1,5 +1,5 @@
 // Background service worker
-const EDART_URL = "https://www.ligidarta.pl";
+const EDART_URL = "https://ace-darts-arena.lovable.app";
 const SUPABASE_URL = "https://uiolhzctnbskdjteufkj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpb2xoemN0bmJza2RqdGV1ZmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTc4NjEsImV4cCI6MjA4ODQ5Mzg2MX0.SEGOONfttWCS7jbacT5NxlbiOGSxmrVRp4DFqQRDYkk";
 

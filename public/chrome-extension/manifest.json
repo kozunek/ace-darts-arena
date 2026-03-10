@@ -8,7 +8,7 @@
     "https://login.autodarts.io/*",
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*",
-    "https://www.ligidarta.pl/*",
+    "https://ace-darts-arena.lovable.app/*",
     "https://*.lovableproject.com/*",
     "https://*.lovable.app/*",
     "https://uiolhzctnbskdjteufkj.supabase.co/*"
@@ -24,7 +24,7 @@
     },
     {
       "matches": [
-        "https://www.ligidarta.pl/*",
+        "https://ace-darts-arena.lovable.app/*",
         "https://*.lovableproject.com/*",
         "https://*.lovable.app/*"
       ],

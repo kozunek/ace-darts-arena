@@ -277,8 +277,19 @@ const SubmitMatchPage = () => {
       const p1 = normalizeName(p1Raw);
       const p2 = normalizeName(p2Raw);
 
-      // Match to upcoming league matches (name fallback)
+      // Match to upcoming league matches (by autodarts ID first, then name fallback)
+      const payloadP1Auto = (enrichedPayload.player1_autodarts_id as string | undefined) || null;
+      const payloadP2Auto = (enrichedPayload.player2_autodarts_id as string | undefined) || null;
+
       const matchedUpcoming = upcomingMatches.find((m) => {
+        // Try matching by autodarts user ID first (most reliable)
+        const m1Auto = playerAutodartsMap[m.player1Id] || null;
+        const m2Auto = playerAutodartsMap[m.player2Id] || null;
+        if (m1Auto && m2Auto && payloadP1Auto && payloadP2Auto) {
+          if ((m1Auto === payloadP1Auto && m2Auto === payloadP2Auto) ||
+              (m1Auto === payloadP2Auto && m2Auto === payloadP1Auto)) return true;
+        }
+        // Fallback to name matching
         const m1 = normalizeName(m.player1Name);
         const m2 = normalizeName(m.player2Name);
         return (m1 === p1 && m2 === p2) || (m1 === p2 && m2 === p1);

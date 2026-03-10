@@ -2,7 +2,7 @@
 
 Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodarts.io). Automatyczne pobieranie statystyk, śledzenie wyników na żywo, tabele ligowe, turnieje i więcej.
 
-**Strona:** [https://www.ligidarta.pl](https://www.ligidarta.pl)
+**Strona:** [https://ace-darts-arena.lovable.app](https://ace-darts-arena.lovable.app)
 
 ---
 
