@@ -89,7 +89,7 @@
 
   function isLiveMatch(match) {
     const state = String(match?.state || "").toLowerCase();
-    return ["playing", "started", "running", "in_progress", "active", "order"].includes(state);
+    return ["playing", "started", "running", "in_progress", "active"].includes(state);
   }
 
   // Track already-processed match IDs

@@ -14,35 +14,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    // All paths require authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Use getUser instead of getClaims for better compatibility
-    const token = authHeader.replace("Bearer ", "");
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data: userData, error: userError } = await authClient.auth.getUser(token);
-    if (userError || !userData?.user) {
-      console.error("[check-league-match] Auth failed:", userError?.message || "no user");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const body = await req.json();
     const { action, autodarts_match_id, player1_name, player2_name, player1_autodarts_id, player2_autodarts_id } = body;
 
-    // Use service key for player lookups (players table has RLS restricting reads)
+    // Use service key for all lookups (this is a read-only check, no auth required)
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Handle live match end action
@@ -62,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find players using service client (bypasses RLS on players table)
+    // Find players
     let p1Id: string | null = null;
     let p2Id: string | null = null;
 
@@ -71,9 +47,8 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player1_autodarts_id)
-        .limit(1)
-        .maybeSingle();
-      if (data) p1Id = data.id;
+        .limit(1);
+      if (data && data.length > 0) p1Id = data[0].id;
     }
     if (!p1Id && player1_name) {
       const { data } = await supabase
@@ -89,9 +64,8 @@ Deno.serve(async (req) => {
         .from("players")
         .select("id")
         .eq("autodarts_user_id", player2_autodarts_id)
-        .limit(1)
-        .maybeSingle();
-      if (data) p2Id = data.id;
+        .limit(1);
+      if (data && data.length > 0) p2Id = data[0].id;
     }
     if (!p2Id && player2_name) {
       const { data } = await supabase
@@ -106,7 +80,7 @@ Deno.serve(async (req) => {
 
     if (!p1Id || !p2Id) {
       return new Response(
-        JSON.stringify({ is_league_match: false }),
+        JSON.stringify({ is_league_match: false, reason: `players not found: p1=${!!p1Id}, p2=${!!p2Id}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -114,7 +88,7 @@ Deno.serve(async (req) => {
     // Check for upcoming match between these two players (either order)
     const { data: matches } = await supabase
       .from("matches")
-      .select("id, league_id, round, date, leagues!inner(name)")
+      .select("id, league_id, round, date, player1_id, player2_id, leagues!inner(name)")
       .eq("status", "upcoming")
       .or(
         `and(player1_id.eq.${p1Id},player2_id.eq.${p2Id}),and(player1_id.eq.${p2Id},player2_id.eq.${p1Id})`
@@ -132,7 +106,7 @@ Deno.serve(async (req) => {
     const match = matches[0];
     const leagueName = (match as any).leagues?.name || "Liga";
 
-    console.log(`[check-league-match] Found league match: ${match.id}, league: ${leagueName}`);
+    console.log(`[check-league-match] ✅ Found league match: ${match.id}, league: ${leagueName}`);
 
     return new Response(
       JSON.stringify({

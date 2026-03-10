@@ -1,14 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   const statusEl = document.getElementById('status');
   const infoEl = document.getElementById('info');
   const stepsEl = document.getElementById('steps');
   const copyBtn = document.getElementById('copyBtn');
   const openBtn = document.getElementById('openAutodarts');
 
-  chrome.storage.local.get(['autodarts_token', 'token_timestamp'], (result) => {
+  browserAPI.storage.local.get(['autodarts_token', 'token_timestamp'], (result) => {
     if (result.autodarts_token) {
       const age = Date.now() - (result.token_timestamp || 0);
-      const fresh = age < 300000; // 5 min
+      const fresh = age < 300000;
       const mins = Math.floor(age / 60000);
 
       statusEl.className = 'status connected';
@@ -38,6 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   openBtn.onclick = () => {
-    chrome.tabs.create({ url: 'https://play.autodarts.io' });
+    browserAPI.tabs.create({ url: 'https://play.autodarts.io' });
   };
 });
