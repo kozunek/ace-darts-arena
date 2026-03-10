@@ -61,22 +61,12 @@ async function fetchJson(url: string, token: string) {
   return res.json();
 }
 
-// Check if a remaining score can be finished with exactly one double dart
-function isFinishableWithOneDouble(remaining: number): boolean {
+// Check if a remaining score can be finished with exactly one double dart (PDC "darts at double")
+// Valid doubles: D1-D20 (2,4,6,...,40) and Bull (50)
+function isDartAtDouble(remaining: number): boolean {
   if (remaining === 50) return true; // Bull
   if (remaining >= 2 && remaining <= 40 && remaining % 2 === 0) return true;
   return false;
-}
-
-// Check if a remaining score is "finishable" — can be checked out in ≤3 darts (ending with a double).
-// ALL darts thrown when the player is on a finishable score count as checkout attempts.
-// Non-finishable scores above 60: 169, 168, 166, 165, 163, 162, 159
-function isFinishable(remaining: number): boolean {
-  if (remaining <= 0 || remaining > 170) return false;
-  // Impossible finishes
-  const impossible = new Set([169, 168, 166, 165, 163, 162, 159]);
-  if (impossible.has(remaining)) return false;
-  return true;
 }
 
 function getDartPoints(dart: any): number {
