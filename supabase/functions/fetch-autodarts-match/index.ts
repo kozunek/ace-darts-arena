@@ -248,36 +248,37 @@ function processGameTurns(
     else if (points >= 100) st.ton100++;
     else if (points >= 60) st.ton60++;
 
-    // Checkout detection — track dart-by-dart remaining within this visit
-    // A checkout ATTEMPT = a dart thrown when the remaining score at that moment
-    // can be finished with exactly one double (remaining ≤40 even, or =50)
+    // Checkout detection — PDC style: "darts at double"
+    // A checkout attempt = a dart thrown when the remaining score BEFORE that dart
+    // is a valid one-double finish (even 2-40, or bull 50).
+    // This counts 1st, 2nd, AND 3rd darts in a visit if remaining at that moment is a double.
+    // Busts also count — if player has 40 and throws 60 (bust), the dart AT 40 is still an attempt.
     if (dartsArr && scoreBeforeTurn != null) {
       let runningRemaining = scoreBeforeTurn;
 
       for (const d of dartsArr) {
         const dartValue = getDartPoints(d);
 
-        // Count a checkout attempt for EVERY dart thrown when remaining is finishable
-        // (can be checked out in ≤3 darts ending with a double)
-        if (isFinishable(runningRemaining)) {
+        // PDC rule: count as checkout attempt only when remaining is directly on a double
+        if (isDartAtDouble(runningRemaining)) {
           st.checkoutAttempts++;
         }
 
         runningRemaining -= dartValue;
+        // Bust (negative) or checkout (zero) — stop counting
         if (runningRemaining <= 0) break;
       }
 
-      // Autodarts may omit trailing darts in a visit (empty dart slots).
-      // If API declares more darts than it provides, treat missing ones as misses (0 points).
+      // Handle missing trailing darts (API declares more than provided)
       const missingDarts = Math.max(0, dartsCount - dartsArr.length);
       for (let md = 0; md < missingDarts; md++) {
-        if (isFinishable(runningRemaining)) {
+        if (isDartAtDouble(runningRemaining)) {
           st.checkoutAttempts++;
         }
       }
     } else if (!dartsArr && scoreBeforeTurn != null) {
-      // No per-dart detail: only count if starting score is finishable
-      if (isFinishable(scoreBeforeTurn)) {
+      // No per-dart detail: only count if starting score is directly on a double
+      if (isDartAtDouble(scoreBeforeTurn)) {
         st.checkoutAttempts += dartsCount;
       }
     }
