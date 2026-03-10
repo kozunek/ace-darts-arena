@@ -70,7 +70,7 @@ const MyMatchesPage = () => {
       .then(({ data }) => {
         if (data) {
           const map: Record<string, string> = {};
-          data.forEach((p) => { if (p.user_id) map[p.id] = p.user_id; });
+          (data as any[]).forEach((p: any) => { if (p.user_id) map[p.id] = p.user_id; });
           setOpponentUserIds(map);
         }
       });

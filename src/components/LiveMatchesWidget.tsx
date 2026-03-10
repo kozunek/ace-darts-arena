@@ -46,7 +46,7 @@ const LiveMatchesWidget = () => {
           .in("id", playerIds);
 
         const nameMap: Record<string, string> = {};
-        (playersData || []).forEach((p) => (nameMap[p.id] = p.name));
+        ((playersData || []) as any[]).forEach((p: any) => (nameMap[p.id] = p.name));
 
         matchData.forEach((m) => {
           matchPlayers[m.id] = {

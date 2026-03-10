@@ -53,7 +53,7 @@ const LiveMatchesPage = () => {
         ]);
 
         const nameMap: Record<string, { name: string; avatar_url: string | null }> = {};
-        (playersRes.data || []).forEach((p) => (nameMap[p.id] = { name: p.name, avatar_url: p.avatar_url }));
+        ((playersRes.data || []) as any[]).forEach((p: any) => (nameMap[p.id] = { name: p.name, avatar_url: p.avatar_url }));
 
         const leagueMap: Record<string, string> = {};
         (leaguesRes.data || []).forEach((l) => (leagueMap[l.id] = l.name));
