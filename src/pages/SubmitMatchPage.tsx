@@ -404,6 +404,7 @@ const SubmitMatchPage = () => {
           description: `Wynik ${finalPayload.player1_name} vs ${finalPayload.player2_name} został wysłany automatycznie.`,
         });
       }
+      return true;
     },
     [autoSubmitFromExtension, extensionToken, fetchFullStats, playerAutodartsMap, populateForm, selectedMatch, submitMatchResult, toast, upcomingMatches],
   );
