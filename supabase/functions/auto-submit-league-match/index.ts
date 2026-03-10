@@ -636,6 +636,8 @@ Deno.serve(async (req) => {
         checkout_hits1: statsData.checkout_hits1,
         checkout_hits2: statsData.checkout_hits2,
         autodarts_link: statsData.autodarts_link,
+        nine_darters1: statsData.nine_darters1,
+        nine_darters2: statsData.nine_darters2,
       })
       .eq("id", edartMatch.id);
 
