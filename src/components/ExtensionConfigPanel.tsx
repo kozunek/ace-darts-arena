@@ -73,6 +73,8 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
       toast({ title: "Błąd zapisu", description: error.message, variant: "destructive" });
       // Reload settings from DB to reflect actual state
       loadSettings();
+    } else {
+      toast({ title: "Zapisano ✅", description: "Ustawienia zostały zaktualizowane." });
     }
   };
 
