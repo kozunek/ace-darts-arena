@@ -18,6 +18,11 @@ const primaryNavItems = [
   { label: "Mecze", href: "/matches", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Gracze", href: "/players", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-3.5 w-3.5" /> },
+  { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
+  { label: "H2H", href: "/h2h", icon: <Swords className="h-3.5 w-3.5" /> },
+  { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
+  { label: "Hall of Fame", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
   { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
   { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" /> },
 ];
