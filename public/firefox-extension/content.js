@@ -193,10 +193,22 @@
     }
   }
 
+  function isExtensionContextValid() {
+    try {
+      return !!(browserAPI.runtime?.id);
+    } catch { return false; }
+  }
+
   async function fetchHistoryMatch(matchId) {
     try {
-      const stored = await new Promise((resolve) => {
-        browserAPI.storage.local.get(["autodarts_token"], resolve);
+      if (!isExtensionContextValid()) {
+        console.log("[eDART] Extension context invalidated, skipping fetch");
+        return;
+      }
+      const stored = await new Promise((resolve, reject) => {
+        try {
+          browserAPI.storage.local.get(["autodarts_token"], resolve);
+        } catch (e) { reject(e); }
       });
       const token = stored.autodarts_token;
       if (!token) {
