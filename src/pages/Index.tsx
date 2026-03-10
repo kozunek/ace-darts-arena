@@ -8,7 +8,6 @@ import LeagueSelector from "@/components/LeagueSelector";
 import OpenLeagues from "@/components/OpenLeagues";
 import LeagueWinners from "@/components/LeagueWinners";
 import MyNextMatchWidget from "@/components/MyNextMatchWidget";
-import LiveMatchesWidget from "@/components/LiveMatchesWidget";
 import ExtensionDownloadSection from "@/components/ExtensionDownloadSection";
 import ApkDownloadSection from "@/components/ApkDownloadSection";
 
@@ -22,7 +21,6 @@ const Index = () => {
       <HeroSection />
       <div className="container mx-auto px-4 py-8 space-y-8">
         <MyNextMatchWidget />
-        <LiveMatchesWidget />
         <ExtensionDownloadSection />
         <ApkDownloadSection />
         <LeagueWinners />
