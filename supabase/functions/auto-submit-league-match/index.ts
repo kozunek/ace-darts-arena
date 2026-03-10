@@ -262,20 +262,19 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     
-    // Use getUser instead of getClaims for better compatibility
     const authClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    const { data: userData, error: userError } = await authClient.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     
-    if (userError || !userData?.user?.id) {
-      console.error("[auto-submit] Auth failed:", userError?.message || "no user");
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("[auto-submit] Auth failed:", claimsError?.message || "no claims");
       return new Response(
-        JSON.stringify({ error: "Unauthorized", details: userError?.message }),
+        JSON.stringify({ error: "Unauthorized", details: claimsError?.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const callerUserId = userData.user.id;
+    const callerUserId = claimsData.claims.sub as string;
     console.log(`[auto-submit] Authenticated user: ${callerUserId}`);
 
     const {
