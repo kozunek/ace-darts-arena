@@ -245,9 +245,9 @@ const SubmitMatchPage = () => {
     }
   }, []);
 
-  const applyAutoPayload = useCallback(
-    async (payload: AutoPayload, allowAutoSubmit: boolean) => {
-      if (!payload) return;
+   const applyAutoPayload = useCallback(
+    async (payload: AutoPayload, allowAutoSubmit: boolean): Promise<boolean> => {
+      if (!payload) return false;
 
       // If payload has autodarts link/match_id but no stats, fetch full stats from server
       const autodartsMatchId = payload.match_id || payload.autodarts_link?.match(/matches\/([a-f0-9-]+)/i)?.[1];
@@ -300,14 +300,14 @@ const SubmitMatchPage = () => {
 
       if (!matchedUpcoming && allowAutoSubmit) {
         console.log("Auto-submit skipped: no matching league match for", p1Raw, "vs", p2Raw);
-        return;
+        return false;
       }
 
       if (targetMatch) {
         setSelectedMatchId(targetMatch.id);
       }
 
-      // Robust swap detection + strict participant validation
+      // Robust swap detection + participant validation
       let finalPayload = enrichedPayload;
       if (targetMatch) {
         const m1 = normalizeName(targetMatch.player1Name);
@@ -323,22 +323,41 @@ const SubmitMatchPage = () => {
 
         let sameById = false;
         let reversedById = false;
+        // Full 4-way ID match
         if (targetP1Auto && targetP2Auto && payloadP1Auto && payloadP2Auto) {
           sameById = targetP1Auto === payloadP1Auto && targetP2Auto === payloadP2Auto;
           reversedById = targetP1Auto === payloadP2Auto && targetP2Auto === payloadP1Auto;
         }
 
-        const participantMatch = sameById || reversedById || sameByName || reversedByName;
-        if (!participantMatch) {
-          toast({
-            title: "Mecz nie pasuje",
-            description: "Dane z Autodarts są dla innych graczy niż wybrany mecz ligowy.",
-            variant: "destructive",
-          });
-          return;
+        // Partial ID match: at least one player matches by autodarts ID
+        let partialSame = false;
+        let partialReversed = false;
+        if (!sameById && !reversedById) {
+          if (targetP1Auto && payloadP1Auto && targetP1Auto === payloadP1Auto) partialSame = true;
+          if (targetP2Auto && payloadP2Auto && targetP2Auto === payloadP2Auto) partialSame = true;
+          if (targetP1Auto && payloadP2Auto && targetP1Auto === payloadP2Auto) partialReversed = true;
+          if (targetP2Auto && payloadP1Auto && targetP2Auto === payloadP1Auto) partialReversed = true;
         }
 
-        const shouldSwap = reversedById || (!sameById && reversedByName && !sameByName);
+        // Also check partial name match (contains)
+        const p1MatchesM1 = m1 === p1 || (p1.length > 2 && (m1.includes(p1) || p1.includes(m1)));
+        const p2MatchesM2 = m2 === p2 || (p2.length > 2 && (m2.includes(p2) || p2.includes(m2)));
+        const p1MatchesM2 = m2 === p1 || (p1.length > 2 && (m2.includes(p1) || p1.includes(m2)));
+        const p2MatchesM1 = m1 === p2 || (p2.length > 2 && (m1.includes(p2) || p2.includes(m1)));
+        const partialNameSame = p1MatchesM1 && p2MatchesM2;
+        const partialNameReversed = p1MatchesM2 && p2MatchesM1 && !partialNameSame;
+
+        const participantMatch = sameById || reversedById || sameByName || reversedByName 
+          || partialSame || partialReversed || partialNameSame || partialNameReversed;
+        
+        if (!participantMatch && allowAutoSubmit) {
+          console.log("Auto-submit skipped: participant mismatch", { m1, m2, p1, p2, targetP1Auto, targetP2Auto, payloadP1Auto, payloadP2Auto });
+          return false;
+        }
+        // For manual fetch, skip strict validation — user chose the match
+
+        const shouldSwap = reversedById || partialReversed 
+          || (!sameById && !partialSame && (reversedByName || partialNameReversed) && !sameByName && !partialNameSame);
         if (shouldSwap) {
           finalPayload = swapPayload(enrichedPayload);
         }
@@ -385,6 +404,7 @@ const SubmitMatchPage = () => {
           description: `Wynik ${finalPayload.player1_name} vs ${finalPayload.player2_name} został wysłany automatycznie.`,
         });
       }
+      return true;
     },
     [autoSubmitFromExtension, extensionToken, fetchFullStats, playerAutodartsMap, populateForm, selectedMatch, submitMatchResult, toast, upcomingMatches],
   );
@@ -486,11 +506,20 @@ const SubmitMatchPage = () => {
         return;
       }
 
-      applyAutoPayload(fnData.data, false);
-      toast({
-        title: "✅ Pobrano!",
-        description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}`,
-      });
+      const applied = await applyAutoPayload(fnData.data, false);
+      if (applied) {
+        toast({
+          title: "✅ Pobrano!",
+          description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}`,
+        });
+      } else {
+        toast({
+          title: "⚠️ Pobrano dane",
+          description: "Nie udało się dopasować graczy do wybranego meczu. Statystyki zostały pobrane, ale mogą wymagać ręcznego przypisania.",
+        });
+        // Still populate form even if matching failed
+        populateForm(fnData.data);
+      }
     } catch {
       toast({
         title: "Błąd połączenia",
@@ -500,7 +529,7 @@ const SubmitMatchPage = () => {
     }
 
     setFetchingAutodarts(false);
-  }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload]);
+  }, [autodartsLink, getAutodartsToken, toast, applyAutoPayload, populateForm]);
 
   const resetForm = () => {
     setSelectedMatchId("");
