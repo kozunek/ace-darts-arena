@@ -75,6 +75,14 @@ function emptyStats(): PlayerStats {
   };
 }
 
+// PDC/Autodarts "Darts at Double" — only counts when remaining IS a direct double finish
+function isDoubleAttempt(remaining: number): boolean {
+  if (remaining === 50) return true; // Bull
+  if (remaining < 2 || remaining > 40) return false;
+  return remaining % 2 === 0; // D1-D20 (2,4,6,...,40)
+}
+
+// Legacy: can the score be finished at all (used for other logic, NOT checkout attempts)
 function isFinishable(remaining: number): boolean {
   if (remaining <= 0 || remaining > 170) return false;
   const impossible = new Set([169, 168, 166, 165, 163, 162, 159]);
@@ -194,19 +202,22 @@ function processGameTurns(
     else if (points >= 100) st.ton100++;
     else if (points >= 60) st.ton60++;
 
+    // PDC "Darts at Double": only count when remaining is a direct double (even 2-40 or 50)
     if (dartsArr && scoreBeforeTurn != null) {
       let runningRemaining = scoreBeforeTurn;
       for (const d of dartsArr) {
-        if (isFinishable(runningRemaining)) st.checkoutAttempts++;
-        runningRemaining -= getDartPoints(d);
+        if (isDoubleAttempt(runningRemaining)) st.checkoutAttempts++;
+        const dartPts = getDartPoints(d);
+        runningRemaining -= dartPts;
         if (runningRemaining <= 0) break;
       }
       const missingDarts = Math.max(0, dartsCount - dartsArr.length);
       for (let md = 0; md < missingDarts; md++) {
-        if (isFinishable(runningRemaining)) st.checkoutAttempts++;
+        if (isDoubleAttempt(runningRemaining)) st.checkoutAttempts++;
       }
     } else if (!dartsArr && scoreBeforeTurn != null) {
-      if (isFinishable(scoreBeforeTurn)) st.checkoutAttempts += dartsCount;
+      // No individual dart data — estimate: count 1 attempt if on a double
+      if (isDoubleAttempt(scoreBeforeTurn)) st.checkoutAttempts++;
     }
 
     const remainingAfter = typeof turn.score === "number" ? turn.score : null;
