@@ -506,11 +506,20 @@ const SubmitMatchPage = () => {
         return;
       }
 
-      applyAutoPayload(fnData.data, false);
-      toast({
-        title: "✅ Pobrano!",
-        description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}`,
-      });
+      const applied = await applyAutoPayload(fnData.data, false);
+      if (applied) {
+        toast({
+          title: "✅ Pobrano!",
+          description: `Statystyki: ${fnData.data.player1_name} vs ${fnData.data.player2_name}`,
+        });
+      } else {
+        toast({
+          title: "⚠️ Pobrano dane",
+          description: "Nie udało się dopasować graczy do wybranego meczu. Statystyki zostały pobrane, ale mogą wymagać ręcznego przypisania.",
+        });
+        // Still populate form even if matching failed
+        populateForm(fnData.data);
+      }
     } catch {
       toast({
         title: "Błąd połączenia",
