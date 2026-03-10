@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     }
 
     // Check for upcoming match between these two players (either order)
-    const { data: matches } = await supabase
+    const { data: matches } = await supabaseAnon
       .from("matches")
       .select("id, league_id, round, date, leagues!inner(name)")
       .eq("status", "upcoming")
