@@ -332,6 +332,29 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
                   <div className="text-xs text-muted-foreground mb-4 italic">Brak statystyk — tylko wynik</div>
                 )}
 
+                {/* Source platform badge */}
+                {m.sourcePlatform && m.sourcePlatform !== "autodarts" && (
+                  <div className="text-xs text-muted-foreground mb-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 font-display uppercase tracking-wider">
+                      {m.sourcePlatform === "dartcounter" ? "📱 DartCounter" : "🧠 DartsMind"}
+                    </span>
+                  </div>
+                )}
+
+                {/* Screenshots */}
+                {m.screenshotUrls && m.screenshotUrls.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs text-muted-foreground font-display uppercase tracking-wider mb-2">📸 Zrzuty ekranu ({m.screenshotUrls.length})</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {m.screenshotUrls.map((url: string, i: number) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
+                          <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-auto object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {m.autodartsLink && <div className="text-xs text-primary mb-4"><a href={m.autodartsLink} target="_blank" rel="noopener noreferrer" className="hover:underline">🔗 Link Autodarts</a></div>}
                 <div className="flex gap-3">
                   <Button variant="default" size="sm" className="flex-1" onClick={() => { approveMatch(m.id); toast({ title: "✅ Mecz zatwierdzony!", description: `${m.player1Name} vs ${m.player2Name}` }); }}>
