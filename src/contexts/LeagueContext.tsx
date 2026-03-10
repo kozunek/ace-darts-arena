@@ -368,7 +368,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       avg_until_170_1: data.avgUntil170_1 ?? null,
       avg_until_170_2: data.avgUntil170_2 ?? null,
       autodarts_link: data.autodartsLink,
-    }).eq("id", matchId);
+      screenshot_urls: data.screenshotUrls ?? [],
+      source_platform: data.sourcePlatform ?? 'autodarts',
+    } as any).eq("id", matchId);
 
     setMatchList((prev) =>
       prev.map((m) =>
