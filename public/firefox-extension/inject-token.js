@@ -1,12 +1,11 @@
-// Content script that runs on eDART pages (Firefox version)
-// Reads session from localStorage directly instead of receiving via postMessage
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+// Content script that runs on eDART pages (Firefox)
+// Provides token + latest finished match data + league match data to the app
 
 (function () {
+  const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   const STORAGE_KEY_PREFIX = "sb-";
   const STORAGE_KEY_SUFFIX = "-auth-token";
 
-  // Read eDART/Supabase session from localStorage
   const getSessionFromLocalStorage = () => {
     try {
       for (let i = 0; i < localStorage.length; i++) {
@@ -19,13 +18,10 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
           }
         }
       }
-    } catch (e) {
-      // Ignore parse errors
-    }
+    } catch (e) {}
     return null;
   };
 
-  // Sync session token to extension storage whenever it changes
   const syncSessionToExtension = () => {
     const token = getSessionFromLocalStorage();
     if (token) {
@@ -37,42 +33,33 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   };
 
   const postToken = () => {
-    browserAPI.storage.local.get(["autodarts_token", "token_timestamp"]).then((result) => {
-      window.postMessage(
-        {
-          type: "EDART_TOKEN_RESPONSE",
-          token: result.autodarts_token || null,
-          timestamp: result.token_timestamp || null,
-          fresh: result.token_timestamp ? Date.now() - result.token_timestamp < 600000 : false,
-        },
-        "*"
-      );
+    browserAPI.storage.local.get(["autodarts_token", "token_timestamp"], (result) => {
+      window.postMessage({
+        type: "EDART_TOKEN_RESPONSE",
+        token: result.autodarts_token || null,
+        timestamp: result.token_timestamp || null,
+        fresh: result.token_timestamp ? Date.now() - result.token_timestamp < 600000 : false,
+      }, "*");
     });
   };
 
   const postLastMatch = () => {
-    browserAPI.storage.local.get(["autodarts_last_match", "autodarts_last_match_timestamp"]).then((result) => {
-      window.postMessage(
-        {
-          type: "EDART_LAST_MATCH_RESPONSE",
-          payload: result.autodarts_last_match || null,
-          timestamp: result.autodarts_last_match_timestamp || null,
-        },
-        "*"
-      );
+    browserAPI.storage.local.get(["autodarts_last_match", "autodarts_last_match_timestamp"], (result) => {
+      window.postMessage({
+        type: "EDART_LAST_MATCH_RESPONSE",
+        payload: result.autodarts_last_match || null,
+        timestamp: result.autodarts_last_match_timestamp || null,
+      }, "*");
     });
   };
 
   const postLeagueMatch = () => {
-    browserAPI.storage.local.get(["autodarts_league_match", "autodarts_league_match_timestamp"]).then((result) => {
-      window.postMessage(
-        {
-          type: "EDART_LEAGUE_MATCH_RESPONSE",
-          payload: result.autodarts_league_match || null,
-          timestamp: result.autodarts_league_match_timestamp || null,
-        },
-        "*"
-      );
+    browserAPI.storage.local.get(["autodarts_league_match", "autodarts_league_match_timestamp"], (result) => {
+      window.postMessage({
+        type: "EDART_LEAGUE_MATCH_RESPONSE",
+        payload: result.autodarts_league_match || null,
+        timestamp: result.autodarts_league_match_timestamp || null,
+      }, "*");
     });
   };
 
@@ -80,47 +67,37 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
     if (event.data?.type === "EDART_REQUEST_TOKEN") postToken();
     if (event.data?.type === "EDART_REQUEST_LAST_MATCH") postLastMatch();
     if (event.data?.type === "EDART_REQUEST_LEAGUE_MATCH") postLeagueMatch();
-    // When app signals auth state changed, re-read token from localStorage
     if (event.data?.type === "EDART_AUTH_STATE_CHANGED") syncSessionToExtension();
   });
 
   browserAPI.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
     if (changes.autodarts_last_match) {
-      window.postMessage(
-        {
-          type: "EDART_LAST_MATCH_PUSH",
-          payload: changes.autodarts_last_match.newValue || null,
-          timestamp: Date.now(),
-        },
-        "*"
-      );
+      window.postMessage({
+        type: "EDART_LAST_MATCH_PUSH",
+        payload: changes.autodarts_last_match.newValue || null,
+        timestamp: Date.now(),
+      }, "*");
     }
     if (changes.autodarts_league_match) {
-      window.postMessage(
-        {
-          type: "EDART_LEAGUE_MATCH_PUSH",
-          payload: changes.autodarts_league_match.newValue || null,
-          timestamp: Date.now(),
-        },
-        "*"
-      );
+      window.postMessage({
+        type: "EDART_LEAGUE_MATCH_PUSH",
+        payload: changes.autodarts_league_match.newValue || null,
+        timestamp: Date.now(),
+      }, "*");
     }
     if (changes.autodarts_token || changes.token_timestamp) {
       postToken();
     }
   });
 
-  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.1" }, "*");
+  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.0" }, "*");
   postToken();
-  // Do NOT auto-push last match on page load — only respond to explicit requests
-  // postLastMatch();
+  postLastMatch();
   postLeagueMatch();
 
-  // Initial session sync from localStorage
   syncSessionToExtension();
 
-  // Store eDART user ID for auto-fill functionality
   window.addEventListener("message", (event) => {
     if (event.data?.type === "EDART_STORE_USER_ID" && event.data?.userId) {
       browserAPI.storage.local.set({ edart_user_id: event.data.userId });

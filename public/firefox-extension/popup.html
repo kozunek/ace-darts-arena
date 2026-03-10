@@ -6,103 +6,121 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 320px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
       color: #e0e0e0;
       padding: 16px;
     }
-    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .header img { width: 32px; height: 32px; border-radius: 8px; }
-    .header h1 { font-size: 14px; font-weight: 700; color: #fff; }
-    .header span { font-size: 11px; color: #888; }
-    .status {
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
+    .header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #222;
+    }
+    .header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .header .badge {
+      font-size: 10px;
+      background: #dc2626;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .status.connected {
+      background: #052e16;
+      border: 1px solid #166534;
+      color: #4ade80;
+    }
+    .status.disconnected {
+      background: #1c1917;
+      border: 1px solid #44403c;
+      color: #a8a29e;
+    }
+    .status .icon { font-size: 18px; margin-right: 8px; }
+    .info {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
       margin-bottom: 12px;
     }
-    .status.connected { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
-    .status.disconnected { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
-    .icon { font-size: 16px; }
-    #info { font-size: 12px; color: #999; margin-bottom: 12px; line-height: 1.5; }
-    .token-preview {
-      margin-top: 6px;
-      padding: 6px 10px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 11px;
-      color: #ccc;
-      word-break: break-all;
+    .steps {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.6;
     }
-    button {
+    .steps ol {
+      padding-left: 20px;
+    }
+    .steps li { margin-bottom: 4px; }
+    .steps a { color: #60a5fa; text-decoration: none; }
+    .steps a:hover { text-decoration: underline; }
+    .btn {
+      display: block;
       width: 100%;
       padding: 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      margin-bottom: 8px;
-      transition: all 0.2s;
+      margin-top: 8px;
     }
-    #copyBtn {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    .btn-primary {
+      background: #dc2626;
       color: white;
-      display: none;
     }
-    #copyBtn:hover { filter: brightness(1.1); }
-    #openAutodarts {
-      background: rgba(255,255,255,0.06);
-      color: #ccc;
-      border: 1px solid rgba(255,255,255,0.1);
+    .btn-primary:hover { background: #b91c1c; }
+    .btn-secondary {
+      background: #27272a;
+      color: #e0e0e0;
+      border: 1px solid #3f3f46;
     }
-    #openAutodarts:hover { background: rgba(255,255,255,0.1); }
-    #steps {
-      display: none;
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
+    .btn-secondary:hover { background: #3f3f46; }
+    .token-preview {
+      font-family: monospace;
+      font-size: 11px;
+      color: #666;
+      word-break: break-all;
+      margin-top: 4px;
     }
-    #steps h3 { font-size: 12px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-    #steps ol { padding-left: 18px; }
-    #steps li { font-size: 12px; color: #999; margin-bottom: 4px; line-height: 1.4; }
   </style>
 </head>
 <body>
   <div class="header">
-    <img src="icon48.png" alt="eDART">
-    <div>
-      <h1>eDART Polska</h1>
-      <span>Autodarts Stats v1.4.0</span>
-    </div>
+    <h1>🎯 eDART Polska</h1>
+    <span class="badge">Autodarts</span>
   </div>
-
+  
   <div id="status" class="status disconnected">
     <span class="icon">⏳</span> Sprawdzanie...
   </div>
-
-  <div id="info"></div>
-
-  <button id="copyBtn">📋 Kopiuj token</button>
-  <button id="openAutodarts">🎯 Otwórz Autodarts</button>
-
-  <div id="steps">
-    <h3>Jak uzyskać token?</h3>
+  
+  <div class="info" id="info"></div>
+  
+  <div class="steps" id="steps" style="display:none">
+    <p><strong>Jak to działa:</strong></p>
     <ol>
-      <li>Kliknij "Otwórz Autodarts" poniżej</li>
-      <li>Zaloguj się na swoje konto</li>
+      <li>Otwórz <a href="https://play.autodarts.io" target="_blank">play.autodarts.io</a> i zaloguj się</li>
+      <li>Zagraj lub otwórz dowolny mecz w historii</li>
       <li>Token zostanie przechwycony automatycznie</li>
-      <li>Wróć tutaj — status zmieni się na ✅</li>
+      <li>Wróć do <a href="https://ace-darts-arena.lovable.app/submit" target="_blank">eDART Polska</a> i kliknij "Pobierz"</li>
     </ol>
   </div>
+
+  <button class="btn btn-primary" id="copyBtn" style="display:none">📋 Kopiuj token</button>
+  <button class="btn btn-secondary" id="openAutodarts">🔗 Otwórz Autodarts</button>
 
   <script src="popup.js"></script>
 </body>
