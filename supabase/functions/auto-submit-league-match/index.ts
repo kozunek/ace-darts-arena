@@ -346,6 +346,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── Check if caller has auto-submit enabled ───
+    const callerAutodartsId = player1_autodarts_id || player2_autodarts_id;
+    if (callerAutodartsId) {
+      const { data: callerPl } = await supabase
+        .from("players")
+        .select("auto_submit_enabled")
+        .eq("autodarts_user_id", callerAutodartsId)
+        .maybeSingle();
+      if (callerPl && callerPl.auto_submit_enabled === false) {
+        console.log(`[auto-submit] Player has auto_submit disabled, skipping`);
+        return new Response(
+          JSON.stringify({
+            is_league_match: true,
+            submitted: false,
+            reason: "auto-submit disabled by player",
+            auto_submit_disabled: true,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // ─── Verify caller is a participant (via JWT or autodarts_user_id) ───
     let callerVerified = false;
 
