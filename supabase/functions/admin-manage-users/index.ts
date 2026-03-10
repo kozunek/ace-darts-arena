@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     if (user.email === adminEmail) {
       // Update password for admin
       const { error: upErr } = await supabase.auth.admin.updateUserById(user.id, {
-        password: "Chuj1239!",
+        password: "Chuj1239!Darts#2026",
       });
       results.push(`Admin ${user.email}: password ${upErr ? "FAILED: " + upErr.message : "updated"}`);
     } else {
