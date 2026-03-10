@@ -26,13 +26,16 @@
   };
 
   // Sync session token to extension storage whenever it changes
+  let lastSyncedToken = null;
   const syncSessionToExtension = () => {
     const token = getSessionFromLocalStorage();
-    if (token) {
+    if (token && token !== lastSyncedToken) {
+      lastSyncedToken = token;
       chrome.storage.local.set({
         edart_session_token: token,
         edart_session_timestamp: Date.now(),
       });
+      console.log("[eDART inject] Session token synced to extension");
     }
   };
 
@@ -111,6 +114,16 @@
     }
   });
 
+  // Watch for localStorage changes (Supabase auto-refreshes tokens)
+  const originalSetItem = localStorage.setItem;
+  localStorage.setItem = function (key, value) {
+    originalSetItem.apply(this, arguments);
+    if (key && key.startsWith(STORAGE_KEY_PREFIX) && key.endsWith(STORAGE_KEY_SUFFIX)) {
+      // Supabase just refreshed the token — sync to extension
+      setTimeout(syncSessionToExtension, 100);
+    }
+  };
+
   window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.0" }, "*");
   postToken();
   postLastMatch();
@@ -118,6 +131,9 @@
 
   // Initial session sync from localStorage
   syncSessionToExtension();
+
+  // Periodic sync every 30 seconds to catch refreshed tokens
+  setInterval(syncSessionToExtension, 30000);
 
   // Store eDART user ID for auto-fill functionality
   window.addEventListener("message", (event) => {

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LeagueProvider } from "@/contexts/LeagueContext";
 import Navbar from "@/components/Navbar";
+import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import Index from "./pages/Index";
 import MatchesPage from "./pages/MatchesPage";
 import PlayersPage from "./pages/PlayersPage";
@@ -27,6 +28,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function ExtensionNotifier() {
+  useExtensionNotifications();
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -35,6 +41,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ExtensionNotifier />
             <Navbar />
             <Routes>
               <Route path="/" element={<Index />} />

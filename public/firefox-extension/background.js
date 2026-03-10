@@ -426,6 +426,14 @@ function handleAutoSubmitResult(result, matchPayload) {
     });
 
     browserAPI.storage.local.set({
+      autodarts_league_match: {
+        ...matchPayload,
+        edart_match_id: result.match_id,
+        league_name: result.league_name,
+        auto_submitted: false,
+        submit_error: reason,
+      },
+      autodarts_league_match_timestamp: Date.now(),
       edart_manual_fallback: {
         autodarts_link: `https://play.autodarts.io/history/matches/${matchPayload.match_id}`,
         match_id: result.match_id,
