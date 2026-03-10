@@ -140,7 +140,7 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-48 max-h-80 overflow-y-auto">
-                  {allOverflowItems.filter(item => !('authOnly' in item) || !item.authOnly || user).map((item) => (
+                  {allOverflowItems.filter(item => !('authOnly' in item && item.authOnly) || user).map((item) => (
                     <Link key={item.href} to={item.href}>
                       <DropdownMenuItem className={`font-display uppercase tracking-wider text-xs cursor-pointer ${location.pathname === item.href ? "bg-accent" : ""}`}>
                         {item.icon && <span className="mr-2">{item.icon}</span>}
