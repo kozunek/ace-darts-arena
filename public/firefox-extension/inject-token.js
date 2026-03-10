@@ -111,9 +111,10 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome;
     }
   });
 
-  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.0" }, "*");
+  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.1" }, "*");
   postToken();
-  postLastMatch();
+  // Do NOT auto-push last match on page load — only respond to explicit requests
+  // postLastMatch();
   postLeagueMatch();
 
   // Initial session sync from localStorage
