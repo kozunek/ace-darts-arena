@@ -838,7 +838,7 @@ const SubmitMatchPage = () => {
                   </div>
 
                   <p className="text-[10px] text-muted-foreground text-center">
-                    Dane z Autodarts uzupełniły formularz poniżej.
+                    Dane z {sourcePlatform === "autodarts" ? "Autodarts" : sourcePlatform === "dartcounter" ? "DartCounter" : "DartsMind"} uzupełniły formularz poniżej.
                   </p>
                 </div>
               )}
