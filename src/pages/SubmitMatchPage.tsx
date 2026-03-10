@@ -394,7 +394,9 @@ const SubmitMatchPage = () => {
         setExtensionToken(event.data.token || null);
         setTokenFresh(Boolean(event.data.fresh));
       }
+      // Only apply extension match data when Autodarts platform is selected
       if (
+        sourcePlatform === "autodarts" &&
         (event.data?.type === "EDART_LAST_MATCH_RESPONSE" ||
           event.data?.type === "EDART_LAST_MATCH_PUSH") &&
         event.data.payload
@@ -405,13 +407,21 @@ const SubmitMatchPage = () => {
     };
 
     window.addEventListener("message", handler);
-    requestExtensionData();
-    const interval = window.setInterval(requestExtensionData, 8000);
+    // Only request extension match data for Autodarts platform
+    if (sourcePlatform === "autodarts") {
+      requestExtensionData();
+    } else {
+      // Still check for extension presence (token only)
+      window.postMessage({ type: "EDART_REQUEST_TOKEN" }, window.location.origin);
+    }
+    const interval = sourcePlatform === "autodarts"
+      ? window.setInterval(requestExtensionData, 8000)
+      : undefined;
     return () => {
       window.removeEventListener("message", handler);
-      window.clearInterval(interval);
+      if (interval) window.clearInterval(interval);
     };
-  }, [applyAutoPayload, requestExtensionData]);
+  }, [applyAutoPayload, requestExtensionData, sourcePlatform]);
 
   const getAutodartsToken = useCallback(async (): Promise<string | null> => {
     if (extensionToken && tokenFresh) return extensionToken;
