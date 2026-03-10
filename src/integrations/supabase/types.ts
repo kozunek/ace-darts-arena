@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           auto_approve: boolean
           auto_approve_manual: boolean
+          auto_approve_screenshot: boolean
           created_at: string
           id: string
           league_id: string | null
@@ -89,6 +90,7 @@ export type Database = {
         Insert: {
           auto_approve?: boolean
           auto_approve_manual?: boolean
+          auto_approve_screenshot?: boolean
           created_at?: string
           id?: string
           league_id?: string | null
@@ -106,6 +108,7 @@ export type Database = {
         Update: {
           auto_approve?: boolean
           auto_approve_manual?: boolean
+          auto_approve_screenshot?: boolean
           created_at?: string
           id?: string
           league_id?: string | null
@@ -377,6 +380,8 @@ export type Database = {
           round: number | null
           score1: number | null
           score2: number | null
+          screenshot_urls: string[] | null
+          source_platform: string | null
           status: string
           ton_plus1: number | null
           ton_plus2: number | null
@@ -422,6 +427,8 @@ export type Database = {
           round?: number | null
           score1?: number | null
           score2?: number | null
+          screenshot_urls?: string[] | null
+          source_platform?: string | null
           status?: string
           ton_plus1?: number | null
           ton_plus2?: number | null
@@ -467,6 +474,8 @@ export type Database = {
           round?: number | null
           score1?: number | null
           score2?: number | null
+          screenshot_urls?: string[] | null
+          source_platform?: string | null
           status?: string
           ton_plus1?: number | null
           ton_plus2?: number | null
