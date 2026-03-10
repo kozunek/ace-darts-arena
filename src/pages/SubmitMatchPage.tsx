@@ -332,6 +332,9 @@ const SubmitMatchPage = () => {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
+      // Only accept messages from our own origin (includes extension content scripts)
+      if (event.origin !== window.location.origin) return;
+
       if (event.data?.type === "EDART_EXTENSION_INSTALLED") setExtensionInstalled(true);
       if (event.data?.type === "EDART_TOKEN_RESPONSE") {
         setExtensionInstalled(true);

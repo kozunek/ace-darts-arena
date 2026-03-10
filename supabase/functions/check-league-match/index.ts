@@ -18,7 +18,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    // Use anon key for read-only lookups; service key only for privileged actions
+    const supabaseAnon = createClient(supabaseUrl, anonKey);
+    const supabaseService = createClient(supabaseUrl, serviceKey);
 
     // Handle live match end action — requires authenticated admin/moderator
     if (action === "end_live_match" && autodarts_match_id) {
