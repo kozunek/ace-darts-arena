@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     }
     // Fallback to name
     if (!p1Id && player1_name) {
-      const { data } = await supabase
+      const { data } = await supabaseAnon
         .from("players")
         .select("id")
         .ilike("name", player1_name)
