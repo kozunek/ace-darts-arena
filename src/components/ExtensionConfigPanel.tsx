@@ -56,6 +56,7 @@ const ExtensionConfigPanel = ({ leagues }: { leagues: any[] }) => {
       .update({
         auto_approve: s.auto_approve,
         auto_approve_manual: s.auto_approve_manual,
+        auto_approve_screenshot: s.auto_approve_screenshot,
         require_avg: s.require_avg,
         require_180s: s.require_180s,
         require_high_checkout: s.require_high_checkout,
