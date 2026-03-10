@@ -68,6 +68,17 @@ function isFinishableWithOneDouble(remaining: number): boolean {
   return false;
 }
 
+// Check if a remaining score is "finishable" — can be checked out in ≤3 darts (ending with a double).
+// ALL darts thrown when the player is on a finishable score count as checkout attempts.
+// Non-finishable scores above 60: 169, 168, 166, 165, 163, 162, 159
+function isFinishable(remaining: number): boolean {
+  if (remaining <= 0 || remaining > 170) return false;
+  // Impossible finishes
+  const impossible = new Set([169, 168, 166, 165, 163, 162, 159]);
+  if (impossible.has(remaining)) return false;
+  return true;
+}
+
 function getDartPoints(dart: any): number {
   const seg = dart?.segment || dart || {};
   const bed = String(seg.bed ?? "").toLowerCase();
