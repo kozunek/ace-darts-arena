@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague } from "@/contexts/LeagueContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats";
 
@@ -474,6 +477,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [roundDeadlines, setRoundDeadlines] = useState<Record<number, string>>({});
   const [playerSearch, setPlayerSearch] = useState("");
   const [leaguePlayerSearch, setLeaguePlayerSearch] = useState("");
+  const [managePlayersLeagueId, setManagePlayersLeagueId] = useState<string | null>(null);
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
@@ -637,6 +641,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const approvedPlayers = players.filter((p: any) => p.approved);
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-display font-bold text-foreground">Ligi i Turnieje ({leagues.length})</h2>
@@ -835,37 +840,11 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
 
             {/* Quick player management */}
             {l.is_active && showGenerate !== l.id && (
-              <div className="border-t border-border pt-3 mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
-                    Gracze w lidze ({approvedPlayers.filter((p: any) => (p.leagueIds || []).includes(l.id)).length})
-                  </Label>
-                </div>
-                <div className="relative mb-2">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={leaguePlayerSearch}
-                    onChange={(e) => setLeaguePlayerSearch(e.target.value)}
-                    placeholder="Szukaj gracza do dodania/usunięcia..."
-                    className="bg-muted/30 border-border text-sm pl-8 h-8"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                  {approvedPlayers
-                    .filter((p: any) => !leaguePlayerSearch || p.name.toLowerCase().includes(leaguePlayerSearch.toLowerCase()))
-                    .map((p: any) => {
-                      const isIn = (p.leagueIds || []).includes(l.id);
-                      return (
-                        <button key={p.id} type="button" onClick={() => {
-                          if (isIn) { removePlayerFromLeague(p.id, l.id); toast({ title: `${p.name} usunięty z ${l.name}` }); }
-                          else { assignPlayerToLeague(p.id, l.id); toast({ title: `${p.name} dodany do ${l.name}` }); }
-                        }} className={`text-xs font-display uppercase tracking-wider px-2.5 py-1 rounded-full border transition-all ${isIn ? "bg-secondary/20 border-secondary/30 text-secondary" : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"}`}>
-                          {isIn ? <Check className="h-3 w-3 inline mr-1" /> : <Plus className="h-3 w-3 inline mr-1" />}
-                          {p.name}
-                        </button>
-                      );
-                    })}
-                </div>
+              <div className="border-t border-border pt-3 mt-3">
+                <Button variant="outline" size="sm" className="w-full" onClick={() => setManagePlayersLeagueId(l.id)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Zarządzaj graczami ({approvedPlayers.filter((p: any) => (p.leagueIds || []).includes(l.id)).length})
+                </Button>
               </div>
             )}
 
@@ -1076,7 +1055,61 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
         ))}
         {leagues.length === 0 && <p className="text-muted-foreground font-body text-center py-8">Brak lig. Kliknij "Nowa Liga / Turniej" aby utworzyć pierwszą.</p>}
       </div>
-    </div>
+      </div>
+
+      {/* Manage players dialog */}
+      <Dialog open={!!managePlayersLeagueId} onOpenChange={(open) => { if (!open) { setManagePlayersLeagueId(null); setLeaguePlayerSearch(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Zarządzaj graczami — {leagues.find((l: any) => l.id === managePlayersLeagueId)?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={leaguePlayerSearch}
+              onChange={(e) => setLeaguePlayerSearch(e.target.value)}
+              placeholder="Szukaj gracza..."
+              className="pl-9"
+              autoFocus
+            />
+          </div>
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-1">
+              {approvedPlayers
+                .filter((p: any) => !leaguePlayerSearch || p.name.toLowerCase().includes(leaguePlayerSearch.toLowerCase()))
+                .map((p: any) => {
+                  const isIn = (p.leagueIds || []).includes(managePlayersLeagueId);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        if (isIn) {
+                          removePlayerFromLeague(p.id, managePlayersLeagueId!);
+                          toast({ title: `${p.name} usunięty z ligi` });
+                        } else {
+                          assignPlayerToLeague(p.id, managePlayersLeagueId!);
+                          toast({ title: `${p.name} dodany do ligi` });
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isIn ? "bg-secondary/15 text-foreground" : "text-muted-foreground hover:bg-muted/50"}`}
+                    >
+                      <Checkbox checked={isIn} className="pointer-events-none" />
+                      <span className="font-medium">{p.name}</span>
+                      {isIn && <Check className="h-3.5 w-3.5 ml-auto text-secondary" />}
+                    </button>
+                  );
+                })}
+              {approvedPlayers.filter((p: any) => !leaguePlayerSearch || p.name.toLowerCase().includes(leaguePlayerSearch.toLowerCase())).length === 0 && (
+                <p className="text-center text-muted-foreground text-sm py-4">Brak graczy pasujących do wyszukiwania</p>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
