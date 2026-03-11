@@ -1,4 +1,4 @@
-# 🎯 eDART Polska — Liga Darts Online
+
 
 Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodarts.io). Automatyczne pobieranie statystyk, śledzenie wyników na żywo, tabele ligowe, turnieje i więcej.
 
