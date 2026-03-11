@@ -18,9 +18,9 @@ Deno.serve(async (req) => {
 
     const results = { screenshots_deleted: 0, avatars_deleted: 0, errors: [] as string[] };
 
-    // 1. Clean old screenshots (older than 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // 1. Clean old screenshots (3 days after match approval)
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     // Get all screenshot URLs currently referenced in matches
     const { data: matches } = await supabase
