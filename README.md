@@ -1,4 +1,4 @@
-
+# 🎯 eDART Polska — Liga Darts Online
 
 Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodarts.io). Automatyczne pobieranie statystyk, śledzenie wyników na żywo, tabele ligowe, turnieje i więcej.
 
@@ -11,14 +11,16 @@ Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodar
 1. [Funkcjonalności](#-funkcjonalności)
 2. [Architektura](#-architektura)
 3. [Wymagania](#-wymagania)
-4. [Instalacja i konfiguracja](#-instalacja-i-konfiguracja)
+4. [Self-hosting na VPS — kompletny poradnik](#-self-hosting-na-vps--kompletny-poradnik)
 5. [Baza danych — schemat](#-baza-danych--schemat)
 6. [Edge Functions](#-edge-functions)
-7. [Wtyczka przeglądarki](#-wtyczka-przeglądarki)
-8. [Konfiguracja Autodarts](#-konfiguracja-autodarts)
-9. [Panel admina](#-panel-admina)
-10. [Zmienne środowiskowe](#-zmienne-środowiskowe)
-11. [Deployment](#-deployment)
+7. [Analiza screenshotów AI (bez Lovable)](#-analiza-screenshotów-ai-bez-lovable)
+8. [Wtyczka przeglądarki](#-wtyczka-przeglądarki)
+9. [Konfiguracja Autodarts](#-konfiguracja-autodarts)
+10. [Panel admina](#-panel-admina)
+11. [Zmienne środowiskowe](#-zmienne-środowiskowe)
+12. [Automatyczne czyszczenie Storage](#-automatyczne-czyszczenie-storage)
+13. [Deployment](#-deployment)
 
 ---
 
@@ -37,6 +39,7 @@ Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodar
 - **System ról** — admin, moderator, user z RLS (Row Level Security)
 - **PWA** — aplikacja dostępna jako Progressive Web App
 - **APK** — wersja Android (WebView wrapper)
+- **Automatyczne czyszczenie Storage** — codzienne kasowanie nieużywanych screenshotów (>30 dni) i osieroconych awatarów
 
 ---
 
@@ -57,171 +60,611 @@ Platforma do zarządzania ligami darts z integracją [Autodarts](https://autodar
 │ Wtyczka Chrome/ │────▶│  Autodarts API       │
 │ Firefox         │     │  (api.autodarts.io)  │
 └─────────────────┘     └──────────────────────┘
+                                  ▲
+                                  │
+                        ┌──────────────────────┐
+                        │  AI API (Gemini /     │
+                        │  OpenAI / dowolne)    │
+                        └──────────────────────┘
 ```
 
 **Stack technologiczny:**
 - Frontend: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion
 - Backend: Supabase (PostgreSQL + Auth + Edge Functions + Realtime + Storage)
-- AI: Lovable AI Gateway (Google Gemini 2.5 Flash) — analiza screenshotów
+- AI: Lovable AI Gateway (Google Gemini 2.5 Flash) — analiza screenshotów — **lub dowolne API kompatybilne z OpenAI**
 - Integracja: Autodarts API (REST + OIDC), DartCounter (OCR), DartsMind (OCR), wtyczki Chrome/Firefox
-- Auth: Email/hasło + Google OAuth (Lovable Cloud managed)
+- Auth: Email/hasło + Google OAuth
 
 ---
 
 ## 📦 Wymagania
 
-- **Node.js** ≥ 18 (lub Bun)
-- **Supabase CLI** — `npm install -g supabase`
-- **Konto Supabase** — [supabase.com](https://supabase.com) (darmowy plan wystarczy)
-- **Konto Autodarts** — do integracji z automatycznym pobieraniem statystyk (opcjonalne)
+### Dla Lovable Cloud (najłatwiejsze)
+- Konto [Lovable](https://lovable.dev) — backend automatycznie skonfigurowany
+
+### Dla Self-hosting na VPS
+- **VPS** z Ubuntu 22.04+ (min. 2 GB RAM, 20 GB dysk)
+- **Docker** + **Docker Compose** — do uruchomienia Supabase
+- **Node.js** ≥ 18 (lub Bun) — do budowania frontendu
+- **Deno** ≥ 1.30 — do uruchomienia Edge Functions (lub Supabase CLI)
+- **Nginx** — reverse proxy + SSL
+- **Certbot** — darmowy certyfikat SSL (Let's Encrypt)
+- **Domena** — z dostępem do DNS (A record → IP VPS)
+- **(Opcjonalne)** Klucz API do AI (Google Gemini, OpenAI, lub inny)
+- **(Opcjonalne)** Konto Autodarts + credentials API
 
 ---
 
-## 🔧 Instalacja i konfiguracja
+## 🖥 Self-hosting na VPS — kompletny poradnik
 
-### 1. Sklonuj repozytorium
-
-```bash
-git clone https://github.com/TWOJ_USER/edart-polska.git
-cd edart-polska
-```
-
-### 2. Zainstaluj zależności
+### Krok 1: Przygotowanie VPS
 
 ```bash
-npm install
-# lub
-bun install
+# Aktualizacja systemu
+sudo apt update && sudo apt upgrade -y
+
+# Instalacja wymaganych pakietów
+sudo apt install -y git curl wget nginx certbot python3-certbot-nginx
+
+# Instalacja Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+
+# Instalacja Docker Compose
+sudo apt install -y docker-compose-plugin
+
+# Instalacja Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Instalacja Supabase CLI
+npm install -g supabase
+
+# Instalacja Deno (do Edge Functions)
+curl -fsSL https://deno.land/install.sh | sh
+echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
+echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-### 3. Utwórz projekt Supabase
+### Krok 2: Self-hosted Supabase (baza danych + auth + storage)
 
 ```bash
-# Zaloguj się do Supabase CLI
-supabase login
+# Sklonuj Supabase Docker
+git clone --depth 1 https://github.com/supabase/supabase
+cd supabase/docker
 
-# Utwórz nowy projekt na supabase.com/dashboard
-# Skopiuj Project ID, URL i Anon Key
+# Skopiuj przykładową konfigurację
+cp .env.example .env
 ```
 
-### 4. Połącz z projektem Supabase
-
-```bash
-supabase link --project-ref TWOJ_PROJECT_ID
-```
-
-### 5. Uruchom migracje bazy danych
-
-```bash
-supabase db push
-```
-
-To automatycznie utworzy wszystkie tabele, funkcje, triggery i polityki RLS.
-
-### 6. Skonfiguruj zmienne środowiskowe
-
-Utwórz plik `.env` w katalogu głównym:
+**Edytuj plik `.env`** — zmień te wartości:
 
 ```env
-VITE_SUPABASE_PROJECT_ID="twoj-project-id"
-VITE_SUPABASE_PUBLISHABLE_KEY="twoj-anon-key"
-VITE_SUPABASE_URL="https://twoj-project-id.supabase.co"
+# KRYTYCZNE — zmień na unikalne wartości!
+POSTGRES_PASSWORD=twoje-bezpieczne-haslo-db
+JWT_SECRET=twoj-super-tajny-jwt-secret-min-32-znaki
+ANON_KEY=wygeneruj-przez-supabase-cli
+SERVICE_ROLE_KEY=wygeneruj-przez-supabase-cli
+
+# Generowanie kluczy JWT:
+# supabase gen keys --jwt-secret "twoj-super-tajny-jwt-secret-min-32-znaki"
+# To wyświetli ANON_KEY i SERVICE_ROLE_KEY
+
+# Domena
+SITE_URL=https://twoja-domena.pl
+API_EXTERNAL_URL=https://api.twoja-domena.pl
+
+# SMTP (do wysyłania emaili z Auth)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=twoj-email@gmail.com
+SMTP_PASS=haslo-aplikacji-gmail
+SMTP_SENDER_NAME=eDART Polska
+SMTP_ADMIN_EMAIL=admin@twoja-domena.pl
+
+# Storage
+STORAGE_BACKEND=file
+FILE_STORAGE_BACKEND_PATH=/var/lib/storage
 ```
 
-### 7. Skonfiguruj sekrety Supabase (Edge Functions)
+**Generowanie kluczy JWT:**
 
 ```bash
-# Wymagane do działania Edge Functions
-supabase secrets set SUPABASE_URL="https://twoj-project-id.supabase.co"
-supabase secrets set SUPABASE_ANON_KEY="twoj-anon-key"
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY="twoj-service-role-key"
+# Zainstaluj narzędzie do generowania kluczy
+npm install -g jsonwebtoken
 
-# Opcjonalne — do automatycznego logowania do Autodarts z serwera
-supabase secrets set AUTODARTS_EMAIL="twoj-email@autodarts.io"
-supabase secrets set AUTODARTS_PASSWORD="twoje-haslo-autodarts"
+# Lub użyj strony: https://supabase.com/docs/guides/self-hosting/docker#generate-api-keys
+# Wklej swój JWT_SECRET i wygeneruj ANON_KEY i SERVICE_ROLE_KEY
 ```
 
-### 8. Wdróż Edge Functions
+**Uruchom Supabase:**
 
 ```bash
-supabase functions deploy fetch-autodarts-match
-supabase functions deploy submit-match-result
-supabase functions deploy auto-submit-league-match
-supabase functions deploy check-league-match
+docker compose up -d
+
+# Sprawdź czy działa
+docker compose ps
+# Wszystkie kontenery powinny mieć status "running"
+
+# Supabase Studio (panel admina DB) będzie na porcie 3000
+# API będzie na porcie 8000
 ```
 
-### 9. Uruchom aplikację
+### Krok 3: Konfiguracja bazy danych
 
 ```bash
-npm run dev
-# lub
-bun dev
+# Wróć do katalogu projektu eDART
+cd ~/edart-polska
+
+# Połącz Supabase CLI z lokalną instancją
+supabase link --project-ref local \
+  --db-url "postgresql://postgres:twoje-bezpieczne-haslo-db@localhost:5432/postgres"
+
+# Uruchom wszystkie migracje
+supabase db push
+
+# Lub ręcznie przez psql:
+# PGPASSWORD=twoje-haslo psql -h localhost -p 5432 -U postgres -d postgres -f supabase/migrations/*.sql
 ```
 
-Aplikacja będzie dostępna pod `http://localhost:5173`.
+**Weryfikacja — po migracji powinny istnieć tabele:**
 
-### 10. Utwórz konto admina
+```bash
+# Sprawdź tabele
+PGPASSWORD=twoje-haslo psql -h localhost -p 5432 -U postgres -d postgres -c "\dt public.*"
 
-1. Zarejestruj się przez formularz na stronie
-2. W panelu Supabase → SQL Editor uruchom:
+# Oczekiwane tabele:
+# players, profiles, user_roles, leagues, player_leagues, matches,
+# match_proposals, match_reactions, match_audit_log, live_matches,
+# notifications, announcements, chat_messages, extension_settings, bug_reports
+```
+
+### Krok 4: Konfiguracja Storage (buckety)
 
 ```sql
+-- Uruchom w Supabase Studio (localhost:3000) → SQL Editor
+-- lub przez psql:
+
+-- Utwórz buckety storage
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true);
+INSERT INTO storage.buckets (id, name, public) VALUES ('match-screenshots', 'match-screenshots', true);
+
+-- Polityki storage — avatary
+CREATE POLICY "Avatars publiczne" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+CREATE POLICY "Upload avatarów" ON storage.objects FOR INSERT WITH CHECK (
+  bucket_id = 'avatars' AND auth.role() = 'authenticated'
+);
+CREATE POLICY "Aktualizacja avatarów" ON storage.objects FOR UPDATE USING (
+  bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Polityki storage — screenshoty
+CREATE POLICY "Screenshoty publiczne" ON storage.objects FOR SELECT USING (bucket_id = 'match-screenshots');
+CREATE POLICY "Upload screenshotów" ON storage.objects FOR INSERT WITH CHECK (
+  bucket_id = 'match-screenshots' AND auth.role() = 'authenticated'
+);
+```
+
+### Krok 5: Edge Functions (backend logic)
+
+Edge Functions to serverless funkcje Deno. Na self-hosted Supabase masz dwa sposoby:
+
+#### Opcja A: Supabase Edge Runtime (rekomendowane)
+
+```bash
+# Edge Functions działają automatycznie z docker compose
+# Pliki z supabase/functions/ są montowane do kontenera
+
+# Ustaw sekrety Edge Functions
+docker compose exec supabase-edge-functions sh -c '
+  echo "SUPABASE_URL=http://kong:8000" >> /etc/environment
+  echo "SUPABASE_ANON_KEY=twoj-anon-key" >> /etc/environment
+  echo "SUPABASE_SERVICE_ROLE_KEY=twoj-service-role-key" >> /etc/environment
+  echo "AUTODARTS_EMAIL=twoj@email.com" >> /etc/environment
+  echo "AUTODARTS_PASSWORD=twoje-haslo" >> /etc/environment
+'
+
+# Lub przez supabase CLI:
+supabase functions deploy fetch-autodarts-match --no-verify-jwt
+supabase functions deploy submit-match-result
+supabase functions deploy auto-submit-league-match --no-verify-jwt
+supabase functions deploy check-league-match --no-verify-jwt
+supabase functions deploy analyze-match-screenshot
+supabase functions deploy cleanup-storage --no-verify-jwt
+```
+
+#### Opcja B: Standalone Deno server (alternatywa)
+
+Jeśli nie chcesz używać Supabase Edge Runtime, możesz uruchomić Edge Functions jako standalone serwer Deno:
+
+```bash
+# Utwórz plik serwera
+cat > ~/edart-edge-server.ts << 'EOF'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Załaduj zmienne środowiskowe
+const FUNCTIONS_DIR = "./supabase/functions";
+
+serve(async (req: Request) => {
+  const url = new URL(req.url);
+  const functionName = url.pathname.split("/")[2]; // /functions/v1/FUNCTION_NAME
+  
+  // Dynamicznie importuj i wywołaj odpowiednią funkcję
+  try {
+    const mod = await import(`${FUNCTIONS_DIR}/${functionName}/index.ts`);
+    return mod.default(req);
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Function not found" }), { status: 404 });
+  }
+}, { port: 8001 });
+EOF
+
+# Uruchom z odpowiednimi zmiennymi
+SUPABASE_URL=http://localhost:8000 \
+SUPABASE_ANON_KEY=twoj-anon-key \
+SUPABASE_SERVICE_ROLE_KEY=twoj-service-role-key \
+AUTODARTS_EMAIL=twoj@email.com \
+AUTODARTS_PASSWORD=twoje-haslo \
+deno run --allow-net --allow-env --allow-read ~/edart-edge-server.ts
+```
+
+### Krok 6: AI — analiza screenshotów (bez Lovable AI Gateway)
+
+Na Lovable Cloud funkcja `analyze-match-screenshot` używa `LOVABLE_API_KEY` i Lovable AI Gateway. Na własnym serwerze musisz podłączyć własne API AI.
+
+#### Opcja A: Google Gemini API (rekomendowane — najtańsze)
+
+1. **Uzyskaj klucz API:**
+   - Wejdź na [Google AI Studio](https://aistudio.google.com/)
+   - Kliknij "Get API Key" → "Create API Key"
+   - Skopiuj klucz (zaczyna się od `AIza...`)
+
+2. **Ustaw sekret:**
+
+```bash
+supabase secrets set GEMINI_API_KEY="AIzaSy..."
+```
+
+3. **Zmodyfikuj Edge Function** — zamień Lovable AI Gateway na bezpośrednie API Gemini:
+
+```typescript
+// supabase/functions/analyze-match-screenshot/index.ts
+// Zmień linię z AI_GATEWAY i fetch na:
+
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+if (!GEMINI_API_KEY) {
+  return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
+    status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// Zamień fetch do AI Gateway na:
+const response = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: systemPrompt + "\n\n" + userText },
+            ...screenshot_urls.map((url: string) => ({
+              inline_data: {
+                mime_type: "image/png",
+                // Uwaga: dla URL musisz najpierw pobrać obraz i konwertować na base64
+                // lub użyć fileUri z Google Cloud Storage
+              }
+            }))
+          ]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    }),
+  }
+);
+```
+
+**Prostsza opcja — zachowaj format OpenAI-compatible (np. OpenRouter):**
+
+```typescript
+// Zamiast Lovable AI Gateway, użyj OpenRouter, Together AI, lub innego proxy
+const AI_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const AI_API_KEY = Deno.env.get("OPENROUTER_API_KEY"); // lub TOGETHER_API_KEY, etc.
+
+const response = await fetch(AI_API_URL, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${AI_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash",  // lub inny model z wizją
+    messages: [...],
+    tools: [...],
+    tool_choice: {...},
+  }),
+});
+```
+
+#### Opcja B: OpenAI API
+
+```bash
+supabase secrets set OPENAI_API_KEY="sk-..."
+```
+
+```typescript
+// Zamień AI_GATEWAY i LOVABLE_API_KEY na:
+const AI_API_URL = "https://api.openai.com/v1/chat/completions";
+const AI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+
+// Reszta kodu (messages, tools, tool_choice) jest identyczna!
+// Zmień tylko model na "gpt-4o" lub "gpt-4o-mini"
+```
+
+#### Opcja C: Self-hosted AI (Ollama)
+
+```bash
+# Na VPS zainstaluj Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pobierz model z wizją (wymaga min 8 GB RAM)
+ollama pull llava:13b
+# lub mniejszy:
+ollama pull llava:7b
+```
+
+```typescript
+// Edge Function — użyj lokalnego Ollama
+const AI_API_URL = "http://localhost:11434/v1/chat/completions";
+// Ollama jest kompatybilny z OpenAI API, więc reszta kodu zostaje bez zmian
+// Model: "llava:13b"
+// UWAGA: Ollama nie wspiera tool_choice, więc musisz parsować JSON z odpowiedzi tekstowej
+```
+
+#### Porównanie kosztów AI:
+
+| Provider | Model | Koszt / mecz (1-3 screenshoty) | Jakość OCR |
+|----------|-------|-------------------------------|------------|
+| Google Gemini | gemini-2.5-flash | ~$0.001-0.003 | ⭐⭐⭐⭐⭐ |
+| OpenAI | gpt-4o-mini | ~$0.002-0.005 | ⭐⭐⭐⭐ |
+| OpenAI | gpt-4o | ~$0.01-0.03 | ⭐⭐⭐⭐⭐ |
+| OpenRouter | gemini-2.5-flash | ~$0.001-0.003 | ⭐⭐⭐⭐⭐ |
+| Ollama (self-hosted) | llava:13b | $0 (prąd) | ⭐⭐⭐ |
+| Lovable AI Gateway | gemini-2.5-flash | wliczone w plan | ⭐⭐⭐⭐⭐ |
+
+### Krok 7: Budowanie i deploy frontendu
+
+```bash
+cd ~/edart-polska
+
+# Utwórz plik .env
+cat > .env << EOF
+VITE_SUPABASE_PROJECT_ID="local"
+VITE_SUPABASE_PUBLISHABLE_KEY="twoj-anon-key"
+VITE_SUPABASE_URL="https://api.twoja-domena.pl"
+EOF
+
+# Zbuduj aplikację
+npm install
+npm run build
+
+# Skopiuj pliki do nginx
+sudo mkdir -p /var/www/edart
+sudo cp -r dist/* /var/www/edart/
+```
+
+### Krok 8: Konfiguracja Nginx + SSL
+
+```bash
+# Utwórz konfigurację nginx
+sudo cat > /etc/nginx/sites-available/edart << 'EOF'
+# Frontend — główna domena
+server {
+    listen 80;
+    server_name twoja-domena.pl www.twoja-domena.pl;
+
+    root /var/www/edart;
+    index index.html;
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache statycznych plików
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Gzip
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+}
+
+# Supabase API — subdomena
+server {
+    listen 80;
+    server_name api.twoja-domena.pl;
+
+    # Proxy do Supabase Kong API Gateway
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support (Realtime)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# Supabase Studio (opcjonalne — panel admina DB)
+server {
+    listen 80;
+    server_name studio.twoja-domena.pl;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # WAŻNE: Ogranicz dostęp!
+        allow TWOJE_IP;
+        deny all;
+    }
+}
+EOF
+
+# Aktywuj konfigurację
+sudo ln -s /etc/nginx/sites-available/edart /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# SSL — certyfikat Let's Encrypt
+sudo certbot --nginx -d twoja-domena.pl -d www.twoja-domena.pl -d api.twoja-domena.pl
+
+# Auto-renewal
+sudo systemctl enable certbot.timer
+```
+
+### Krok 9: Konfiguracja DNS
+
+W panelu swojego rejestratora domen dodaj rekordy:
+
+| Typ | Nazwa | Wartość | TTL |
+|-----|-------|---------|-----|
+| A | @ | IP_TWOJEGO_VPS | 300 |
+| A | www | IP_TWOJEGO_VPS | 300 |
+| A | api | IP_TWOJEGO_VPS | 300 |
+| A | studio | IP_TWOJEGO_VPS | 300 |
+
+### Krok 10: Konto admina
+
+```bash
+# Zarejestruj się przez formularz na stronie
+
+# Nadaj rolę admina w bazie
+PGPASSWORD=twoje-haslo psql -h localhost -p 5432 -U postgres -d postgres << 'SQL'
 -- Znajdź swoje user_id
-SELECT id FROM auth.users WHERE email = 'twoj@email.com';
+SELECT id, email FROM auth.users;
 
 -- Nadaj rolę admina
 INSERT INTO public.user_roles (user_id, role) 
 VALUES ('TWOJE_USER_ID', 'admin');
+SQL
 ```
 
-### 11. Logowanie przez Google (OAuth)
+### Krok 11: Google OAuth (logowanie przez Google)
 
-Logowanie przez Google działa automatycznie na platformie Lovable Cloud — nie wymaga konfiguracji.
+1. Wejdź na [Google Cloud Console](https://console.cloud.google.com/)
+2. Utwórz nowy projekt (lub użyj istniejącego)
+3. Idź do **APIs & Services → Credentials**
+4. Kliknij **Create Credentials → OAuth 2.0 Client ID**
+5. Typ: **Web application**
+6. Authorized redirect URIs: `https://api.twoja-domena.pl/auth/v1/callback`
+7. Skopiuj **Client ID** i **Client Secret**
 
-**Jak to działa:**
-- Aplikacja używa `lovable.auth.signInWithOAuth("google")` z pakietu `@lovable.dev/cloud-auth-js`
-- Token Google jest automatycznie wymieniany na sesję Supabase
-- PWA jest skonfigurowane z `navigateFallbackDenylist: [/^\/~oauth/]` aby nie cache'ować redirectów OAuth
+**Konfiguracja w Supabase:**
 
-**Self-hosting (własne credentials Google):**
+```bash
+# W Supabase Studio → Authentication → Providers → Google
+# Lub przez API:
+PGPASSWORD=twoje-haslo psql -h localhost -p 5432 -U postgres -d postgres << 'SQL'
+UPDATE auth.config SET 
+  external_google_enabled = true,
+  external_google_client_id = 'TWOJ_GOOGLE_CLIENT_ID',
+  external_google_secret = 'TWOJ_GOOGLE_CLIENT_SECRET'
+WHERE id = 1;
+SQL
+```
 
-1. Utwórz projekt w [Google Cloud Console](https://console.cloud.google.com/)
-2. Włącz **Google Identity / OAuth 2.0**
-3. Dodaj **Authorized redirect URL**: `https://twoja-domena.pl/~oauth` (lub URL z dashboardu Lovable Cloud)
-4. Skonfiguruj `Client ID` i `Client Secret` w panelu Lovable Cloud → Authentication Settings → Google
-5. Lub w Supabase Dashboard → Authentication → Providers → Google
-
-**Bez Lovable Cloud (czysty Supabase):**
-
-Zamień `lovable.auth.signInWithOAuth()` na `supabase.auth.signInWithOAuth()`:
+**Ważne — zamień Lovable Auth na Supabase Auth w kodzie:**
 
 ```typescript
-// src/pages/LoginPage.tsx — zamień handleGoogleSignIn na:
+// src/pages/LoginPage.tsx — zmień handleGoogleSignIn:
+// ZAMIEŃ:
+// lovable.auth.signInWithOAuth("google")
+// NA:
 const { error } = await supabase.auth.signInWithOAuth({
   provider: "google",
   options: { redirectTo: window.location.origin },
 });
 ```
 
-### 12. Powiązanie kont z platformami dartowymi
+### Krok 12: Automatyczne czyszczenie Storage
 
-Gracze mogą podać swoje nicki z platform dartowych w **Ustawienia konta**:
+Projekt zawiera Edge Function `cleanup-storage`, która kasuje:
+- Screenshoty z `match-screenshots` starsze niż 30 dni i niepowiązane z żadnym meczem
+- Osierocone awatary z `avatars` niepowiązane z żadnym graczem
 
-| Pole | Opis | Zastosowanie |
-|------|------|-------------|
-| **Autodarts User ID** | UUID z autodarts.io | Automatyczne pobieranie statystyk z API |
-| **Nick DartCounter** | Nick z aplikacji DartCounter | Dopasowywanie graczy na screenshotach AI |
-| **Nick DartsMind** | Nick z aplikacji DartsMind | Dopasowywanie graczy na screenshotach AI |
+**Konfiguracja cron job (codziennie o 3:00):**
 
-**Jak podać nick:**
-1. Gracz: Ustawienia → Dane kontaktowe → wpisz nick
-2. Przy rejestracji: opcjonalne pole "Nick w grze" (zapisuje się jako dartcounter_id i dartsmind_id)
-3. Admin: Panel admina → Gracze → pola Autodarts ID / DartCounter / DartsMind przy każdym graczu
+```bash
+# Dodaj do crontab
+crontab -e
 
-**Jak AI używa nicków:**
-- Przy analizie screenshotów AI otrzymuje kontekst meczu (nazwy graczy z formularza)
-- AI porównuje nicki ze screena z nazwami z kontekstu i automatycznie mapuje statystyki do właściwego gracza
-- Niezależnie od pozycji na screenie (lewa/prawa), dane trafiają do poprawnego gracza
+# Dodaj linię:
+0 3 * * * curl -s -X POST "https://api.twoja-domena.pl/functions/v1/cleanup-storage" \
+  -H "Authorization: Bearer TWOJ_ANON_KEY" \
+  -H "Content-Type: application/json" >> /var/log/edart-cleanup.log 2>&1
+```
+
+Lub przez pg_cron w PostgreSQL:
+
+```sql
+-- Włącz pg_cron (jeśli nie włączony)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Zaplanuj czyszczenie codziennie o 3:00
+SELECT cron.schedule(
+  'cleanup-storage-daily',
+  '0 3 * * *',
+  $$SELECT net.http_post(
+    url := 'https://api.twoja-domena.pl/functions/v1/cleanup-storage',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer TWOJ_ANON_KEY"}'::jsonb,
+    body := '{}'::jsonb
+  )$$
+);
+```
+
+### Krok 13: Monitoring i backup
+
+```bash
+# Backup bazy danych (codziennie)
+crontab -e
+# Dodaj:
+0 2 * * * PGPASSWORD=twoje-haslo pg_dump -h localhost -p 5432 -U postgres postgres | gzip > /var/backups/edart-$(date +\%Y\%m\%d).sql.gz
+
+# Monitorowanie logów
+docker compose logs -f --tail=100
+
+# Sprawdzenie zdrowia kontenerów
+docker compose ps
+
+# Restart po awarii
+docker compose restart
+```
+
+### Krok 14: Firewall
+
+```bash
+# Otwórz wymagane porty
+sudo ufw allow 22/tcp    # SSH
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
+sudo ufw enable
+
+# NIE otwieraj portów Supabase (8000, 3000, 5432) — dostęp tylko przez nginx!
+```
 
 ---
 
@@ -245,6 +688,7 @@ Gracze mogą podać swoje nicki z platform dartowych w **Ustawienia konta**:
 | `announcements` | Ogłoszenia administracyjne |
 | `chat_messages` | Wiadomości czatu |
 | `extension_settings` | Ustawienia wtyczki Chrome/Firefox |
+| `bug_reports` | Zgłoszenia błędów |
 
 ### Kluczowe funkcje bazy danych
 
@@ -309,25 +753,6 @@ Wszystkie tabele mają włączone RLS. Kluczowe zasady:
 }
 ```
 
-**Response (mecz ligowy):**
-```json
-{
-  "is_league_match": true,
-  "match_id": "uuid-meczu-edart",
-  "league_id": "uuid-ligi",
-  "league_name": "Liga Sezon 1",
-  "round": 3,
-  "player1_id": "uuid-gracza-edart",
-  "player2_id": "uuid-gracza-edart"
-}
-```
-
-**Konfiguracja w `supabase/config.toml`:**
-```toml
-[functions.check-league-match]
-verify_jwt = false
-```
-
 ### 2. `auto-submit-league-match`
 
 **Cel:** Automatyczne zgłaszanie wyniku meczu ligowego (wywoływane przez wtyczkę).
@@ -335,157 +760,39 @@ verify_jwt = false
 **Endpoint:** `POST /functions/v1/auto-submit-league-match`  
 **Auth:** Publiczny (`verify_jwt = false`) — autoryzacja przez anon key
 
-**Flow:**
-1. Szuka graczy w bazie (po `autodarts_user_id` lub nazwie)
-2. Szuka zaplanowanego meczu (`status = 'upcoming'`)
-3. Sprawdza czy mecz jest zaplanowany na dzisiaj (±1 dzień)
-4. Pobiera pełne statystyki z Autodarts API (token gracza lub credentials serwera)
-5. Mapuje graczy Autodarts → eDART (obsługuje zamianę kolejności)
-6. Zapisuje wynik z `auto_approve` → `completed` lub `pending_approval`
-7. Zapobiega duplikatom (jeśli wynik już wysłany)
-
-**Wymagane sekrety:**
-- `AUTODARTS_EMAIL` — email konta Autodarts (serwer fallback)
-- `AUTODARTS_PASSWORD` — hasło konta Autodarts
-- `SUPABASE_SERVICE_ROLE_KEY` — klucz serwisowy Supabase
-
 ### 3. `fetch-autodarts-match`
 
-**Cel:** Pobieranie statystyk meczu z Autodarts API (ręczne wysyłanie wyniku).
+**Cel:** Pobieranie statystyk meczu z Autodarts API.
 
 **Endpoint:** `POST /functions/v1/fetch-autodarts-match`  
-**Auth:** Bearer token (zalogowany użytkownik eDART)
-
-**Request:**
-```json
-{
-  "autodarts_link": "https://play.autodarts.io/history/matches/UUID",
-  "autodarts_token": "opcjonalny-token-autodarts"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "score1": 3, "score2": 2,
-    "avg1": 85.42, "avg2": 78.15,
-    "first_9_avg1": 92.33, "first_9_avg2": 81.50,
-    "avg_until_170_1": 78.20, "avg_until_170_2": 72.10,
-    "one_eighties1": 2, "one_eighties2": 0,
-    "high_checkout1": 120, "high_checkout2": 96,
-    "ton60_1": 5, "ton60_2": 3,
-    "ton80_1": 3, "ton80_2": 2,
-    "ton_plus1": 2, "ton_plus2": 1,
-    "ton40_1": 1, "ton40_2": 0,
-    "darts_thrown1": 180, "darts_thrown2": 195,
-    "checkout_attempts1": 12, "checkout_attempts2": 15,
-    "checkout_hits1": 3, "checkout_hits2": 2,
-    "player1_name": "Jan Kowalski",
-    "player2_name": "Anna Nowak",
-    "autodarts_link": "https://play.autodarts.io/history/matches/UUID"
-  }
-}
-```
-
-**Statystyki obliczane z danych dart-by-dart:**
-- **Średnia** — `(totalScore / totalDarts) * 3` (PPD × 3 = 3-dart average)
-- **First 9 Avg** — średnia z pierwszych 3 wizyt (9 lotek) w każdym legu
-- **Avg Until 170** — średnia z wizyt gdzie remaining > 170
-- **Checkout Attempts** — liczone per lotka: każda lotka rzucona gdy `remaining` jest dublem (2-40 parzyste lub 50/bull), **włącznie z bustami**
-- **Checkout Hits** — wejście na 0 (nie-bust)
-- **Zakresy tonów**: 60+ (ton60), 100+ (ton80/ton100), 140+ (ton_plus), 170+ (ton40), 180 (one_eighties)
+**Auth:** Bearer token (zalogowany użytkownik)
 
 ### 4. `submit-match-result`
 
-**Cel:** Ręczne zgłaszanie wyniku meczu przez zalogowanego gracza.
+**Cel:** Ręczne zgłaszanie wyniku meczu.
 
 **Endpoint:** `POST /functions/v1/submit-match-result`  
-**Auth:** Bearer token (zalogowany użytkownik eDART)
-
-**Request:**
-```json
-{
-  "match_id": "uuid-meczu",
-  "score1": 3,
-  "score2": 2,
-  "avg1": 85.4,
-  "avg2": 78.2,
-  "autodarts_link": "https://play.autodarts.io/history/matches/UUID",
-  "auto_complete": false
-}
-```
-
-**Statusy meczu:**
-- `upcoming` → mecz zaplanowany, nie rozegrany
-- `pending_approval` → wynik zgłoszony, czeka na zatwierdzenie admina
-- `completed` → wynik zatwierdzony
+**Auth:** Bearer token (zalogowany użytkownik)
 
 ### 5. `analyze-match-screenshot` (AI Vision)
 
-**Cel:** Automatyczne rozpoznawanie statystyk z zrzutów ekranu DartCounter/DartsMind przy użyciu AI (Gemini Vision).
+**Cel:** Automatyczne rozpoznawanie statystyk z zrzutów ekranu.
 
 **Endpoint:** `POST /functions/v1/analyze-match-screenshot`  
-**Auth:** Bearer token (zalogowany użytkownik eDART)
+**Auth:** Bearer token (zalogowany użytkownik)
 
-**Request:**
-```json
-{
-  "screenshot_urls": ["https://...storage.../screenshot1.png"],
-  "match_context": {
-    "player1_name": "Jan Kowalski",
-    "player2_name": "Anna Nowak"
-  }
-}
-```
+Patrz sekcja [Analiza screenshotów AI](#-analiza-screenshotów-ai-bez-lovable) po szczegóły konfiguracji bez Lovable.
 
-**Parametry:**
-- `screenshot_urls` (wymagane) — tablica URL-i do przesłanych screenshotów (1-5 sztuk)
-- `match_context` (opcjonalne) — kontekst meczu ligowego, dzięki któremu AI dopasowuje graczy ze screena do formularza
+### 6. `cleanup-storage`
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "confidence": "high",
-    "platform": "dartcounter",
-    "matched_to_context": true,
-    "screenshot_player1_name": "JanK",
-    "screenshot_player2_name": "AnnaN",
-    "player1_name": "Jan Kowalski",
-    "player2_name": "Anna Nowak",
-    "score1": 3, "score2": 2,
-    "avg1": 85.42, "avg2": 78.15,
-    "one_eighties1": 2, "one_eighties2": 0,
-    "high_checkout1": 120, "high_checkout2": 96
-  }
-}
-```
+**Cel:** Automatyczne kasowanie nieużywanych plików z Storage.
 
-**Jak działa dopasowywanie graczy:**
-1. AI odczytuje nicki ze screenshota (np. „JanK" po lewej, „AnnaN" po prawej)
-2. Jeśli podano `match_context`, AI porównuje nicki z kontekstem i mapuje statystyki tak, że `player1_*` = gracz 1 z formularza
-3. Jeśli AI nie może dopasować, `matched_to_context = false` i frontend sam próbuje dopasować po nazwie
-4. Niezależnie od pozycji na screenie (lewa/prawa), statystyki trafiają do właściwego gracza
+**Endpoint:** `POST /functions/v1/cleanup-storage`  
+**Auth:** Publiczny (`verify_jwt = false`)
 
-**Confidence levels:**
-- `high` — dane czytelne → może być auto-zatwierdzone
-- `low` — niektóre dane nieczytelne → wymaga ręcznej weryfikacji
-- `none` — screenshot nie wygląda na podsumowanie meczu darta
-
-**Wymagane sekrety:**
-- `LOVABLE_API_KEY` — automatycznie konfigurowany przez Lovable Cloud
-
-**Limity i rate limiting:**
-- **Model:** `google/gemini-2.5-flash` — szybki, idealny do OCR ze screenshotów
-- **Screenshoty:** max 5 na mecz
-- **Rate limit:** ~30 żądań/min na workspace (Lovable AI Gateway)
-- **Koszt:** ~0.001-0.003 USD za analizę jednego meczu (1-3 screenshoty)
-- **Przy dużej liczbie graczy:** 30 meczy/min wystarczy nawet dla dużych lig
-- **Błąd 429:** Zbyt wiele żądań — komunikat „Spróbuj za chwilę"
-- **Błąd 402:** Brak kredytów — doładuj w Lovable → Settings → Workspace → Usage
+**Co kasuje:**
+- Pliki w `match-screenshots` starsze niż 30 dni i niepowiązane z żadnym meczem
+- Pliki w `avatars` niepowiązane z żadnym graczem
 
 ---
 
@@ -495,93 +802,17 @@ verify_jwt = false
 
 Wtyczka dostępna dla **Chrome** (Manifest V3) i **Firefox** (Manifest V2).
 
-### Jak działa wtyczka
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   play.autodarts.io                      │
-│                                                          │
-│  content.js                                              │
-│  ├── Przechwytuje token z fetch/XHR do Autodarts API     │
-│  ├── Monitoruje SPA navigation (pushState/popstate)      │
-│  ├── Wykrywa stronę historii (/history/matches/*)         │
-│  ├── Pobiera dane meczu z api.autodarts.io               │
-│  ├── Wykrywa Autodarts User ID z localStorage/session     │
-│  └── Wysyła dane do background.js                        │
-│                                                          │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-            ┌──────────▼──────────┐
-            │   background.js     │
-            │                     │
-            │ ├─ CHECK_LEAGUE_MATCH_LIVE                   │
-            │ │  → POST check-league-match                 │
-            │ │  → Powiadomienie "Mecz ligowy!"             │
-            │ │                                             │
-            │ ├─ LIVE_MATCH_UPDATE                         │
-            │ │  → Upsert do live_matches                  │
-            │ │                                             │
-            │ ├─ AUTO_SUBMIT_LEAGUE_MATCH                  │
-            │ │  → POST auto-submit-league-match           │
-            │ │  → Powiadomienie: wynik wysłany/błąd        │
-            │ │                                             │
-            │ ├─ AUTODARTS_USER_ID_DETECTED                │
-            │ │  → PATCH players.autodarts_user_id         │
-            │ │                                             │
-            │ └─ webRequest listener                       │
-            │    → Przechwytuje Bearer token z API calls    │
-            └──────────────────────┘
-                       │
-            ┌──────────▼──────────┐
-            │   inject-token.js   │
-            │   (na stronach eDART)│
-            │                     │
-            │ ├─ Dostarcza token do strony eDART            │
-            │ ├─ Dostarcza dane ostatniego meczu            │
-            │ ├─ Nasłuchuje na zmiany w storage             │
-            │ └─ Wysyła eDART user ID do rozszerzenia       │
-            └─────────────────────┘
-```
-
-### Przepływ automatycznego wysyłania wyników
-
-1. Gracz otwiera `play.autodarts.io` → `content.js` przechwytuje token
-2. Gracz rozpoczyna mecz → `content.js` wykrywa live match
-3. `background.js` sprawdza w eDART czy to mecz ligowy → **powiadomienie**
-4. Aktualizuje `live_matches` w czasie rzeczywistym (Realtime na stronie eDART)
-5. Gracz klika "Final" → Autodarts przekierowuje na `/history/matches/UUID`
-6. `content.js` wykrywa zmianę URL, pobiera dane meczu z API
-7. `background.js` wywołuje `auto-submit-league-match` Edge Function
-8. Wynik zapisany → **powiadomienie** z wynikiem
-9. Jeśli błąd → **powiadomienie** z linkiem do ręcznego zgłoszenia
-
-### Instalacja wtyczki (Chrome)
-
-1. Pobierz folder `public/chrome-extension/` z repozytorium
-2. Otwórz `chrome://extensions/`
-3. Włącz **Tryb dewelopera** (prawy górny róg)
-4. Kliknij **Załaduj rozpakowane** → wybierz folder `chrome-extension`
-5. Wtyczka pojawi się na pasku narzędzi
-
-### Instalacja wtyczki (Firefox)
-
-1. Pobierz folder `public/firefox-extension/` z repozytorium
-2. Otwórz `about:debugging#/runtime/this-firefox`
-3. Kliknij **Załaduj tymczasowy dodatek** → wybierz dowolny plik z folderu
-4. Wtyczka pojawi się na pasku narzędzi
-
 ### Konfiguracja wtyczki dla własnego serwera
 
 W plikach `background.js` (Chrome i Firefox) zmień:
 
 ```javascript
-// background.js — linie 1-4
 const EDART_URL = "https://twoja-domena.pl";
-const SUPABASE_URL = "https://twoj-project-id.supabase.co";
+const SUPABASE_URL = "https://api.twoja-domena.pl";
 const SUPABASE_ANON_KEY = "twoj-anon-key";
 ```
 
-W plikach `manifest.json` zaktualizuj `host_permissions` (Chrome) lub `permissions` (Firefox):
+W `manifest.json` zaktualizuj `host_permissions`:
 
 ```json
 {
@@ -590,49 +821,29 @@ W plikach `manifest.json` zaktualizuj `host_permissions` (Chrome) lub `permissio
     "https://play.autodarts.io/*",
     "https://api.autodarts.io/*",
     "https://twoja-domena.pl/*",
-    "https://twoj-project-id.supabase.co/*"
+    "https://api.twoja-domena.pl/*"
   ]
 }
 ```
 
-W `content_scripts` zmień `matches` dla `inject-token.js`:
+### Instalacja wtyczki (Chrome)
 
-```json
-{
-  "matches": ["https://twoja-domena.pl/*"],
-  "js": ["inject-token.js"],
-  "run_at": "document_idle"
-}
-```
+1. Pobierz folder `public/chrome-extension/`
+2. Otwórz `chrome://extensions/`
+3. Włącz **Tryb dewelopera**
+4. Kliknij **Załaduj rozpakowane** → wybierz folder
 
-W `popup.html` zmień linki do Twojej domeny:
+### Instalacja wtyczki (Firefox)
 
-```html
-<li>Wróć do <a href="https://twoja-domena.pl/submit" target="_blank">eDART</a>...</li>
-```
-
-### Pliki wtyczki
-
-| Plik | Opis |
-|------|------|
-| `manifest.json` | Konfiguracja rozszerzenia (permissions, content scripts) |
-| `background.js` | Service worker — komunikacja z Supabase, powiadomienia, auto-submit |
-| `content.js` | Skrypt na `play.autodarts.io` — przechwytuje token, wykrywa mecze |
-| `inject-token.js` | Skrypt na stronach eDART — dostarcza token i dane meczu do aplikacji |
-| `popup.html/js` | Popup rozszerzenia — status tokena, kopiowanie, link do Autodarts |
-| `icon48.png` | Ikona 48×48 |
-| `icon128.png` | Ikona 128×128 |
+1. Pobierz folder `public/firefox-extension/`
+2. Otwórz `about:debugging#/runtime/this-firefox`
+3. Kliknij **Załaduj tymczasowy dodatek**
 
 ---
 
 ## 🏹 Konfiguracja Autodarts
 
 ### Konto serwerowe (do Edge Functions)
-
-Aby Edge Functions mogły samodzielnie pobierać statystyki z Autodarts, potrzebujesz konta Autodarts z dostępem do API.
-
-1. Utwórz konto na [autodarts.io](https://autodarts.io) (lub użyj istniejącego)
-2. Ustaw sekrety w Supabase:
 
 ```bash
 supabase secrets set AUTODARTS_EMAIL="twoj@email.com"
@@ -641,48 +852,13 @@ supabase secrets set AUTODARTS_PASSWORD="twoje-haslo"
 
 **Uwaga:** Konto serwerowe jest fallbackiem. Jeśli gracz ma aktywną sesję na Autodarts, wtyczka użyje jego tokenu w pierwszej kolejności.
 
-### Łączenie kont graczy z Autodarts
-
-Gracze mogą powiązać konto eDART z Autodarts na dwa sposoby:
-
-1. **Automatycznie** — wtyczka wykrywa `autodarts_user_id` z `localStorage` i zapisuje do profilu gracza
-2. **Ręcznie** — admin może wpisać `autodarts_user_id` w panelu zarządzania graczami
-
-Powiązanie kont pozwala na dokładniejsze matchowanie graczy (po UUID zamiast nazwy).
-
 ---
 
 ## 🛡 Panel admina
 
 Dostępny pod `/admin` dla użytkowników z rolą `admin`.
 
-### Sekcje panelu admina
-
-1. **Zarządzanie ligami** — tworzenie, edycja, generowanie meczów, reguły bonusowe
-2. **Zarządzanie meczami** — zatwierdzanie wyników, edycja, usuwanie
-3. **Zarządzanie graczami** — zatwierdzanie, edycja profili, usuwanie
-4. **Integracja wtyczki** — konfiguracja auto-approve, wymagane statystyki, endpoint API
-5. **Ogłoszenia** — tworzenie pinned announcements
-6. **Role** — nadawanie/odbieranie ról (admin, moderator, user)
-7. **Audit log** — historia zmian w meczach
-8. **Eksport** — eksport danych (CSV)
-
-### Ustawienia integracji wtyczki
-
-W panelu admina → Integracje:
-
-| Opcja | Opis |
-|-------|------|
-| **Webhook aktywny** | Zezwalaj na przesyłanie wyników przez API |
-| **Auto-zatwierdzanie (automatyczne)** | Wyniki wysłane przez wtyczkę automatycznie zatwierdzane |
-| **Auto-zatwierdzanie (ręczne/link)** | Wyniki z linku Autodarts automatycznie zatwierdzane |
-| **Wymagane: Średnia** | Pole średniej wymagane przy zgłoszeniu |
-| **Wymagane: 180-tki** | Pole 180-tek wymagane |
-| **Wymagane: Najwyższy checkout** | Pole high checkout wymagane |
-| **Wymagane: Checkout stats** | Próby i trafienia checkout wymagane |
-| **Wymagane: Rzucone lotki** | Pole darts thrown wymagane |
-| **Wymagane: Zakresy tonów** | 60+, 100+, 140+, 170+ wymagane |
-| **Wymagane: Link Autodarts** | Link do meczu wymagany |
+Sekcje: Zarządzanie ligami, meczami, graczami, integracja wtyczki, ogłoszenia, role, audit log, eksport danych.
 
 ---
 
@@ -703,62 +879,58 @@ W panelu admina → Integracje:
 | `SUPABASE_URL` | URL projektu Supabase | ✅ (auto) |
 | `SUPABASE_ANON_KEY` | Anon key | ✅ (auto) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key | ✅ (auto) |
+| `LOVABLE_API_KEY` | Klucz Lovable AI Gateway (auto na Lovable Cloud) | ⚠️ Tylko Lovable |
+| `GEMINI_API_KEY` | Klucz Google Gemini API (self-hosting) | ⚠️ Alternatywa |
+| `OPENAI_API_KEY` | Klucz OpenAI API (self-hosting) | ⚠️ Alternatywa |
 | `AUTODARTS_EMAIL` | Email konta Autodarts (serwer) | ⚠️ Opcjonalna |
 | `AUTODARTS_PASSWORD` | Hasło konta Autodarts | ⚠️ Opcjonalna |
 
-> ⚠️ `AUTODARTS_EMAIL` i `AUTODARTS_PASSWORD` są opcjonalne. Bez nich Edge Functions nadal działają, ale wymagają tokenu gracza z wtyczki. Z nimi — serwer może samodzielnie pobierać dane jako fallback.
+---
+
+## 🧹 Automatyczne czyszczenie Storage
+
+Edge Function `cleanup-storage` automatycznie kasuje niepotrzebne pliki:
+
+| Bucket | Co kasuje | Warunek |
+|--------|----------|---------|
+| `match-screenshots` | Stare screenshoty | Starsze niż 30 dni AND nie powiązane z żadnym meczem |
+| `avatars` | Osierocone awatary | Plik nie jest używany przez żadnego gracza |
+
+**Częstotliwość:** Codziennie o 3:00 (pg_cron lub system crontab)
+
+**Szacowane zużycie storage:**
+- Screenshoty: ~5-15 MB/dzień (zależnie od aktywności)
+- Awatary: ~100 MB total (max 2 MB/plik)
+- Darmowy limit Supabase Cloud: 1 GB — z czyszczeniem powinien wystarczyć
 
 ---
 
 ## 🚢 Deployment
 
-### Lovable (rekomendowane)
-
-Projekt działa natywnie na platformie [Lovable](https://lovable.dev) z automatycznym backendem (Lovable Cloud / Supabase).
+### Lovable (najłatwiejsze)
 
 1. Importuj projekt do Lovable
 2. Backend konfiguruje się automatycznie
-3. Kliknij **Publish** aby wdrożyć
+3. Kliknij **Publish**
 
-### Self-hosting
+### Self-hosting (VPS)
 
-#### Frontend
+Patrz [Self-hosting na VPS — kompletny poradnik](#-self-hosting-na-vps--kompletny-poradnik).
 
-```bash
-npm run build
-# Pliki w dist/ — serwuj przez nginx, Vercel, Netlify, etc.
-```
+**Checklista przed uruchomieniem:**
 
-Przykład nginx:
-
-```nginx
-server {
-    listen 80;
-    server_name twoja-domena.pl;
-    root /var/www/edart/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-#### Backend (Supabase)
-
-Opcja A — **Supabase Cloud** (rekomendowane):
-- Utwórz projekt na [supabase.com](https://supabase.com)
-- Uruchom migracje: `supabase db push`
-- Wdróż Edge Functions: `supabase functions deploy`
-
-Opcja B — **Self-hosted Supabase**:
-- Uruchom Supabase lokalnie: [docs.supabase.com/guides/self-hosting](https://supabase.com/docs/guides/self-hosting)
-- Zmień `VITE_SUPABASE_URL` na adres lokalnego Supabase
-- Wdróż Edge Functions: `supabase functions deploy`
-
-#### Wtyczka
-
-Po zmianie domeny, zaktualizuj pliki wtyczki (patrz [Konfiguracja wtyczki](#konfiguracja-wtyczki-dla-własnego-serwera)) i opublikuj w Chrome Web Store lub dystrybuuj jako rozpakowane rozszerzenie.
+- [ ] Supabase Docker działa (`docker compose ps`)
+- [ ] Migracje bazy wykonane (`supabase db push`)
+- [ ] Buckety storage utworzone (avatars, match-screenshots)
+- [ ] Frontend zbudowany i skopiowany do nginx
+- [ ] Nginx skonfigurowany z SSL
+- [ ] DNS ustawiony (A records)
+- [ ] Konto admina utworzone
+- [ ] Edge Functions wdrożone
+- [ ] Sekrety ustawione (SUPABASE_*, AUTODARTS_*, AI API key)
+- [ ] Cron job na czyszczenie storage
+- [ ] Backup bazy skonfigurowany
+- [ ] Firewall skonfigurowany
 
 ---
 
@@ -773,9 +945,6 @@ Po zmianie domeny, zaktualizuj pliki wtyczki (patrz [Konfiguracja wtyczki](#konf
 ├── src/
 │   ├── components/            # Komponenty React
 │   │   ├── ui/                # shadcn/ui components
-│   │   ├── ExtensionConfigPanel.tsx
-│   │   ├── LeagueTable.tsx
-│   │   ├── BracketView.tsx
 │   │   └── ...
 │   ├── contexts/              # React Contexts (Auth, League)
 │   ├── hooks/                 # Custom hooks
@@ -786,8 +955,10 @@ Po zmianie domeny, zaktualizuj pliki wtyczki (patrz [Konfiguracja wtyczki](#konf
 │   ├── config.toml            # Konfiguracja Supabase
 │   ├── migrations/            # Migracje SQL
 │   └── functions/             # Edge Functions
+│       ├── analyze-match-screenshot/
 │       ├── auto-submit-league-match/
 │       ├── check-league-match/
+│       ├── cleanup-storage/
 │       ├── fetch-autodarts-match/
 │       ├── submit-match-result/
 │       └── sync-autodarts/
@@ -798,24 +969,12 @@ Po zmianie domeny, zaktualizuj pliki wtyczki (patrz [Konfiguracja wtyczki](#konf
 
 ## 🤝 Rozwój
 
-### Lokalne uruchomienie
-
 ```bash
-npm run dev          # Frontend dev server
-supabase start       # Lokalny Supabase (opcjonalnie)
-supabase functions serve  # Lokalne Edge Functions (opcjonalnie)
-```
-
-### Testy
-
-```bash
-npm run test
-```
-
-### Budowanie
-
-```bash
-npm run build
+npm run dev              # Frontend dev server
+supabase start           # Lokalny Supabase (opcjonalnie)
+supabase functions serve # Lokalne Edge Functions (opcjonalnie)
+npm run test             # Testy
+npm run build            # Budowanie
 ```
 
 ---
