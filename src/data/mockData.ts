@@ -29,6 +29,7 @@ export interface League {
   bonus_rules: BonusRules;
   registration_open?: boolean;
   meetings_per_pair?: number;
+  registration_deadline?: string | null;
 }
 
 export interface Player {
