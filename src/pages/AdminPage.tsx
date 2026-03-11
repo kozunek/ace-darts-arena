@@ -1324,6 +1324,11 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
       });
     }
 
+    // Discord webhook
+    await supabase.functions.invoke("discord-webhook", {
+      body: { action: "send_match_result", match_data: { match_id: matchId } },
+    }).catch(() => {});
+
     setWalkoverDialog(null);
     refreshData();
     toast({ title: "⚠️ Walkower zapisany!", description: `Wygrywa ${isP1Winner ? match.player1Name : match.player2Name} ${s1}:${s2}` });
