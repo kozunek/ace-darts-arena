@@ -353,6 +353,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       score1: data.score1, score2: data.score2,
       legs_won1: data.score1, legs_won2: data.score2,
       status: "pending_approval",
+      is_walkover: false,
       avg1: data.avg1, avg2: data.avg2,
       one_eighties1: data.oneEighties1 ?? 0, one_eighties2: data.oneEighties2 ?? 0,
       high_checkout1: data.highCheckout1 ?? 0, high_checkout2: data.highCheckout2 ?? 0,
