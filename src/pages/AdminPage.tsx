@@ -472,6 +472,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [generateMode, setGenerateMode] = useState<"all" | "selected">("all");
   const [selectedRounds, setSelectedRounds] = useState<number[]>([]);
   const [roundDeadlines, setRoundDeadlines] = useState<Record<number, string>>({});
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [leaguePlayerSearch, setLeaguePlayerSearch] = useState("");
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
