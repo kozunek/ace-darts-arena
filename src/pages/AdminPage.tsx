@@ -20,6 +20,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats";
 
