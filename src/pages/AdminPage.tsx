@@ -73,6 +73,7 @@ const AdminPage = () => {
     { id: "matches", label: "Mecze", icon: <Calendar className="h-4 w-4" />, adminOnly: true },
     { id: "roles", label: "Role", icon: <Award className="h-4 w-4" />, adminOnly: true },
     { id: "integrations", label: "Integracje", icon: <Plug className="h-4 w-4" />, adminOnly: true },
+    { id: "discord", label: "Discord", icon: <MessageCircle className="h-4 w-4" />, adminOnly: true },
     { id: "audit", label: "Dziennik", icon: <ScrollText className="h-4 w-4" />, adminOnly: true },
     { id: "export", label: "Eksport", icon: <Download className="h-4 w-4" />, adminOnly: true },
     { id: "chats", label: "Czaty", icon: <MessageCircle className="h-4 w-4" />, adminOnly: true },
