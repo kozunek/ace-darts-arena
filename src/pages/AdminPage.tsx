@@ -457,6 +457,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [format, setFormat] = useState("Best of 5");
   const [isActive, setIsActive] = useState(true);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [leagueType, setLeagueType] = useState<LeagueType>("league");
   const [bonusRules, setBonusRules] = useState<BonusRules>({ ...DEFAULT_BONUS_RULES });
   const [meetingsPerPair, setMeetingsPerPair] = useState(1);
