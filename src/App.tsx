@@ -47,6 +47,7 @@ const App = () => (
           <BrowserRouter>
             <ExtensionNotifier />
             <Navbar />
+            <FloatingChat />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/matches" element={<MatchesPage />} />
