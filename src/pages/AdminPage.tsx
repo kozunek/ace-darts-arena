@@ -119,6 +119,7 @@ const AdminPage = () => {
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
           {activeTab === "roles" && isAdmin && <RolesTab toast={toast} />}
           {activeTab === "integrations" && isAdmin && <ExtensionConfigPanel leagues={leagues} />}
+          {activeTab === "discord" && isAdmin && <DiscordWebhookPanel leagues={leagues} />}
           {activeTab === "audit" && isAdmin && <AuditLogPanel />}
           {activeTab === "export" && isAdmin && <ExportPanel />}
           {activeTab === "chats" && isAdmin && <AdminChatPanel />}
