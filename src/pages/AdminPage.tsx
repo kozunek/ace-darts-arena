@@ -1203,6 +1203,7 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
 // ─── MATCHES TAB ───
 const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }: any) => {
   const { updateMatchResult, approveMatch, rejectMatch, refreshData } = useLeague();
+  const [walkoverDialog, setWalkoverDialog] = useState<{ matchId: string; p1Name: string; p2Name: string; p1Id: string; p2Id: string; leagueId: string } | null>(null);
   const [selectedLeague, setSelectedLeague] = useState(leagues[0]?.id || "");
   const [newMatchP1, setNewMatchP1] = useState("");
   const [newMatchP2, setNewMatchP2] = useState("");
