@@ -700,6 +700,12 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   </SelectContent>
                 </Select>
               </div>
+              {registrationOpen && (
+                <div className="space-y-2">
+                  <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Termin zamknięcia zapisów</Label>
+                  <Input type="date" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="bg-muted/30 border-border" placeholder="Opcjonalnie" />
+                </div>
+              )}
               {leagueType === "league" && (
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Spotkania na parę</Label>
