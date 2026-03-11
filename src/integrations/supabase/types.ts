@@ -95,6 +95,44 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_webhooks: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string | null
+          league_id: string | null
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          league_id?: string | null
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          league_id?: string | null
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_webhooks_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extension_settings: {
         Row: {
           auto_approve: boolean
