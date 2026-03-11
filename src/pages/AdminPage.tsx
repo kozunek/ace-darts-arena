@@ -1085,9 +1085,12 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
   const approved = players.filter((p: any) => p.approved);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [profiles, setProfiles] = useState<{ user_id: string; name: string }[]>([]);
   const [playerUserMap, setPlayerUserMap] = useState<Record<string, string | null>>({});
   const [playerExtIds, setPlayerExtIds] = useState<Record<string, { autodarts_user_id: string; dartcounter_id: string; dartsmind_id: string }>>({});
+
+  const filteredApproved = approved.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   useEffect(() => {
     const fetchProfiles = async () => {
