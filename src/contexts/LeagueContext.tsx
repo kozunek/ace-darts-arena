@@ -426,6 +426,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         old_data: match ? { status: match.status, score1: match.score1, score2: match.score2 } : null,
         new_data: { status: "completed" },
       });
+      
+      // Send to Discord webhook
+      try {
+        await supabase.functions.invoke("discord-webhook", {
+          body: { action: "send_match_result", match_data: { match_id: matchId } },
+        });
+      } catch (e) {
+        console.error("Discord webhook error:", e);
+      }
     }
     setMatchList((prev) => prev.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m));
   }, [matchList]);
