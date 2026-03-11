@@ -1300,7 +1300,7 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
     // Find league max_legs for walkover score
     const league = leagues.find((l: any) => l.id === leagueId);
     const maxLegs = league?.max_legs || 5;
-    const winScore = Math.ceil(maxLegs / 2); // e.g. Best of 5 = need 3 to win
+    const winScore = maxLegs; // Walkover: pełny wynik formatu (Best of 5 = 5:0)
 
     const match = matches.find((m: any) => m.id === matchId);
     if (!match) return;
@@ -1341,7 +1341,7 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
 
     const league = leagues.find((l: any) => l.id === leagueId);
     const maxLegs = league?.max_legs || 5;
-    const winScore = Math.ceil(maxLegs / 2);
+    const winScore = maxLegs; // Dyskwalifikacja: pełny wynik formatu
 
     for (const m of upcomingMatches) {
       const isP1Disqualified = m.player1Id === playerId;
