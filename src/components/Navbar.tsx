@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type NavItem = { label: string; href: string; icon: React.ReactElement; authOnly?: boolean };
+type NavItem = { label: string; href: string; icon: React.ReactElement; authOnly?: boolean; mobileOnly?: boolean };
 
 const allNavItems: NavItem[] = [
   { label: "Tabela", href: "/", icon: <Target className="h-3.5 w-3.5" /> },
