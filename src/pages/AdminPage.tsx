@@ -1371,6 +1371,13 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
       });
     }
 
+    // Discord webhooks for all disqualified matches
+    for (const m of upcomingMatches) {
+      await supabase.functions.invoke("discord-webhook", {
+        body: { action: "send_match_result", match_data: { match_id: m.id } },
+      }).catch(() => {});
+    }
+
     refreshData();
     toast({ title: "🚫 Gracz zdyskwalifikowany!", description: `${playerName} — ${upcomingMatches.length} meczów przegranych walkowerem.` });
   };
