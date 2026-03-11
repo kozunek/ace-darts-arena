@@ -3,7 +3,7 @@ import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Trophy, Users, UserPlus, Check, LogIn } from "lucide-react";
+import { Trophy, Users, UserPlus, Check, LogIn, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
