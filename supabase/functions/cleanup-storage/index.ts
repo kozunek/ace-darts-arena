@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       for (const file of files || []) {
         const fullPath = `${folder.name}/${file.name}`;
         const isUsed = usedScreenshotPaths.has(fullPath);
-        const isOld = file.created_at && new Date(file.created_at) < thirtyDaysAgo;
+        const isOld = file.created_at && new Date(file.created_at) < threeDaysAgo;
 
         if (!isUsed && isOld) {
           const { error } = await supabase.storage

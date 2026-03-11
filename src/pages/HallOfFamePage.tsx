@@ -142,7 +142,7 @@ const HallOfFamePage = () => {
     <div className="container mx-auto px-4 py-8 space-y-8">
       <div>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2 flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-accent" /> Hall of Fame
+          <Trophy className="h-8 w-8 text-accent" /> Rekordy
         </h1>
         <p className="text-muted-foreground font-body mb-4">Rekordy i najlepsi gracze ze wszystkich rozgrywek</p>
       </div>
