@@ -267,6 +267,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       bonus_rules: { ...DEFAULT_BONUS_RULES, ...(l.bonus_rules || {}) } as BonusRules,
       registration_open: l.registration_open ?? false,
       meetings_per_pair: l.meetings_per_pair ?? 1,
+      registration_deadline: l.registration_deadline ?? null,
     }));
     setLeagueList(leagues);
     if (leagues.length > 0 && !activeLeagueId) {

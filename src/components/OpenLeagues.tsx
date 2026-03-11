@@ -106,9 +106,9 @@ const OpenLeagues = () => {
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" /> {count} zapisanych
                   </span>
-                  {(league as any).registration_deadline && (
+                  {league.registration_deadline && (
                     <span className="flex items-center gap-1 text-accent">
-                      <Calendar className="h-3.5 w-3.5" /> Do {new Date((league as any).registration_deadline).toLocaleDateString("pl-PL")}
+                      <Calendar className="h-3.5 w-3.5" /> Zapisy do {new Date(league.registration_deadline).toLocaleDateString("pl-PL")}
                     </span>
                   )}
                 </div>
