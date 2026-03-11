@@ -1157,9 +1157,20 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
         </section>
       )}
 
-      <h2 className="text-xl font-display font-bold text-foreground">Zatwierdzeni gracze ({approved.length})</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-display font-bold text-foreground">Zatwierdzeni gracze ({approved.length})</h2>
+      </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Szukaj gracza..."
+          className="bg-muted/30 border-border pl-9"
+        />
+      </div>
       <div className="space-y-3">
-        {approved.map((p: any) => (
+        {filteredApproved.map((p: any) => (
           <div key={p.id} className="rounded-lg border border-border bg-card p-5 card-glow">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
