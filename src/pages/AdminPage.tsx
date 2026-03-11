@@ -1054,7 +1054,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
         ))}
         {leagues.length === 0 && <p className="text-muted-foreground font-body text-center py-8">Brak lig. Kliknij "Nowa Liga / Turniej" aby utworzyć pierwszą.</p>}
       </div>
-    </div>
+      </div>
 
       {/* Manage players dialog */}
       <Dialog open={!!managePlayersLeagueId} onOpenChange={(open) => { if (!open) { setManagePlayersLeagueId(null); setLeaguePlayerSearch(""); } }}>
@@ -1108,7 +1108,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 
