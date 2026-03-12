@@ -221,6 +221,42 @@ Deno.serve(async (req) => {
     }
 
     const stats = JSON.parse(toolCall.function.arguments);
+
+    const isReversedAgainstContext = !!(
+      match_context &&
+      typeof stats?.player1_name === "string" &&
+      typeof stats?.player2_name === "string" &&
+      stats.player1_name.toLowerCase() === match_context.player2_name.toLowerCase() &&
+      stats.player2_name.toLowerCase() === match_context.player1_name.toLowerCase()
+    );
+
+    if (isReversedAgainstContext) {
+      const swapPairs: Array<[string, string]> = [
+        ["score1", "score2"],
+        ["avg1", "avg2"],
+        ["first_9_avg1", "first_9_avg2"],
+        ["one_eighties1", "one_eighties2"],
+        ["high_checkout1", "high_checkout2"],
+        ["checkout_attempts1", "checkout_attempts2"],
+        ["checkout_hits1", "checkout_hits2"],
+        ["darts_thrown1", "darts_thrown2"],
+        ["ton60_1", "ton60_2"],
+        ["ton80_1", "ton80_2"],
+        ["ton_plus1", "ton_plus2"],
+      ];
+
+      for (const [leftKey, rightKey] of swapPairs) {
+        const tmp = stats[leftKey];
+        stats[leftKey] = stats[rightKey];
+        stats[rightKey] = tmp;
+      }
+
+      stats.player1_name = match_context.player1_name;
+      stats.player2_name = match_context.player2_name;
+      stats.matched_to_context = true;
+      console.log("Reversed stats detected and swapped to match context order");
+    }
+
     console.log("Extracted stats:", JSON.stringify(stats));
 
     return new Response(JSON.stringify({ success: true, data: stats }), {
