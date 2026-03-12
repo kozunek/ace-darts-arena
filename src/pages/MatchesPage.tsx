@@ -123,8 +123,8 @@ const MatchesPage = () => {
           {completed.length === 0 && <p className="text-muted-foreground font-body">Brak rozegranych meczów.</p>}
         </div>
       </section>
+      </div>
     </div>
-  );
 };
 
 export default MatchesPage;
