@@ -486,7 +486,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
-    setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setBonusRules({ ...DEFAULT_BONUS_RULES });
+    setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setLeaguePlatform("autodarts"); setBonusRules({ ...DEFAULT_BONUS_RULES });
     setMeetingsPerPair(1);
     setShowForm(false); setEditId(null);
   };
