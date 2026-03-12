@@ -77,6 +77,7 @@ interface UserCustomRole {
 
 const RoleManagementPanel = () => {
   const { toast } = useToast();
+  const { leagues } = useLeague();
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [userCustomRoles, setUserCustomRoles] = useState<UserCustomRole[]>([]);
@@ -91,6 +92,7 @@ const RoleManagementPanel = () => {
   const [roleName, setRoleName] = useState("");
   const [roleDesc, setRoleDesc] = useState("");
   const [roleStatsScope, setRoleStatsScope] = useState("own_leagues");
+  const [roleStatsLeagueIds, setRoleStatsLeagueIds] = useState<Set<string>>(new Set());
   const [rolePages, setRolePages] = useState<Set<string>>(new Set());
   const [roleActions, setRoleActions] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
