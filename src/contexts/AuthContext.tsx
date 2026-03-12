@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setIsAdmin(adminByRpc || roles.includes("admin"));
     setIsModerator(modByRpc || roles.includes("moderator"));
-  }, []);
+  }, [supabase]);
 
   const syncUserState = useCallback(async (currentUser: User | null) => {
     setUser(currentUser);
