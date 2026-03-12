@@ -47,9 +47,10 @@ const P = ({ path, children }: { path: string; children: ReactNode }) => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <LeagueProvider>
-          <PagePermissionsProvider>
+      <SelfHostProvider>
+        <AuthProvider>
+          <LeagueProvider>
+            <PagePermissionsProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
