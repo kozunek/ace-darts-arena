@@ -65,7 +65,6 @@ function emptyStats(): PlayerStats {
   return {
     totalScore: 0, totalDarts: 0,
     first9Score: 0, first9Darts: 0,
-    until170Score: 0, until170Darts: 0,
     oneEighties: 0, highCheckout: 0,
     ton60: 0, ton100: 0, ton140: 0, ton170: 0,
     checkoutAttempts: 0, checkoutHits: 0,
