@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import MatchStatFields from "@/components/MatchStatFields";
 import ScreenshotUpload from "@/components/ScreenshotUpload";
+import PageHeader from "@/components/PageHeader";
 
 type AutoPayload = Record<string, any>;
 type SourcePlatform = "autodarts" | "dartcounter" | "dartsmind";
