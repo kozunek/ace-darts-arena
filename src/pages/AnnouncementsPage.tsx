@@ -165,6 +165,7 @@ const AnnouncementsPage = () => {
         )}
       </div>
     </div>
+    </div>
   );
 };
 

@@ -285,6 +285,7 @@ const SettingsPage = () => {
         </AlertDialog>
       </div>
     </div>
+    </div>
   );
 };
 

@@ -1059,6 +1059,7 @@ const SubmitMatchPage = () => {
         </>
       )}
     </div>
+    </div>
   );
 };
 

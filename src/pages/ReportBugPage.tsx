@@ -94,6 +94,7 @@ const ReportBugPage = () => {
         </Button>
       </form>
     </div>
+    </div>
   );
 };
 

@@ -209,6 +209,7 @@ const MyMatchesPage = () => {
         </span>
       </div>
     </div>
+    </div>
   );
 };
 
