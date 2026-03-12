@@ -164,6 +164,7 @@ const RoleManagementPanel = () => {
     setRoleStatsLeagueIds(new Set());
     setRolePages(new Set());
     setRoleActions(new Set());
+    setRoleChannels(new Set());
     setRoleDialog({ open: true });
   };
 
