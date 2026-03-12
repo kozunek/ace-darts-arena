@@ -272,11 +272,11 @@ const RoleManagementPanel = () => {
   if (loading) return <p className="text-muted-foreground text-sm">Ładowanie...</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto overscroll-contain">
       <h2 className="text-xl font-display font-bold text-foreground">Zarządzanie rolami</h2>
 
       <Tabs defaultValue="custom" className="w-full">
-        <TabsList className="w-full grid grid-cols-2">
+        <TabsList className="w-full grid grid-cols-2 sticky top-0 z-10">
           <TabsTrigger value="custom">🎭 Role niestandardowe</TabsTrigger>
           <TabsTrigger value="system">🛡️ Role systemowe</TabsTrigger>
         </TabsList>
