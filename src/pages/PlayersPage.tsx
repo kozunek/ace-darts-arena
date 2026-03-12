@@ -115,7 +115,8 @@ const StatBlock = ({ label, value }: { label: string; value: string }) => (
   <div className="text-center bg-muted/30 rounded-md py-2">
     <div className="font-display font-bold text-foreground text-lg">{value}</div>
     <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-display">{label}</div>
-  </div>
-);
+      </div>
+    </div>
+  );
 
 export default PlayersPage;
