@@ -202,6 +202,7 @@ const PlayerProfilePage = () => {
         <p className="text-muted-foreground font-body">Gracz nie uczestniczy jeszcze w żadnej lidze.</p>
       )}
     </div>
+    </div>
   );
 };
 
