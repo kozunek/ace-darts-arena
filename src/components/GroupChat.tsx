@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Hash, Lock, Globe, Trophy, Monitor } from "lucide-react";
+import { Send, Hash, Lock, Globe, Trophy, Monitor, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -138,6 +139,16 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const deleteMessage = async (msgId: string) => {
+    const { error } = await supabase.from("group_messages").delete().eq("id", msgId);
+    if (error) {
+      toast.error("Nie udało się usunąć wiadomości");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    toast.success("Wiadomość usunięta");
+  };
+
   const sendMessage = async () => {
     if (!user || !activeChannel || !newMessage.trim()) return;
     setSending(true);
@@ -212,7 +223,12 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                   {!isMine && (
                     <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-1">{senderName}</span>
                   )}
-                  <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  <div className={`group flex items-center gap-1 ${isMine ? "justify-end" : "justify-start"}`}>
+                    {(isAdmin || isModerator) && isMine && (
+                      <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                     <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
                       <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
                       <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
@@ -224,6 +240,11 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                         })()}
                       </p>
                     </div>
+                    {(isAdmin || isModerator) && !isMine && (
+                      <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
