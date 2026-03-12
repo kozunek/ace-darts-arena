@@ -139,6 +139,16 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const deleteMessage = async (msgId: string) => {
+    const { error } = await supabase.from("group_messages").delete().eq("id", msgId);
+    if (error) {
+      toast.error("Nie udało się usunąć wiadomości");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    toast.success("Wiadomość usunięta");
+  };
+
   const sendMessage = async () => {
     if (!user || !activeChannel || !newMessage.trim()) return;
     setSending(true);
