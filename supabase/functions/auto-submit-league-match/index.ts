@@ -54,7 +54,6 @@ async function fetchJson(url: string, token: string) {
 interface PlayerStats {
   totalScore: number; totalDarts: number;
   first9Score: number; first9Darts: number;
-  until170Score: number; until170Darts: number;
   oneEighties: number; highCheckout: number;
   ton60: number; ton100: number; ton140: number; ton170: number;
   checkoutAttempts: number; checkoutHits: number;
