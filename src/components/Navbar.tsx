@@ -173,20 +173,9 @@ const Navbar = () => {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="lg:hidden pb-4 animate-fade-in max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain">
-            {allMobileItems.filter(item => !item.authOnly || user).map((item) => (
-              <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}>
-                <Button
-                  variant={location.pathname === item.href ? "default" : "ghost"}
-                  className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1"
-                >
-                  <span className="mr-1">{item.icon}</span>
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
-            {user && (
-              <>
-                <div className="my-2 border-t border-border" />
+            {/* User section first - always visible */}
+            {user ? (
+              <div className="mb-2 pb-2 border-b border-border">
                 <Link to="/settings" onClick={() => setMobileOpen(false)}>
                   <Button variant={location.pathname === "/settings" ? "default" : "ghost"} className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1">
                     <Settings className="h-4 w-4 mr-1" /> Ustawienia
@@ -199,18 +188,32 @@ const Navbar = () => {
                     </Button>
                   </Link>
                 )}
-                <Button variant="outline" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start font-display uppercase tracking-wider text-sm">
+                <Button variant="outline" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start font-display uppercase tracking-wider text-sm text-destructive">
                   <LogOut className="h-4 w-4 mr-1" /> Wyloguj
                 </Button>
-              </>
+              </div>
+            ) : (
+              <div className="mb-2 pb-2 border-b border-border">
+                <Link to="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="default" className="w-full justify-start font-display uppercase tracking-wider text-sm">
+                    <LogIn className="h-4 w-4 mr-1" /> Zaloguj
+                  </Button>
+                </Link>
+              </div>
             )}
-            {!user && (
-              <Link to="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="default" className="w-full justify-start font-display uppercase tracking-wider text-sm">
-                  <LogIn className="h-4 w-4 mr-1" /> Zaloguj
+
+            {/* Navigation items */}
+            {allMobileItems.filter(item => !item.authOnly || user).map((item) => (
+              <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}>
+                <Button
+                  variant={location.pathname === item.href ? "default" : "ghost"}
+                  className="w-full justify-start font-display uppercase tracking-wider text-sm mb-1"
+                >
+                  <span className="mr-1">{item.icon}</span>
+                  {item.label}
                 </Button>
               </Link>
-            )}
+            ))}
           </div>
         )}
       </div>
