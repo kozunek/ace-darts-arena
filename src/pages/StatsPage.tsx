@@ -6,6 +6,7 @@ import { BarChart3, Trophy, Target, Crown, TrendingUp, Crosshair, Percent } from
 import { Button } from "@/components/ui/button";
 import LeagueSelector from "@/components/LeagueSelector";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import PageHeader from "@/components/PageHeader";
 
 type StatsTab = "tons" | "averages" | "checkouts" | "winrate";
 
@@ -39,19 +40,10 @@ const StatsPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-              <BarChart3 className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Statystyki</h1>
-              <p className="text-muted-foreground font-body text-sm">Ranking graczy — kto rzuca najlepiej?</p>
-            </div>
-          </div>
-        </div>
+    <div>
+      <PageHeader title="Statystyki" subtitle="Ranking graczy — kto rzuca najlepiej?" />
+      <div className="container mx-auto px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {tabs.map((tab) => (
