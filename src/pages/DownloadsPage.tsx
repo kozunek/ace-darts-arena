@@ -14,48 +14,38 @@ const DownloadsPage = () => {
     const checkAccess = async () => {
       if (!user) { setLoading(false); return; }
 
-      // Check if user has a custom role that grants /downloads page access
-      // and also check for specific role names like 'autodarts'
-      const { data: userRoles } = await supabase
-        .from("user_custom_roles")
-        .select("role_id")
-        .eq("user_id", user.id);
-
-      if (!userRoles || userRoles.length === 0) {
-        // Check if user is admin/moderator
-        const { data: sysRoles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id);
-        
-        if (sysRoles?.some(r => r.role === "admin" || r.role === "moderator")) {
-          setHasExtensionAccess(true);
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Check if any of the user's custom roles have a name related to extensions
-      const roleIds = userRoles.map(r => r.role_id);
-      const { data: roles } = await supabase
-        .from("custom_roles")
-        .select("name")
-        .in("id", roleIds);
-
-      const extensionRoleNames = ["autodarts", "dartcounter", "dartsmind"];
-      const hasRole = roles?.some(r =>
-        extensionRoleNames.some(name => r.name.toLowerCase().includes(name))
-      );
-
-      // Also check admin/mod
+      // Check admin/moderator
       const { data: sysRoles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
 
-      setHasExtensionAccess(
-        !!hasRole || !!sysRoles?.some(r => r.role === "admin" || r.role === "moderator")
-      );
+      if (sysRoles?.some(r => r.role === "admin" || r.role === "moderator")) {
+        setHasExtensionAccess(true);
+        setLoading(false);
+        return;
+      }
+
+      // Check if any custom role has "extension_download" action permission
+      const { data: userRoles } = await supabase
+        .from("user_custom_roles")
+        .select("role_id")
+        .eq("user_id", user.id);
+
+      if (userRoles && userRoles.length > 0) {
+        const roleIds = userRoles.map(r => r.role_id);
+        const { data: perms } = await supabase
+          .from("custom_role_permissions")
+          .select("permission_key")
+          .in("role_id", roleIds)
+          .eq("permission_type", "action")
+          .eq("permission_key", "extension_download");
+
+        if (perms && perms.length > 0) {
+          setHasExtensionAccess(true);
+        }
+      }
+
       setLoading(false);
     };
     checkAccess();

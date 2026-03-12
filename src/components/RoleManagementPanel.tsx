@@ -48,6 +48,7 @@ const ACTION_PERMISSIONS = [
   { key: "view_audit_log", label: "Dziennik zmian" },
   { key: "export_data", label: "Eksport danych" },
   { key: "manage_announcements", label: "Zarządzanie ogłoszeniami" },
+  { key: "extension_download", label: "Pobieranie wtyczki" },
   { key: "manage_bugs", label: "Zarządzanie błędami" },
 ];
 
