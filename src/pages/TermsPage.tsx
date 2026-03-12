@@ -19,7 +19,7 @@ const TermsPage = () => (
         <h2 className="text-xl font-display font-bold text-foreground">§1. Postanowienia ogólne</h2>
         <ol className="list-decimal pl-6 space-y-1">
           <li>Niniejszy regulamin (dalej: „Regulamin") określa zasady korzystania z serwisu internetowego eDART Polska (dalej: „Serwis").</li>
-          <li>Właścicielem i operatorem Serwisu jest EDARTPOLSKA (dalej: „Organizator").</li>
+          <li>Właścicielem i operatorem Serwisu jest EDARTPOLSKA (dalej: „Organizator"). Kontakt: <a href="mailto:kontakt@edartspolska.pl" className="text-primary hover:underline">kontakt@edartspolska.pl</a></li>
           <li>Serwis służy do organizacji i zarządzania ligami oraz turniejami darts w formule online i stacjonarnej.</li>
           <li>Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu oraz Polityki Prywatności.</li>
         </ol>

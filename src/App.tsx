@@ -8,6 +8,7 @@ import { SelfHostProvider } from "@/contexts/SelfHostContext";
 import { LeagueProvider } from "@/contexts/LeagueContext";
 import Navbar from "@/components/Navbar";
 import FloatingChat from "@/components/FloatingChat";
+import CookieBanner from "@/components/CookieBanner";
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -60,6 +61,7 @@ const App = () => (
               <ExtensionNotifier />
               <Navbar />
               <FloatingChat />
+              <CookieBanner />
               <Routes>
                 <Route path="/" element={<P path="/"><Index /></P>} />
                 <Route path="/matches" element={<P path="/matches"><MatchesPage /></P>} />

@@ -218,7 +218,7 @@ const Navbar = () => {
         </div>
 
         {mobileOpen && (
-          <div className="lg:hidden pb-4 animate-fade-in">
+          <div className="lg:hidden pb-4 animate-fade-in max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain">
             {allMobileItems.filter(item => !('authOnly' in item) || !item.authOnly || user).map((item) => (
               <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}>
                 <Button
