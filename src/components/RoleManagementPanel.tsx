@@ -17,6 +17,7 @@ import {
 
 // ─── AVAILABLE PERMISSIONS ───
 const PAGE_PERMISSIONS = [
+  { key: "/", label: "Strona główna" },
   { key: "/admin", label: "Panel Admina" },
   { key: "/stats", label: "Statystyki" },
   { key: "/matches", label: "Mecze" },
@@ -25,12 +26,14 @@ const PAGE_PERMISSIONS = [
   { key: "/calendar", label: "Kalendarz" },
   { key: "/chat", label: "Czat" },
   { key: "/achievements", label: "Osiągnięcia" },
-  { key: "/head-to-head", label: "Head to Head" },
+  { key: "/h2h", label: "Head to Head" },
   { key: "/announcements", label: "Ogłoszenia" },
   { key: "/my-matches", label: "Moje mecze" },
-  { key: "/submit-match", label: "Zgłoś mecz" },
+  { key: "/submit", label: "Zgłoś mecz" },
   { key: "/settings", label: "Ustawienia" },
   { key: "/downloads", label: "Pobieranie" },
+  { key: "/how-to-play", label: "Jak grać" },
+  { key: "/report-bug", label: "Zgłoś błąd" },
 ];
 
 const ACTION_PERMISSIONS = [
