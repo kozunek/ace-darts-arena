@@ -681,7 +681,18 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Format gry</Label>
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Platforma</Label>
+                <Select value={leaguePlatform} onValueChange={(v) => setLeaguePlatform(v as LeaguePlatform)}>
+                  <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="autodarts">🎯 Autodarts</SelectItem>
+                    <SelectItem value="dartcounter">📱 DartCounter</SelectItem>
+                    <SelectItem value="dartsmind">🧠 DartsMind</SelectItem>
+                    <SelectItem value="manual">✍️ Ręczne</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Select value={format} onValueChange={setFormat}>
                   <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
