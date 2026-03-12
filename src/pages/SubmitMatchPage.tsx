@@ -177,8 +177,6 @@ const SubmitMatchPage = () => {
       avg2: payload.avg2 != null ? String(payload.avg2) : "",
       first9Avg1: payload.first_9_avg1 != null ? String(payload.first_9_avg1) : "",
       first9Avg2: payload.first_9_avg2 != null ? String(payload.first_9_avg2) : "",
-      avgUntil170_1: payload.avg_until_170_1 != null ? String(payload.avg_until_170_1) : "",
-      avgUntil170_2: payload.avg_until_170_2 != null ? String(payload.avg_until_170_2) : "",
       oneEighties1: String(asNumber(payload.one_eighties1)),
       oneEighties2: String(asNumber(payload.one_eighties2)),
       hc1: String(asNumber(payload.high_checkout1)),
