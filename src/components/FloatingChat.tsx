@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, ArrowLeft, Users, Search, X, Minimize2 } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Users, Search, X, Hash } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import GroupChat from "@/components/GroupChat";
 
 interface ChatContact {
   user_id: string;
@@ -34,6 +35,7 @@ const FloatingChat = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [chatMode, setChatMode] = useState<"private" | "group">("private");
   const [contacts, setContacts] = useState<ChatContact[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,7 +53,6 @@ const FloatingChat = () => {
     loadAllPlayers();
   }, [user]);
 
-  // Realtime
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -99,8 +100,7 @@ const FloatingChat = () => {
         contactMap.set(otherId, { lastMsg: m.content, lastTime: m.created_at, unread: 0 });
       }
       if (m.receiver_id === user.id && !m.is_read) {
-        const c = contactMap.get(otherId)!;
-        c.unread++;
+        contactMap.get(otherId)!.unread++;
         unreadTotal++;
       }
     });
@@ -141,10 +141,7 @@ const FloatingChat = () => {
   };
 
   const handleToggle = () => {
-    if (isMobile) {
-      navigate("/chat");
-      return;
-    }
+    if (isMobile) { navigate("/chat"); return; }
     setIsOpen(!isOpen);
   };
 
@@ -157,7 +154,6 @@ const FloatingChat = () => {
 
   return (
     <>
-      {/* Floating button */}
       <button
         onClick={handleToggle}
         className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105"
@@ -170,7 +166,6 @@ const FloatingChat = () => {
         )}
       </button>
 
-      {/* Chat window - desktop only */}
       <AnimatePresence>
         {isOpen && !isMobile && (
           <motion.div
@@ -180,119 +175,116 @@ const FloatingChat = () => {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-5 z-50 w-96 h-[500px] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Header */}
-            <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30">
-              {activeChat ? (
-                <>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setActiveChat(null)}>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="font-display font-bold text-foreground text-sm flex-1 ml-2">{activeName}</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-display font-bold text-foreground text-sm">💬 Czat</span>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowNewChat(!showNewChat)}>
-                    <Users className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 ml-1" onClick={() => setIsOpen(false)}>
+            {/* Mode tabs */}
+            <div className="flex border-b border-border bg-muted/30">
+              <button
+                onClick={() => { setChatMode("private"); setActiveChat(null); }}
+                className={`flex-1 py-2 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "private" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <MessageCircle className="h-3 w-3" /> Prywatne
+              </button>
+              <button
+                onClick={() => { setChatMode("group"); setActiveChat(null); }}
+                className={`flex-1 py-2 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "group" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Hash className="h-3 w-3" /> Grupowe
+              </button>
+              <button onClick={() => setIsOpen(false)} className="px-2 text-muted-foreground hover:text-foreground transition-colors">
                 <X className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
 
-            {activeChat ? (
-              /* Messages view */
-              <>
-                <ScrollArea className="flex-1 p-3">
-                  <div className="space-y-2">
-                    {messages.map((m) => {
-                      const isMine = m.sender_id === user.id;
-                      return (
-                        <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                          <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
-                            <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
-                            <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                              {(() => {
-                                const d = new Date(m.created_at);
-                                if (isToday(d)) return format(d, "HH:mm", { locale: pl });
-                                if (isYesterday(d)) return `wczoraj ${format(d, "HH:mm", { locale: pl })}`;
-                                return format(d, "dd.MM HH:mm", { locale: pl });
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-                <div className="p-2 border-t border-border">
-                  <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-1.5">
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Napisz..."
-                      className="bg-muted/30 border-border text-sm h-8"
-                      maxLength={1000}
-                    />
-                    <Button type="submit" variant="hero" size="icon" className="h-8 w-8 shrink-0" disabled={sending || !newMessage.trim()}>
-                      <Send className="h-3.5 w-3.5" />
-                    </Button>
-                  </form>
-                </div>
-              </>
+            {chatMode === "group" ? (
+              <GroupChat compact />
             ) : (
-              /* Contact list */
               <>
-                <div className="p-2 border-b border-border">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Szukaj..."
-                      className="pl-7 h-7 text-xs bg-muted/30 border-border"
-                    />
+                {/* Header for private chat */}
+                {activeChat && (
+                  <div className="p-2 border-b border-border flex items-center gap-2 bg-muted/20">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setActiveChat(null)}>
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="font-display font-bold text-foreground text-xs flex-1">{activeName}</span>
                   </div>
-                </div>
-                <ScrollArea className="flex-1">
-                  {(showNewChat || (q && filteredNewPlayers.length > 0)) && (
-                    <div className="p-2 border-b border-border bg-muted/20">
-                      <p className="text-[10px] font-display uppercase text-muted-foreground mb-1 px-1">Nowa rozmowa</p>
-                      {filteredNewPlayers.map((p) => (
-                        <button key={p.user_id} onClick={() => loadMessages(p.user_id!)} className="w-full flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 transition-colors text-left">
-                          <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[10px] font-display font-bold text-primary">{p.avatar}</div>
-                          <span className="font-body text-xs text-foreground">{p.name}</span>
+                )}
+
+                {activeChat ? (
+                  <>
+                    <ScrollArea className="flex-1 p-3">
+                      <div className="space-y-2">
+                        {messages.map((m) => {
+                          const isMine = m.sender_id === user.id;
+                          return (
+                            <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                              <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
+                                <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
+                                <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                                  {(() => {
+                                    const d = new Date(m.created_at);
+                                    if (isToday(d)) return format(d, "HH:mm", { locale: pl });
+                                    if (isYesterday(d)) return `wczoraj ${format(d, "HH:mm", { locale: pl })}`;
+                                    return format(d, "dd.MM HH:mm", { locale: pl });
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </ScrollArea>
+                    <div className="p-2 border-t border-border">
+                      <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-1.5">
+                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Napisz..." className="bg-muted/30 border-border text-sm h-8" maxLength={1000} />
+                        <Button type="submit" variant="hero" size="icon" className="h-8 w-8 shrink-0" disabled={sending || !newMessage.trim()}>
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                      </form>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-2 border-b border-border flex items-center gap-1">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj..." className="pl-7 h-7 text-xs bg-muted/30 border-border" />
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowNewChat(!showNewChat)}>
+                        <Users className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <ScrollArea className="flex-1">
+                      {(showNewChat || (q && filteredNewPlayers.length > 0)) && (
+                        <div className="p-2 border-b border-border bg-muted/20">
+                          <p className="text-[10px] font-display uppercase text-muted-foreground mb-1 px-1">Nowa rozmowa</p>
+                          {filteredNewPlayers.map((p) => (
+                            <button key={p.user_id} onClick={() => loadMessages(p.user_id!)} className="w-full flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 transition-colors text-left">
+                              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[10px] font-display font-bold text-primary">{p.avatar}</div>
+                              <span className="font-body text-xs text-foreground">{p.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {filteredContacts.map((c) => (
+                        <button key={c.user_id} onClick={() => loadMessages(c.user_id)} className="w-full flex items-center gap-2.5 p-2.5 border-b border-border/50 hover:bg-muted/30 transition-colors text-left">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary shrink-0">{c.avatar}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-body font-semibold text-xs text-foreground">{c.name}</span>
+                              {c.unread > 0 && <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{c.unread}</span>}
+                            </div>
+                            {c.lastMessage && <p className="text-[10px] text-muted-foreground truncate">{c.lastMessage}</p>}
+                          </div>
                         </button>
                       ))}
-                    </div>
-                  )}
-                  {filteredContacts.map((c) => (
-                    <button
-                      key={c.user_id}
-                      onClick={() => loadMessages(c.user_id)}
-                      className="w-full flex items-center gap-2.5 p-2.5 border-b border-border/50 hover:bg-muted/30 transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary shrink-0">{c.avatar}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-body font-semibold text-xs text-foreground">{c.name}</span>
-                          {c.unread > 0 && (
-                            <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{c.unread}</span>
-                          )}
+                      {filteredContacts.length === 0 && !showNewChat && !q && (
+                        <div className="p-4 text-center text-muted-foreground text-xs font-body">
+                          Brak rozmów. Kliknij <Users className="h-3 w-3 inline" /> aby rozpocząć.
                         </div>
-                        {c.lastMessage && <p className="text-[10px] text-muted-foreground truncate">{c.lastMessage}</p>}
-                      </div>
-                    </button>
-                  ))}
-                  {filteredContacts.length === 0 && !showNewChat && !q && (
-                    <div className="p-4 text-center text-muted-foreground text-xs font-body">
-                      Brak rozmów. Kliknij <Users className="h-3 w-3 inline" /> aby rozpocząć.
-                    </div>
-                  )}
-                </ScrollArea>
+                      )}
+                    </ScrollArea>
+                  </>
+                )}
               </>
             )}
           </motion.div>
