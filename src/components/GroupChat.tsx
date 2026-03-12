@@ -34,6 +34,8 @@ interface GroupMessage {
 interface SenderInfo {
   name: string;
   nick?: string;
+  avatar?: string;
+  avatar_url?: string | null;
 }
 
 interface GroupChatProps {
