@@ -56,14 +56,14 @@ const HeroSection = () => {
             Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-8">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
             <StatChip icon={<UserCheck className="h-3.5 w-3.5" />} label="Zarejestrowani" value={totalRegistered.toString()} />
-            <StatChip icon={<Swords className="h-3.5 w-3.5" />} label="W ligach" value={leagueParticipants.toString()} />
-            <StatChip icon={<Trophy className="h-3.5 w-3.5" />} label="Lig" value={activeLeagues.length.toString()} />
-            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Meczów" value={totalCompleted.toString()} />
-            <StatChip icon={<Flame className="h-3.5 w-3.5" />} label="180-tek" value={total180s > 0 ? total180s.toString() : "—"} />
+            <StatChip icon={<Swords className="h-3.5 w-3.5" />} label="Gracze" value={leagueParticipants.toString()} />
+            <StatChip icon={<Trophy className="h-3.5 w-3.5" />} label="Aktywne ligi" value={activeLeagues.length.toString()} />
+            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Mecze" value={totalCompleted.toString()} />
+            <StatChip icon={<Flame className="h-3.5 w-3.5" />} label="180-tki" value={total180s > 0 ? total180s.toString() : "—"} />
             <StatChip icon={<Crosshair className="h-3.5 w-3.5" />} label="Checkout" value={bestCheckout > 0 ? bestCheckout.toString() : "—"} />
-            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Rzutów" value={totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "—"} />
+            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Rzuty" value={totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "—"} />
             <StatChip icon={<Users className="h-3.5 w-3.5" />} label="Społeczność" value={totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca"} />
           </motion.div>
 
