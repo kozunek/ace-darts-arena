@@ -1,87 +1,128 @@
-import { Users, Trophy, Target, Flame, Crosshair, UserCheck, Swords } from "lucide-react";
+import { Users, Target, Flame, Crosshair } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Gamepad2 } from "lucide-react";
+import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   const { leagues, players, matches } = useLeague();
   const totalRegistered = players.length;
   const leagueParticipants = players.filter(p => p.leagueIds && p.leagueIds.length > 0).length;
-  const activeLeagues = leagues.filter(l => l.is_active);
   const totalCompleted = matches.filter(m => m.status === "completed").length;
 
   let total180s = 0;
-  let bestCheckout = 0;
   let totalDartsThrown = 0;
   matches.forEach(m => {
     if (m.status === "completed") {
       total180s += (m.oneEighties1 ?? 0) + (m.oneEighties2 ?? 0);
       totalDartsThrown += (m.dartsThrown1 ?? 0) + (m.dartsThrown2 ?? 0);
-      if (m.highCheckout1 != null && m.highCheckout1 > bestCheckout) bestCheckout = m.highCheckout1;
-      if (m.highCheckout2 != null && m.highCheckout2 > bestCheckout) bestCheckout = m.highCheckout2;
     }
   });
 
+  const stats = [
+    { icon: <Users className="h-5 w-5" />, label: "Zawodnicy", value: leagueParticipants.toString(), desc: "Zarejestrowanych graczy w lidze" },
+    { icon: <Target className="h-5 w-5" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Meczów zakończonych w tym sezonie" },
+    { icon: <Crosshair className="h-5 w-5" />, label: "Rzutów lotką", value: totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "0", desc: "Łączna liczba rzutów w sezonie" },
+    { icon: <Flame className="h-5 w-5" />, label: "Maksów 180", value: total180s.toString(), desc: "Perfekcyjnych wizyt przy tablicy" },
+  ];
+
   return (
-    <section className="relative overflow-hidden border-b border-border">
-      <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(0_72%_51%/0.08),transparent_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,hsl(145_63%_42%/0.06),transparent_50%)]" />
-      
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <motion.div key={i} className="absolute w-1 h-1 rounded-full bg-primary/30"
-            style={{ left: `${15 + i * 15}%`, top: `${20 + (i % 3) * 25}%` }}
-            animate={{ y: [0, -30, 0], opacity: [0.2, 0.6, 0.2] }}
-            transition={{ duration: 3 + i * 0.5, repeat: Infinity, delay: i * 0.4 }}
-          />
-        ))}
-      </div>
-      
-      <div className="container mx-auto px-4 py-16 md:py-24 relative">
-        <div className="max-w-3xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="flex items-center gap-3 mb-4">
-            <img src="/pwa-192x192.png" alt="eDART Polska" className="h-12 w-12 rounded-full animate-pulse-glow" />
-            <span className="text-xs font-display uppercase tracking-[0.3em] text-muted-foreground">Sezon 2026</span>
-          </motion.div>
+    <>
+      {/* ─── FULLSCREEN HERO ─── */}
+      <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden">
+        <img
+          src={heroBg}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight mb-4">
-            <span className="text-foreground">e</span><span className="text-gradient">DART</span> <span className="text-primary">Polska</span>
-          </motion.h1>
+        <div className="container mx-auto px-4 relative z-10 text-center md:text-left">
+          <div className="max-w-2xl mx-auto md:mx-0">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              className="mb-6"
+            >
+              <div className="w-10 h-1 bg-primary mx-auto md:mx-0 mb-4" />
+              <span className="text-xs font-display uppercase tracking-[0.3em] text-white/50">
+                Sezon 2026 · eDART Polska
+              </span>
+            </motion.div>
 
-          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="text-lg md:text-xl text-muted-foreground font-body max-w-xl mb-8">
-            Polska Liga Darta. 
-            Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
-          </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-[0.95] mb-6 text-white uppercase"
+            >
+              Polska Liga<br />Darta
+            </motion.h1>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
-            <StatChip icon={<UserCheck className="h-3.5 w-3.5" />} label="Zarejestrowani" value={totalRegistered.toString()} />
-            <StatChip icon={<Swords className="h-3.5 w-3.5" />} label="Gracze" value={leagueParticipants.toString()} />
-            <StatChip icon={<Trophy className="h-3.5 w-3.5" />} label="Aktywne ligi" value={activeLeagues.length.toString()} />
-            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Mecze" value={totalCompleted.toString()} />
-            <StatChip icon={<Flame className="h-3.5 w-3.5" />} label="180-tki" value={total180s > 0 ? total180s.toString() : "—"} />
-            <StatChip icon={<Crosshair className="h-3.5 w-3.5" />} label="Checkout" value={bestCheckout > 0 ? bestCheckout.toString() : "—"} />
-            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Rzuty" value={totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "—"} />
-            <StatChip icon={<Users className="h-3.5 w-3.5" />} label="Społeczność" value={totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca"} />
-          </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35 }}
+              className="text-base md:text-lg text-white/60 font-body max-w-md mx-auto md:mx-0 mb-10"
+            >
+              Polska liga darta rozgrywana online. Wyniki, statystyki i ranking graczy w jednym miejscu.
+            </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-wrap gap-3">
-            <Link to="/login">
-              <Button variant="hero" size="lg">
-                <UserPlus className="h-4 w-4 mr-2" /> Dołącz do ligi
-              </Button>
-            </Link>
-            <Link to="/how-to-play">
-              <Button variant="outline" size="lg" className="font-display uppercase tracking-wider">
-                <Gamepad2 className="h-4 w-4 mr-2" /> Jak to działa?
-              </Button>
-            </Link>
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-wrap gap-3 justify-center md:justify-start"
+            >
+              <Link to="/login">
+                <Button variant="hero" size="lg" className="text-sm">
+                  <UserPlus className="h-4 w-4 mr-2" /> Dołącz do ligi
+                </Button>
+              </Link>
+              <Link to="/how-to-play">
+                <Button
+                  size="lg"
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 font-display uppercase tracking-wider text-sm"
+                >
+                  <Gamepad2 className="h-4 w-4 mr-2" /> Jak to działa
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* ─── STATS STRIP ─── */}
+      <section className="border-b border-border bg-card">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+            {stats.map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="py-8 md:py-10 px-4 md:px-6"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    {s.icon}
+                  </div>
+                  <span className="text-[10px] font-display uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                </div>
+                <div className="text-3xl md:text-4xl font-display font-bold text-foreground mt-2">{s.value}</div>
+                <p className="text-xs text-muted-foreground font-body mt-1">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 
@@ -89,13 +130,5 @@ const formatNumber = (n: number) => {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
   return n.toString();
 };
-
-const StatChip = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <motion.div whileHover={{ scale: 1.05 }} className="flex flex-col items-center gap-1 bg-muted/50 rounded-lg px-2 py-2.5 border border-border backdrop-blur-sm text-center">
-    <span className="text-primary">{icon}</span>
-    <div className="text-lg font-display font-bold text-foreground leading-none">{value}</div>
-    <div className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none">{label}</div>
-  </motion.div>
-);
 
 export default HeroSection;
