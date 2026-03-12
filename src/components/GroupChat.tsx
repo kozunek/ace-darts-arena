@@ -322,11 +322,20 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                 return (
                   <div key={m.id} className="flex flex-col">
                     {!isMine && (
-                      <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-1">
+                      <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-8">
                         {renderSenderLabel(info)}
                       </span>
                     )}
-                    <div className={`group flex items-center gap-1 ${isMine ? "justify-end" : "justify-start"}`}>
+                    <div className={`group flex items-end gap-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
+                      {!isMine && (
+                        <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
+                          {info.avatar_url ? (
+                            <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            info.avatar || "??"
+                          )}
+                        </div>
+                      )}
                       {canModerate && isMine && (
                         <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
                           <Trash2 className="h-3 w-3" />
