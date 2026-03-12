@@ -19,6 +19,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { activeClient } = useSelfHost();
+  const supabase = activeClient;
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ name: string; avatar: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
