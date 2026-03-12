@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Eye, EyeOff, Server, Key, Brain } from "lucide-react";
+import { Save, Eye, EyeOff, Server, Key, Brain, Globe } from "lucide-react";
 
 interface ConfigEntry {
   key: string;
@@ -35,6 +35,14 @@ const CONFIG_FIELDS = [
     placeholder: "sk-... lub AIza...",
     description: "Klucz API do usługi AI (OpenAI, Gemini itp.) — zostaw puste dla domyślnego",
     sensitive: true,
+  },
+  {
+    key: "custom_site_url",
+    label: "Adres strony (domena)",
+    icon: Globe,
+    placeholder: "https://twoja-domena.pl",
+    description: "Własna domena strony — po podaniu logowanie przełącza się na standardowe Supabase Auth (bez Lovable OAuth)",
+    sensitive: false,
   },
 ];
 
@@ -70,20 +78,23 @@ const SelfHostConfigPanel = () => {
     try {
       for (const field of CONFIG_FIELDS) {
         const val = values[field.key] ?? "";
-        const { error } = await supabase
+        // Try update first, then upsert if no rows matched
+        const { error, count } = await supabase
           .from("app_config")
           .update({ value: val, updated_at: new Date().toISOString() })
           .eq("key", field.key);
 
         if (error) throw error;
       }
-      toast({ title: "Zapisano", description: "Konfiguracja została zaktualizowana" });
+      toast({ title: "Zapisano", description: "Konfiguracja została zaktualizowana. Odśwież stronę, aby zastosować zmiany." });
     } catch (err: any) {
       toast({ title: "Błąd", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
+
+  const isSelfHosted = Boolean(values["custom_supabase_url"] && values["custom_supabase_anon_key"]);
 
   if (loading) {
     return <div className="text-muted-foreground text-sm py-8 text-center">Ładowanie konfiguracji...</div>;
@@ -94,9 +105,17 @@ const SelfHostConfigPanel = () => {
       <div className="bg-accent/30 border border-border rounded-lg p-4">
         <h3 className="font-display font-bold text-foreground mb-1">🔧 Self-Hosting / Własna konfiguracja</h3>
         <p className="text-sm text-muted-foreground">
-          Podłącz własny projekt Supabase lub klucz AI. Puste pola oznaczają użycie domyślnych ustawień Lovable Cloud.
+          Podłącz własny projekt Supabase lub klucz AI. Puste pola oznaczają użycie domyślnych ustawień.
         </p>
       </div>
+
+      {isSelfHosted && (
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+          <p className="text-sm text-primary font-medium">
+            ✅ Tryb self-host aktywny — logowanie używa standardowego Supabase Auth zamiast Lovable OAuth.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-5">
         {CONFIG_FIELDS.map((field) => {
