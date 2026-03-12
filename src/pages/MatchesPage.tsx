@@ -3,6 +3,7 @@ import { Calendar, Trophy, Clock, ExternalLink, AlertCircle } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import LeagueSelector from "@/components/LeagueSelector";
 import MatchReactions from "@/components/MatchReactions";
+import PageHeader from "@/components/PageHeader";
 
 const MatchesPage = () => {
   const { activeLeagueId, getLeagueMatches } = useLeague();
@@ -12,12 +13,11 @@ const MatchesPage = () => {
   const pendingApproval = leagueMatches.filter((m) => m.status === "pending_approval");
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">Mecze</h1>
-        <p className="text-muted-foreground font-body mb-4">Historia i nadchodzące mecze ligi</p>
+    <div>
+      <PageHeader title="Mecze" subtitle="Historia i nadchodzące mecze ligi">
         <LeagueSelector />
-      </div>
+      </PageHeader>
+      <div className="container mx-auto px-4 py-8 space-y-8">
 
       <section>
         <h2 className="text-xl font-display font-bold text-foreground mb-4 flex items-center gap-2">
