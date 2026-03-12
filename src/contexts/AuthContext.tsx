@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as defaultClient } from "@/integrations/supabase/client";
+import { useSelfHost } from "@/contexts/SelfHostContext";
 import type { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
