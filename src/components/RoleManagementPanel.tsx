@@ -160,7 +160,10 @@ const RoleManagementPanel = () => {
     const rolePerms = permissions.filter((p) => p.role_id === role.id);
     setRolePages(new Set(rolePerms.filter((p) => p.permission_type === "page").map((p) => p.permission_key)));
     setRoleActions(new Set(rolePerms.filter((p) => p.permission_type === "action").map((p) => p.permission_key)));
-    setRoleStatsLeagueIds(new Set(rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key)));
+    setRoleStatsLeagueIds(new Set([
+      ...rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key),
+      ...rolePerms.filter((p) => p.permission_type === "stats_platform").map((p) => p.permission_key),
+    ]));
     setRoleDialog({ open: true, editing: role });
   };
 
@@ -207,8 +210,11 @@ const RoleManagementPanel = () => {
       const permRows: any[] = [];
       rolePages.forEach((key) => permRows.push({ role_id: roleId, permission_type: "page", permission_key: key }));
       roleActions.forEach((key) => permRows.push({ role_id: roleId, permission_type: "action", permission_key: key }));
-      if (roleStatsScope === "selected_leagues") {
+              if (roleStatsScope === "selected_leagues") {
         roleStatsLeagueIds.forEach((key) => permRows.push({ role_id: roleId, permission_type: "stats_league", permission_key: key }));
+      }
+      if (roleStatsScope === "platform") {
+        roleStatsLeagueIds.forEach((key) => permRows.push({ role_id: roleId, permission_type: "stats_platform", permission_key: key }));
       }
 
       if (permRows.length > 0) {
@@ -325,9 +331,14 @@ const RoleManagementPanel = () => {
                           <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded-full border font-display ${
                             role.stats_scope === "all_leagues"
                               ? "bg-primary/20 border-primary/30 text-primary"
+                              : role.stats_scope === "platform"
+                              ? "bg-blue-500/20 border-blue-500/30 text-blue-400"
                               : "bg-muted border-border text-muted-foreground"
                           }`}>
-                            {role.stats_scope === "all_leagues" ? "Wszystkie ligi" : "Tylko swoje ligi"}
+                            {role.stats_scope === "all_leagues" ? "Wszystkie ligi" 
+                              : role.stats_scope === "platform" ? "Platforma"
+                              : role.stats_scope === "selected_leagues" ? "Wybrane ligi"
+                              : "Tylko swoje ligi"}
                           </span>
                         </div>
                         {role.description && (
@@ -494,10 +505,34 @@ const RoleManagementPanel = () => {
                   <SelectContent>
                     <SelectItem value="all_leagues">📊 Wszystkie ligi</SelectItem>
                     <SelectItem value="own_leagues">🎯 Tylko ligi, w których gra</SelectItem>
+                    <SelectItem value="platform">🖥️ Ligi z platformy</SelectItem>
                     <SelectItem value="selected_leagues">📋 Wybrane ligi</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Platform-based stats selection */}
+              {roleStatsScope === "platform" && (
+                <div className="space-y-2">
+                  <Label className="font-display text-xs uppercase tracking-wider text-muted-foreground">Platforma</Label>
+                  <div className="grid grid-cols-2 gap-1.5 rounded-md border border-border p-2">
+                    {[
+                      { key: "autodarts", label: "🎯 Autodarts" },
+                      { key: "dartcounter", label: "📱 DartCounter" },
+                      { key: "dartsmind", label: "🧠 DartsMind" },
+                      { key: "manual", label: "✍️ Ręczne" },
+                    ].map((p) => (
+                      <label key={p.key} className="flex items-center gap-2 text-sm font-body cursor-pointer hover:bg-muted/30 rounded-md px-2 py-1.5">
+                        <Checkbox
+                          checked={roleStatsLeagueIds.has(p.key)}
+                          onCheckedChange={() => togglePerm(roleStatsLeagueIds, p.key, setRoleStatsLeagueIds)}
+                        />
+                        {p.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* League-specific stats selection */}
               {roleStatsScope === "selected_leagues" && (
