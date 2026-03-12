@@ -633,6 +633,7 @@ const RoleManagementPanel = () => {
                   </div>
                 </div>
               )}
+            </div>
           </div>
 
           <DialogFooter className="pt-3 border-t border-border">
