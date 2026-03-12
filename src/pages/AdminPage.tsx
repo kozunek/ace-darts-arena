@@ -1894,7 +1894,6 @@ const RolesTab = ({ toast }: any) => {
           <div><span className="text-secondary font-semibold">Gracz</span> — Może zgłaszać wyniki swoich meczów</div>
         </div>
       </div>
-      </div>
     </div>
   );
 };

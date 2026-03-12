@@ -167,8 +167,9 @@ const CalendarPage = () => {
           )}
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
-};
 
 export default CalendarPage;

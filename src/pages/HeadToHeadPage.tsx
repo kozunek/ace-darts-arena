@@ -177,9 +177,10 @@ const HeadToHeadPage = () => {
           <p className="text-muted-foreground font-body">Wybierz dwóch graczy, aby zobaczyć porównanie.</p>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
-};
 
 const H2HBar = ({ label, v1, v2, format }: { label: string; v1: number; v2: number; format: (v: number) => string }) => {
   const total = v1 + v2;
