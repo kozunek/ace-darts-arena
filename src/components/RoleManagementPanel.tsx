@@ -207,6 +207,9 @@ const RoleManagementPanel = () => {
       const permRows: any[] = [];
       rolePages.forEach((key) => permRows.push({ role_id: roleId, permission_type: "page", permission_key: key }));
       roleActions.forEach((key) => permRows.push({ role_id: roleId, permission_type: "action", permission_key: key }));
+      if (roleStatsScope === "selected_leagues") {
+        roleStatsLeagueIds.forEach((key) => permRows.push({ role_id: roleId, permission_type: "stats_league", permission_key: key }));
+      }
 
       if (permRows.length > 0) {
         const { error: permErr } = await supabase.from("custom_role_permissions").insert(permRows);
