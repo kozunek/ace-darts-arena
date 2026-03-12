@@ -569,7 +569,6 @@ Deno.serve(async (req) => {
 
             const avgFromTurns = (s: PlayerStats) => s.totalDarts > 0 ? Math.round((s.totalScore / s.totalDarts) * 3 * 100) / 100 : null;
             const f9FromTurns = (s: PlayerStats) => s.first9Darts > 0 ? Math.round((s.first9Score / s.first9Darts) * 3 * 100) / 100 : null;
-            const a170FromTurns = (s: PlayerStats) => s.until170Darts > 0 ? Math.round((s.until170Score / s.until170Darts) * 3 * 100) / 100 : null;
 
             const apiAvg = (apiSt: any): number | null => {
               if (typeof apiSt.average === "number") return Math.round(apiSt.average * 100) / 100;
