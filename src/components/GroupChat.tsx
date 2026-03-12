@@ -34,6 +34,8 @@ interface GroupMessage {
 interface SenderInfo {
   name: string;
   nick?: string;
+  avatar?: string;
+  avatar_url?: string | null;
 }
 
 interface GroupChatProps {
@@ -126,7 +128,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     if (senderIds.length === 0) return;
     const [profilesRes, playersRes] = await Promise.all([
       supabase.from("profiles").select("user_id, name").in("user_id", senderIds),
-      supabase.from("players_public").select("user_id, name").in("user_id", senderIds),
+      supabase.from("players_public").select("user_id, name, avatar, avatar_url").in("user_id", senderIds),
     ]);
     const profiles = profilesRes.data || [];
     const players = playersRes.data || [];
@@ -137,9 +139,13 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
       const player = players.find((p: any) => p.user_id === uid);
       const profileName = profile?.name || "...";
       const playerName = player?.name;
-      // Show nick if player name differs from profile name
       const nick = playerName && playerName !== profileName ? playerName : undefined;
-      infos[uid] = { name: profileName, nick };
+      infos[uid] = {
+        name: profileName,
+        nick,
+        avatar: player?.avatar || profileName.substring(0, 2).toUpperCase(),
+        avatar_url: player?.avatar_url || null,
+      };
     });
     setSenderInfos((prev) => ({ ...prev, ...infos }));
   }, []);
@@ -316,11 +322,20 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                 return (
                   <div key={m.id} className="flex flex-col">
                     {!isMine && (
-                      <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-1">
+                      <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-8">
                         {renderSenderLabel(info)}
                       </span>
                     )}
-                    <div className={`group flex items-center gap-1 ${isMine ? "justify-end" : "justify-start"}`}>
+                    <div className={`group flex items-end gap-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
+                      {!isMine && (
+                        <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
+                          {info.avatar_url ? (
+                            <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            info.avatar || "??"
+                          )}
+                        </div>
+                      )}
                       {canModerate && isMine && (
                         <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
                           <Trash2 className="h-3 w-3" />
