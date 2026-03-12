@@ -52,6 +52,10 @@ const LoginPage = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      toast({ title: "Błąd", description: "Musisz zaakceptować regulamin i politykę prywatności.", variant: "destructive" });
+      return;
+    }
     if (password !== confirmPassword) {
       toast({ title: "Błąd", description: "Hasła nie są identyczne.", variant: "destructive" });
       return;
