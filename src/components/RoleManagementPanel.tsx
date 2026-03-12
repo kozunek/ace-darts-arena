@@ -18,11 +18,12 @@ import {
 // ─── AVAILABLE PERMISSIONS ───
 const PAGE_PERMISSIONS = [
   { key: "/", label: "Strona główna" },
+  { key: "/tables", label: "Tabele" },
   { key: "/admin", label: "Panel Admina" },
   { key: "/stats", label: "Statystyki" },
   { key: "/matches", label: "Mecze" },
   { key: "/players", label: "Gracze" },
-  { key: "/hall-of-fame", label: "Hall of Fame" },
+  { key: "/hall-of-fame", label: "Rekordy" },
   { key: "/calendar", label: "Kalendarz" },
   { key: "/chat", label: "Czat" },
   { key: "/achievements", label: "Osiągnięcia" },
