@@ -2,15 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, UserPlus, Target, KeyRound } from "lucide-react";
+import { LogIn, UserPlus, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSelfHost } from "@/contexts/SelfHostContext";
 import { lovable } from "@/integrations/lovable/index";
 
 const LoginPage = () => {
   const { toast } = useToast();
   const { login, register, resetPassword, user, profile } = useAuth();
+  const { isSelfHosted } = useSelfHost();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
@@ -92,6 +94,9 @@ const LoginPage = () => {
     }
   };
 
+  // Show Google OAuth only when NOT self-hosted
+  const showGoogleOAuth = !isSelfHosted;
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -108,6 +113,9 @@ const LoginPage = () => {
           <p className="text-sm text-muted-foreground font-body mt-1">
             {mode === "login" ? "Zaloguj się do panelu gracza" : mode === "register" ? "Załóż konto gracza" : "Podaj email aby zresetować hasło"}
           </p>
+          {isSelfHosted && (
+            <p className="text-xs text-primary mt-2 font-medium">🔧 Tryb self-host — logowanie przez własny serwer</p>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card p-6 card-glow">
@@ -169,7 +177,7 @@ const LoginPage = () => {
             </form>
           )}
 
-          {mode !== "forgot" && (
+          {mode !== "forgot" && showGoogleOAuth && (
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

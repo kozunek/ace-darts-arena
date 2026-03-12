@@ -81,9 +81,10 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </PagePermissionsProvider>
-        </LeagueProvider>
-      </AuthProvider>
+            </PagePermissionsProvider>
+          </LeagueProvider>
+        </AuthProvider>
+      </SelfHostProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
