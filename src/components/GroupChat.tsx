@@ -128,7 +128,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     if (senderIds.length === 0) return;
     const [profilesRes, playersRes] = await Promise.all([
       supabase.from("profiles").select("user_id, name").in("user_id", senderIds),
-      supabase.from("players_public").select("user_id, name").in("user_id", senderIds),
+      supabase.from("players_public").select("user_id, name, avatar, avatar_url").in("user_id", senderIds),
     ]);
     const profiles = profilesRes.data || [];
     const players = playersRes.data || [];
@@ -139,9 +139,13 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
       const player = players.find((p: any) => p.user_id === uid);
       const profileName = profile?.name || "...";
       const playerName = player?.name;
-      // Show nick if player name differs from profile name
       const nick = playerName && playerName !== profileName ? playerName : undefined;
-      infos[uid] = { name: profileName, nick };
+      infos[uid] = {
+        name: profileName,
+        nick,
+        avatar: player?.avatar || profileName.substring(0, 2).toUpperCase(),
+        avatar_url: player?.avatar_url || null,
+      };
     });
     setSenderInfos((prev) => ({ ...prev, ...infos }));
   }, []);
