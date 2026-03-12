@@ -1,4 +1,4 @@
-import { Users, Trophy } from "lucide-react";
+import { Users, Trophy, Target, Flame, Crosshair } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -6,9 +6,22 @@ import { Button } from "@/components/ui/button";
 import { UserPlus, Gamepad2 } from "lucide-react";
 
 const HeroSection = () => {
-  const { leagues, players } = useLeague();
+  const { leagues, players, matches } = useLeague();
   const totalPlayers = players.filter(p => p.approved).length;
   const activeLeagues = leagues.filter(l => l.is_active);
+  const totalCompleted = matches.filter(m => m.status === "completed").length;
+
+  let total180s = 0;
+  let bestCheckout = 0;
+  let totalDartsThrown = 0;
+  matches.forEach(m => {
+    if (m.status === "completed") {
+      total180s += (m.oneEighties1 ?? 0) + (m.oneEighties2 ?? 0);
+      totalDartsThrown += (m.dartsThrown1 ?? 0) + (m.dartsThrown2 ?? 0);
+      if (m.highCheckout1 != null && m.highCheckout1 > bestCheckout) bestCheckout = m.highCheckout1;
+      if (m.highCheckout2 != null && m.highCheckout2 > bestCheckout) bestCheckout = m.highCheckout2;
+    }
+  });
 
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -42,14 +55,13 @@ const HeroSection = () => {
             Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-wrap gap-3 mb-6">
-            <StatChip icon={<Users className="h-4 w-4" />} label="Graczy" value={totalPlayers.toString()} />
-            <StatChip icon={<Trophy className="h-4 w-4" />} label="Aktywne ligi" value={activeLeagues.length.toString()} />
-            <StatChip
-              icon={<Users className="h-4 w-4" />}
-              label="Społeczność"
-              value={totalPlayers >= 50 ? "Duża" : totalPlayers >= 20 ? "Średnia" : "Rosnąca"}
-            />
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-8">
+            <StatChip icon={<Users className="h-3.5 w-3.5" />} label="Graczy" value={totalPlayers.toString()} />
+            <StatChip icon={<Trophy className="h-3.5 w-3.5" />} label="Lig" value={activeLeagues.length.toString()} />
+            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Meczów" value={totalCompleted.toString()} />
+            <StatChip icon={<Flame className="h-3.5 w-3.5" />} label="180-tek" value={total180s > 0 ? total180s.toString() : "—"} />
+            <StatChip icon={<Crosshair className="h-3.5 w-3.5" />} label="Checkout" value={bestCheckout > 0 ? bestCheckout.toString() : "—"} />
+            <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Rzutów" value={totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "—"} />
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-wrap gap-3">
@@ -70,13 +82,16 @@ const HeroSection = () => {
   );
 };
 
+const formatNumber = (n: number) => {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return n.toString();
+};
+
 const StatChip = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2 bg-muted/50 rounded-lg px-4 py-2 border border-border backdrop-blur-sm">
+  <motion.div whileHover={{ scale: 1.05 }} className="flex flex-col items-center gap-1 bg-muted/50 rounded-lg px-2 py-2.5 border border-border backdrop-blur-sm text-center">
     <span className="text-primary">{icon}</span>
-    <div>
-      <div className="text-xl font-display font-bold text-foreground">{value}</div>
-      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-    </div>
+    <div className="text-lg font-display font-bold text-foreground leading-none">{value}</div>
+    <div className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none">{label}</div>
   </motion.div>
 );
 
