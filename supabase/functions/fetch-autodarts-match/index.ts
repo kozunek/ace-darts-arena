@@ -25,8 +25,6 @@ interface PlayerStats {
   totalDarts: number;
   first9Score: number;
   first9Darts: number;
-  until170Score: number;
-  until170Darts: number;
   oneEighties: number;
   highCheckout: number;
   ton60: number;
