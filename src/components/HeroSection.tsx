@@ -1,4 +1,4 @@
-import { Users, Trophy, Target, Flame, Crosshair } from "lucide-react";
+import { Users, Trophy, Target, Flame, Crosshair, UserCheck, Swords } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -7,7 +7,8 @@ import { UserPlus, Gamepad2 } from "lucide-react";
 
 const HeroSection = () => {
   const { leagues, players, matches } = useLeague();
-  const totalPlayers = players.filter(p => p.approved).length;
+  const totalRegistered = players.length;
+  const leagueParticipants = players.filter(p => p.leagueIds && p.leagueIds.length > 0).length;
   const activeLeagues = leagues.filter(l => l.is_active);
   const totalCompleted = matches.filter(m => m.status === "completed").length;
 
@@ -55,13 +56,15 @@ const HeroSection = () => {
             Śledź wyniki, statystyki i ranking w czasie rzeczywistym.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-8">
-            <StatChip icon={<Users className="h-3.5 w-3.5" />} label="Graczy" value={totalPlayers.toString()} />
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-8">
+            <StatChip icon={<UserCheck className="h-3.5 w-3.5" />} label="Zarejestrowani" value={totalRegistered.toString()} />
+            <StatChip icon={<Swords className="h-3.5 w-3.5" />} label="W ligach" value={leagueParticipants.toString()} />
             <StatChip icon={<Trophy className="h-3.5 w-3.5" />} label="Lig" value={activeLeagues.length.toString()} />
             <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Meczów" value={totalCompleted.toString()} />
             <StatChip icon={<Flame className="h-3.5 w-3.5" />} label="180-tek" value={total180s > 0 ? total180s.toString() : "—"} />
             <StatChip icon={<Crosshair className="h-3.5 w-3.5" />} label="Checkout" value={bestCheckout > 0 ? bestCheckout.toString() : "—"} />
             <StatChip icon={<Target className="h-3.5 w-3.5" />} label="Rzutów" value={totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "—"} />
+            <StatChip icon={<Users className="h-3.5 w-3.5" />} label="Społeczność" value={totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca"} />
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-wrap gap-3">
