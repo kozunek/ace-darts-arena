@@ -350,6 +350,15 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                           })()}
                         </p>
                       </div>
+                      {isMine && (
+                        <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
+                          {info.avatar_url ? (
+                            <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            info.avatar || "??"
+                          )}
+                        </div>
+                      )}
                       {canModerate && !isMine && (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
                           <button onClick={() => deleteMessage(m.id)} className="p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
