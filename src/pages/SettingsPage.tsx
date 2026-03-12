@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague } from "@/contexts/LeagueContext";
 import AvatarUpload from "@/components/AvatarUpload";
+import PageHeader from "@/components/PageHeader";
 
 const SettingsPage = () => {
   const { toast } = useToast();
