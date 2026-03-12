@@ -621,8 +621,6 @@ Deno.serve(async (req) => {
               avg2: avgFromTurns(st[i2]) ?? apiAvg(api2),
               first_9_avg1: f9FromTurns(st[i1]) ?? apiFirst9(api1),
               first_9_avg2: f9FromTurns(st[i2]) ?? apiFirst9(api2),
-              avg_until_170_1: a170FromTurns(st[i1]),
-              avg_until_170_2: a170FromTurns(st[i2]),
               one_eighties1: hasTurnData ? st[i1].oneEighties : (numOrNull(api1.oneEighties, api1["180s"]) ?? 0),
               one_eighties2: hasTurnData ? st[i2].oneEighties : (numOrNull(api2.oneEighties, api2["180s"]) ?? 0),
               high_checkout1: hasTurnData ? st[i1].highCheckout : (numOrNull(api1.highestCheckout, api1.bestCheckout) ?? 0),
