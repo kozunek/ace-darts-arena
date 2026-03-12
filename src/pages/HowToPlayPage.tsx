@@ -125,16 +125,9 @@ const platforms = [
 
 const HowToPlayPage = () => {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-          <Gamepad2 className="h-7 w-7 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Jak grać?</h1>
-          <p className="text-muted-foreground font-body text-sm">Przewodnik krok po kroku dla każdej platformy</p>
-        </div>
-      </div>
+    <div>
+      <PageHeader title="Jak grać?" subtitle="Przewodnik krok po kroku dla każdej platformy" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
 
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
         <p className="text-sm font-body text-foreground">

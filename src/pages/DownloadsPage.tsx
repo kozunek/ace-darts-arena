@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ExtensionDownloadSection from "@/components/ExtensionDownloadSection";
 import ApkDownloadSection from "@/components/ApkDownloadSection";
-import { Download, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 
 const DownloadsPage = () => {
   const { user } = useAuth();
@@ -14,7 +15,6 @@ const DownloadsPage = () => {
     const checkAccess = async () => {
       if (!user) { setLoading(false); return; }
 
-      // Check admin/moderator
       const { data: sysRoles } = await supabase
         .from("user_roles")
         .select("role")
@@ -26,7 +26,6 @@ const DownloadsPage = () => {
         return;
       }
 
-      // Check if any custom role has "extension_download" action permission
       const { data: userRoles } = await supabase
         .from("user_custom_roles")
         .select("role_id")
@@ -54,18 +53,10 @@ const DownloadsPage = () => {
   if (loading) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-          <Download className="h-7 w-7 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Pobieranie</h1>
-          <p className="text-muted-foreground font-body text-sm">Aplikacja mobilna i wtyczka przeglądarkowa</p>
-        </div>
-      </div>
-
-      <div className="space-y-8">
+    <div>
+      <PageHeader title="Pobieranie" subtitle="Aplikacja mobilna i wtyczka przeglądarkowa" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="space-y-8">
         {/* APK section - always visible */}
         <ApkDownloadSection />
 

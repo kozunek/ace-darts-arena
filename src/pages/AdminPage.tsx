@@ -91,20 +91,12 @@ const AdminPage = () => {
   const upcomingCount = matches.filter((m) => m.status === "upcoming").length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-          <Shield className="h-7 w-7 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-            {isAdmin ? "Panel Admina" : "Panel Moderatora"}
-          </h1>
-          <p className="text-muted-foreground font-body text-sm">
-            {isAdmin ? "Pełne zarządzanie ligami, turniejami, graczami i meczami" : "Zatwierdzanie wyników meczów"}
-          </p>
-        </div>
-      </div>
+    <div>
+      <PageHeader 
+        title={isAdmin ? "Panel Admina" : "Panel Moderatora"} 
+        subtitle={isAdmin ? "Pełne zarządzanie ligami, turniejami, graczami i meczami" : "Zatwierdzanie wyników meczów"} 
+      />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
 
       <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
         {visibleTabs.map((tab) => (

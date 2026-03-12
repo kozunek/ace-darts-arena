@@ -50,15 +50,9 @@ const AchievementsPage = () => {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2 flex items-center gap-3">
-          <Zap className="h-8 w-8 text-primary" /> Katalog Osiągnięć
-        </h1>
-        <p className="text-muted-foreground font-body">
-          Wszystkie {achievements.length} osiągnięć do zdobycia. Zdobywaj je grając w ligach!
-        </p>
-      </div>
+    <div>
+      <PageHeader title="Katalog Osiągnięć" subtitle={`Wszystkie ${achievements.length} osiągnięć do zdobycia. Zdobywaj je grając w ligach!`} />
+      <div className="container mx-auto px-4 py-8 space-y-8">
 
       {/* Rarity legend */}
       <div className="flex flex-wrap gap-3">

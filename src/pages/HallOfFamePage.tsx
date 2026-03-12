@@ -139,13 +139,9 @@ const HallOfFamePage = () => {
   const medals = ["🥇", "🥈", "🥉", "4.", "5."];
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2 flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-accent" /> Rekordy
-        </h1>
-        <p className="text-muted-foreground font-body mb-4">Rekordy i najlepsi gracze ze wszystkich rozgrywek</p>
-      </div>
+    <div>
+      <PageHeader title="Rekordy" subtitle="Rekordy i najlepsi gracze ze wszystkich rozgrywek" />
+      <div className="container mx-auto px-4 py-8 space-y-8">
 
       {allCompleted.length === 0 ? (
         <div className="rounded-lg border border-border bg-muted/20 p-8 text-center">

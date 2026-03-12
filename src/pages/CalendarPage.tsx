@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LeagueSelector from "@/components/LeagueSelector";
 import { Link } from "react-router-dom";
+import PageHeader from "@/components/PageHeader";
 
 const DAYS_PL = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 const MONTHS_PL = [
@@ -21,7 +22,6 @@ const CalendarPage = () => {
 
   const leagueMatches = getLeagueMatches(activeLeagueId);
 
-  // Group matches by date - use confirmedDate if available, else date (deadline)
   const matchesByDate: Record<string, typeof leagueMatches> = {};
   leagueMatches.forEach((m) => {
     const displayDate = m.confirmedDate || m.date;
@@ -30,10 +30,9 @@ const CalendarPage = () => {
     matchesByDate[key].push(m);
   });
 
-  // Calendar grid
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+  const startOffset = (firstDay.getDay() + 6) % 7;
   const totalDays = lastDay.getDate();
 
   const cells: (number | null)[] = [];
@@ -52,14 +51,11 @@ const CalendarPage = () => {
   const selectedMatches = selectedDateStr ? matchesByDate[selectedDateStr] || [] : [];
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2 flex items-center gap-3">
-          <CalendarIcon className="h-8 w-8 text-primary" /> Kalendarz meczów
-        </h1>
-        <p className="text-muted-foreground font-body mb-4">Przeglądaj zaplanowane i rozegrane mecze</p>
+    <div>
+      <PageHeader title="Kalendarz meczów" subtitle="Przeglądaj zaplanowane i rozegrane mecze">
         <LeagueSelector />
-      </div>
+      </PageHeader>
+      <div className="container mx-auto px-4 py-8 space-y-6">
 
       {/* Month navigation */}
       <div className="flex items-center justify-between">
