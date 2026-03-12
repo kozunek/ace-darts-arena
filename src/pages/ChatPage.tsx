@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
