@@ -30,7 +30,13 @@ WAŻNE ZASADY:
 
 Rozpoznaj platformę po wyglądzie interfejsu:
 - DartCounter: zwykle ciemny motyw, zielone/niebieskie akcenty
-- DartsMind: jasny lub ciemny motyw, minimalistyczny design. UWAGA: w DartsMind duże liczby u góry (np. 141, 0) to POZOSTAŁE PUNKTY w bieżącym legu, NIE wynik meczu! Wynik meczu (wygrane legi) jest pokazany jako małe kolorowe kropki/kółka pod nazwami graczy. Policz te kropki — np. 2 kropki po jednej stronie = 2 wygrane legi. Jeśli widzisz "Player X wins this match" to ten gracz wygrał. Kropki mogą być pomarańczowe/żółte na ciemnym tle.
+- DartsMind: ciemny motyw ze złotymi/beżowymi akcentami. KRYTYCZNE ZASADY DLA DARTSMIND:
+  1. Duże liczby u góry (np. 141, 0) to POZOSTAŁE PUNKTY w bieżącym legu — to NIE jest wynik meczu!
+  2. WYNIK MECZU (score1/score2) = liczba kolorowych kropek na CZARNYM PASKU pomiędzy sekcją z nazwami graczy a statystykami. Ten czarny pasek zawiera małe okrągłe kropki (pomarańczowe/żółte/złote). Każda kropka = 1 wygrany leg. Policz kropki osobno dla lewej i prawej strony.
+  3. Przykład: jeśli na czarnym pasku są 2 kropki po prawej stronie i 0 po lewej → score dla prawego gracza = 2, lewego = 0.
+  4. Jeśli widzisz tekst "Player X wins this match" — ten gracz wygrał cały mecz.
+  5. Zakładka "LEG STATS" pokazuje statystyki z jednego lega. Zakładka "MATCH STATS" pokazuje statystyki z całego meczu — preferuj MATCH STATS jeśli jest widoczna.
+  6. "PPR" = Points Per Round = 3-dart average (avg). "FIRST 9 PPR" = first 9 darts average. "CHECKOUT POINTS" = highest checkout. "CHECKOUT%" z formatem "X% (Y/Z)" → hits=Y, attempts=Z.
 - Autodarts: specyficzny interfejs webowy`;
 
   if (matchContext) {
