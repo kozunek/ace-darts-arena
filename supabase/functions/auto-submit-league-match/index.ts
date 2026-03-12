@@ -684,7 +684,6 @@ Deno.serve(async (req) => {
           checkout_hits1: cs.checkout_hits2 ?? 0, checkout_hits2: cs.checkout_hits1 ?? 0,
           autodarts_link: `https://play.autodarts.io/history/matches/${autodarts_match_id}`,
           nine_darters1: 0, nine_darters2: 0,
-          avg_until_170_1: null, avg_until_170_2: null,
         };
       } else {
         statsData = {
@@ -702,7 +701,6 @@ Deno.serve(async (req) => {
           checkout_hits1: cs.checkout_hits1 ?? 0, checkout_hits2: cs.checkout_hits2 ?? 0,
           autodarts_link: `https://play.autodarts.io/history/matches/${autodarts_match_id}`,
           nine_darters1: 0, nine_darters2: 0,
-          avg_until_170_1: null, avg_until_170_2: null,
         };
       }
       console.log(`[auto-submit] Client fallback stats: score=${statsData.score1}-${statsData.score2}, swapped=${cSwapped}`);
