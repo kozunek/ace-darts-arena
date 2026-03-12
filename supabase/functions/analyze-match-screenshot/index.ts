@@ -37,6 +37,7 @@ Rozpoznaj platformę po wyglądzie interfejsu:
   4. Jeśli widzisz tekst "Player X wins this match" — ten gracz wygrał cały mecz.
   5. Zakładka "LEG STATS" pokazuje statystyki z jednego lega. Zakładka "MATCH STATS" pokazuje statystyki z całego meczu — preferuj MATCH STATS jeśli jest widoczna.
   6. "PPR" = Points Per Round = 3-dart average (avg). "FIRST 9 PPR" = first 9 darts average. "CHECKOUT POINTS" = highest checkout. "CHECKOUT%" z formatem "X% (Y/Z)" → hits=Y, attempts=Z.
+  7. KRYTYCZNE — MAPOWANIE STATYSTYK DO GRACZY: Statystyki w DartsMind są wyświetlane w DWÓCH KOLUMNACH — lewa kolumna należy do gracza po LEWEJ stronie ekranu, prawa kolumna do gracza po PRAWEJ stronie. MUSISZ przypisać statystyki (PPR, checkout, 180s itd.) do TEGO SAMEGO gracza co wynik (kropki). Jeśli gracz po lewej ma 2 kropki i wygrał, to statystyki z LEWEJ kolumny należą do niego. NIE odwracaj statystyk względem wyniku — wynik i statystyki muszą być spójne dla tego samego gracza.
 - Autodarts: specyficzny interfejs webowy`;
 
   if (matchContext) {
