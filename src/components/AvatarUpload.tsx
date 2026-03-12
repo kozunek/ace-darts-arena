@@ -28,8 +28,8 @@ const AvatarUpload = ({ currentAvatarUrl, currentInitials, playerId, onUploaded 
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Błąd", description: "Maksymalny rozmiar to 2MB.", variant: "destructive" });
+    if (file.size > 512 * 1024) {
+      toast({ title: "Błąd", description: "Maksymalny rozmiar avatara to 512 KB.", variant: "destructive" });
       return;
     }
 
