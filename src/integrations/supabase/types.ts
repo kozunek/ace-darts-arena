@@ -275,6 +275,135 @@ export type Database = {
           },
         ]
       }
+      group_channel_roles: {
+        Row: {
+          channel_id: string
+          id: string
+          role_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          role_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_channel_roles_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "group_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_channel_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_channel_system_roles: {
+        Row: {
+          channel_id: string
+          id: string
+          system_role: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          system_role: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          system_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_channel_system_roles_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "group_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_channels: {
+        Row: {
+          channel_type: string
+          created_at: string
+          description: string
+          id: string
+          league_id: string | null
+          name: string
+          platform: string | null
+        }
+        Insert: {
+          channel_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          league_id?: string | null
+          name: string
+          platform?: string | null
+        }
+        Update: {
+          channel_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          league_id?: string | null
+          name?: string
+          platform?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_channels_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_messages: {
+        Row: {
+          channel_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          channel_id: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          channel_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "group_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leagues: {
         Row: {
           bonus_rules: Json | null
