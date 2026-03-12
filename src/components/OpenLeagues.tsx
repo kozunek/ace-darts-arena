@@ -14,6 +14,13 @@ const LEAGUE_TYPE_LABELS: Record<string, string> = {
   group_bracket: "Grupy + Drabinka",
 };
 
+const PLATFORM_LABELS: Record<string, string> = {
+  autodarts: "🎯 Autodarts",
+  dartcounter: "📱 DartCounter",
+  dartsmind: "🧠 DartsMind",
+  manual: "✍️ Ręczne",
+};
+
 const OpenLeagues = () => {
   const { leagues, players, joinLeague, leaveLeague, refreshData } = useLeague();
   const { user } = useAuth();
