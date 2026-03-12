@@ -125,6 +125,6 @@ const MatchesPage = () => {
       </section>
       </div>
     </div>
-};
+  );
 
 export default MatchesPage;
