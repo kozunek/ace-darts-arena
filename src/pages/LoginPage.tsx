@@ -22,6 +22,7 @@ const LoginPage = () => {
   const [name, setName] = useState("");
   const [gamingNick, setGamingNick] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   if (user) {
     return (
