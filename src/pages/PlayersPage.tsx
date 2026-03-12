@@ -34,7 +34,7 @@ const PlayersPage = () => {
   return (
     <div>
       <PageHeader title="Gracze" subtitle={`${approved.length} uczestników ligi`} />
-
+      <div className="container mx-auto px-4 py-8">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
