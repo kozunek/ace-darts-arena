@@ -184,11 +184,6 @@ function processGameTurns(
     st.totalScore += points;
     st.totalDarts += dartsCount;
 
-    if (scoreBeforeTurn != null && scoreBeforeTurn > 170) {
-      st.until170Score += points;
-      st.until170Darts += dartsCount;
-    }
-
     if (tidx < 3) {
       st.first9Score += points;
       st.first9Darts += dartsCount;
