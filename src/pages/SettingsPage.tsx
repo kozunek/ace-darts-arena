@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { KeyRound, User, ArrowLeft, Phone, MessageCircle, Gamepad2, Zap } from "lucide-react";
+import { KeyRound, User, ArrowLeft, Phone, MessageCircle, Gamepad2, Zap, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -222,7 +223,7 @@ const SettingsPage = () => {
       )}
 
       {/* Change password */}
-      <div className="rounded-lg border border-border bg-card p-6 card-glow">
+      <div className="rounded-lg border border-border bg-card p-6 card-glow mb-6">
         <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
           <KeyRound className="h-5 w-5 text-primary" /> Zmień hasło
         </h2>
@@ -239,6 +240,53 @@ const SettingsPage = () => {
             {submitting ? "Zmiana..." : "Zmień hasło"}
           </Button>
         </form>
+      </div>
+
+      {/* Delete account - GDPR */}
+      <div className="rounded-lg border border-destructive/30 bg-card p-6 mb-6">
+        <h2 className="text-lg font-display font-bold text-destructive mb-4 flex items-center gap-2">
+          <Trash2 className="h-5 w-5" /> Usuń konto
+        </h2>
+        <p className="text-sm text-muted-foreground font-body mb-4">
+          Zgodnie z RODO (art. 17) masz prawo do usunięcia swoich danych osobowych. Usunięcie konta jest <strong>nieodwracalne</strong> — zostaną trwale usunięte Twoje dane osobowe, profil, wiadomości i powiązania z meczami.
+        </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">Usuń moje konto</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Czy na pewno chcesz usunąć konto?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ta operacja jest nieodwracalna. Wszystkie Twoje dane osobowe, profil gracza, wiadomości i powiadomienia zostaną trwale usunięte. Zanonimizowane statystyki meczowe mogą zostać zachowane w celach archiwalnych.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    const { supabase } = await import("@/integrations/supabase/client");
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) return;
+                    const res = await supabase.functions.invoke("delete-account", {
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    });
+                    if (res.error) throw res.error;
+                    toast({ title: "Konto usunięte", description: "Twoje konto zostało trwale usunięte." });
+                    await supabase.auth.signOut({ scope: "local" });
+                    window.location.href = "/";
+                  } catch (err: any) {
+                    toast({ title: "Błąd", description: err?.message || "Nie udało się usunąć konta.", variant: "destructive" });
+                  }
+                }}
+              >
+                Tak, usuń konto
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

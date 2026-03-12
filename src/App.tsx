@@ -30,7 +30,10 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import ReportBugPage from "./pages/ReportBugPage";
 import DownloadsPage from "./pages/DownloadsPage";
 import HowToPlayPage from "./pages/HowToPlayPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
+import Footer from "./components/Footer";
 import { ReactNode } from "react";
 
 const queryClient = new QueryClient();
@@ -78,8 +81,11 @@ const App = () => (
                 <Route path="/report-bug" element={<P path="/report-bug"><ReportBugPage /></P>} />
                 <Route path="/downloads" element={<P path="/downloads"><DownloadsPage /></P>} />
                 <Route path="/how-to-play" element={<P path="/how-to-play"><HowToPlayPage /></P>} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <Footer />
             </BrowserRouter>
             </PagePermissionsProvider>
           </LeagueProvider>
