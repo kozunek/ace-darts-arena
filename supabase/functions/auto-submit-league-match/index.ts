@@ -741,8 +741,6 @@ Deno.serve(async (req) => {
         avg2: statsData.avg2,
         first_9_avg1: statsData.first_9_avg1,
         first_9_avg2: statsData.first_9_avg2,
-        avg_until_170_1: statsData.avg_until_170_1,
-        avg_until_170_2: statsData.avg_until_170_2,
         one_eighties1: statsData.one_eighties1,
         one_eighties2: statsData.one_eighties2,
         high_checkout1: statsData.high_checkout1,
