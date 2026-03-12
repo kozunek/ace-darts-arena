@@ -178,6 +178,7 @@ const HallOfFamePage = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -97,6 +97,7 @@ const AchievementsPage = () => {
         </div>
       ))}
     </div>
+    </div>
   );
 };
 

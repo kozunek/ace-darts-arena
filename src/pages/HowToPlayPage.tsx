@@ -205,6 +205,7 @@ const HowToPlayPage = () => {
           </div>
         </Link>
       </div>
+      </div>
     </div>
   );
 };

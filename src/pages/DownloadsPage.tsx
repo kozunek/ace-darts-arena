@@ -73,6 +73,7 @@ const DownloadsPage = () => {
             </p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

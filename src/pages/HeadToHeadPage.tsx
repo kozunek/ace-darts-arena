@@ -52,13 +52,9 @@ const HeadToHeadPage = () => {
   const bothSelected = player1Id && player2Id && player1Id !== player2Id;
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2 flex items-center gap-3">
-          <Swords className="h-8 w-8 text-primary" /> Porównanie H2H
-        </h1>
-        <p className="text-muted-foreground font-body mb-4">Porównaj statystyki dwóch graczy ze wszystkich rozgrywek</p>
-      </div>
+    <div>
+      <PageHeader title="Porównanie H2H" subtitle="Porównaj statystyki dwóch graczy ze wszystkich rozgrywek" />
+      <div className="container mx-auto px-4 py-8 space-y-6">
 
       {/* Player selectors */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
