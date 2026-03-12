@@ -30,7 +30,7 @@ WAŻNE ZASADY:
 
 Rozpoznaj platformę po wyglądzie interfejsu:
 - DartCounter: zwykle ciemny motyw, zielone/niebieskie akcenty
-- DartsMind: jasny lub ciemny motyw, minimalistyczny design
+- DartsMind: jasny lub ciemny motyw, minimalistyczny design. UWAGA: w DartsMind duże liczby u góry (np. 141, 0) to POZOSTAŁE PUNKTY w bieżącym legu, NIE wynik meczu! Wynik meczu (wygrane legi) jest pokazany jako małe kolorowe kropki/kółka pod nazwami graczy. Policz te kropki — np. 2 kropki po jednej stronie = 2 wygrane legi. Jeśli widzisz "Player X wins this match" to ten gracz wygrał. Kropki mogą być pomarańczowe/żółte na ciemnym tle.
 - Autodarts: specyficzny interfejs webowy`;
 
   if (matchContext) {
