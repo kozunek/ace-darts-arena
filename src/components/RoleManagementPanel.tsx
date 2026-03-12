@@ -240,6 +240,13 @@ const RoleManagementPanel = () => {
         if (permErr) throw permErr;
       }
 
+      // Save channel access
+      await supabase.from("group_channel_roles").delete().eq("role_id", roleId);
+      const channelRows = [...roleChannels].map((chId) => ({ channel_id: chId, role_id: roleId }));
+      if (channelRows.length > 0) {
+        await supabase.from("group_channel_roles").insert(channelRows as any);
+      }
+
       toast({ title: roleDialog.editing ? "✅ Rola zaktualizowana!" : "✅ Rola utworzona!" });
       setRoleDialog({ open: false });
       await loadAll();
