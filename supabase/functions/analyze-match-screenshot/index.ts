@@ -60,6 +60,99 @@ KRYTYCZNE ZADANIE - MAPOWANIE GRACZY:
   return prompt;
 };
 
+const extractDartsMindScoreFallback = async (
+  lovableApiKey: string,
+  screenshotUrls: string[],
+  matchContext?: { player1_name: string; player2_name: string },
+) => {
+  try {
+    const imageContents = screenshotUrls.map((url: string) => ({
+      type: "image_url" as const,
+      image_url: { url },
+    }));
+
+    const contextText = matchContext
+      ? `Kontekst meczu: player1=${matchContext.player1_name}, player2=${matchContext.player2_name}.`
+      : "Brak kontekstu meczu.";
+
+    const response = await fetch(AI_GATEWAY, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Analizujesz WYŁĄCZNIE wynik meczu w aplikacji DartsMind. Wynik to liczba kolorowych kropek na czarnym pasku pod nazwami graczy (każda kropka = 1 leg). Duże liczby u góry to punkty pozostałe i należy je zignorować. NIE zwracaj 0:0, jeśli widzisz choć jedną kropkę. Jeśli nie da się odczytać, zwróć null.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: `Odczytaj wynik legów z kropek na czarnym pasku. ${contextText}` },
+              ...imageContents,
+            ],
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_dartsmind_score",
+              description: "Extract only final legs score from DartsMind black-dot score bar",
+              parameters: {
+                type: "object",
+                properties: {
+                  confidence: {
+                    type: "string",
+                    enum: ["high", "low", "none"],
+                  },
+                  matched_to_context: {
+                    type: "boolean",
+                    description: "True if score1/score2 could be mapped to match context players",
+                  },
+                  score1: {
+                    type: ["number", "null"],
+                    description: "Legs won by player1 from match context (or left side if no context)",
+                  },
+                  score2: {
+                    type: ["number", "null"],
+                    description: "Legs won by player2 from match context (or right side if no context)",
+                  },
+                },
+                required: ["confidence"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "extract_dartsmind_score" } },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("DartsMind score fallback failed:", response.status, text);
+      return null;
+    }
+
+    const aiData = await response.json();
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      return null;
+    }
+
+    return JSON.parse(toolCall.function.arguments);
+  } catch (err) {
+    console.error("DartsMind score fallback error:", err);
+    return null;
+  }
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
