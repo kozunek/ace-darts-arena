@@ -160,7 +160,10 @@ const RoleManagementPanel = () => {
     const rolePerms = permissions.filter((p) => p.role_id === role.id);
     setRolePages(new Set(rolePerms.filter((p) => p.permission_type === "page").map((p) => p.permission_key)));
     setRoleActions(new Set(rolePerms.filter((p) => p.permission_type === "action").map((p) => p.permission_key)));
-    setRoleStatsLeagueIds(new Set(rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key)));
+    setRoleStatsLeagueIds(new Set([
+      ...rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key),
+      ...rolePerms.filter((p) => p.permission_type === "stats_platform").map((p) => p.permission_key),
+    ]));
     setRoleDialog({ open: true, editing: role });
   };
 
