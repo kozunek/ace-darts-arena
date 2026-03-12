@@ -321,11 +321,9 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                 const info = senderInfos[m.sender_id] || { name: "..." };
                 return (
                   <div key={m.id} className="flex flex-col">
-                    {!isMine && (
-                      <span className="text-[10px] font-display font-bold text-primary mb-0.5 ml-8">
-                        {renderSenderLabel(info)}
-                      </span>
-                    )}
+                    <span className={`text-[10px] font-display font-bold mb-0.5 ${isMine ? "text-right mr-8 text-primary/70" : "ml-8 text-primary"}`}>
+                      {renderSenderLabel(info)}
+                    </span>
                     <div className={`group flex items-end gap-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
                       {!isMine && (
                         <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
