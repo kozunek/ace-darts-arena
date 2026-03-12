@@ -328,9 +328,14 @@ const RoleManagementPanel = () => {
                           <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded-full border font-display ${
                             role.stats_scope === "all_leagues"
                               ? "bg-primary/20 border-primary/30 text-primary"
+                              : role.stats_scope === "platform"
+                              ? "bg-blue-500/20 border-blue-500/30 text-blue-400"
                               : "bg-muted border-border text-muted-foreground"
                           }`}>
-                            {role.stats_scope === "all_leagues" ? "Wszystkie ligi" : "Tylko swoje ligi"}
+                            {role.stats_scope === "all_leagues" ? "Wszystkie ligi" 
+                              : role.stats_scope === "platform" ? "Platforma"
+                              : role.stats_scope === "selected_leagues" ? "Wybrane ligi"
+                              : "Tylko swoje ligi"}
                           </span>
                         </div>
                         {role.description && (
