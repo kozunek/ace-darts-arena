@@ -17,6 +17,7 @@ import {
 
 // ─── AVAILABLE PERMISSIONS ───
 const PAGE_PERMISSIONS = [
+  { key: "/", label: "Strona główna" },
   { key: "/admin", label: "Panel Admina" },
   { key: "/stats", label: "Statystyki" },
   { key: "/matches", label: "Mecze" },
@@ -25,12 +26,14 @@ const PAGE_PERMISSIONS = [
   { key: "/calendar", label: "Kalendarz" },
   { key: "/chat", label: "Czat" },
   { key: "/achievements", label: "Osiągnięcia" },
-  { key: "/head-to-head", label: "Head to Head" },
+  { key: "/h2h", label: "Head to Head" },
   { key: "/announcements", label: "Ogłoszenia" },
   { key: "/my-matches", label: "Moje mecze" },
-  { key: "/submit-match", label: "Zgłoś mecz" },
+  { key: "/submit", label: "Zgłoś mecz" },
   { key: "/settings", label: "Ustawienia" },
   { key: "/downloads", label: "Pobieranie" },
+  { key: "/how-to-play", label: "Jak grać" },
+  { key: "/report-bug", label: "Zgłoś błąd" },
 ];
 
 const ACTION_PERMISSIONS = [
@@ -51,6 +54,7 @@ interface CustomRole {
   name: string;
   description: string;
   stats_scope: string;
+  is_guest_role: boolean;
   created_at: string;
 }
 
@@ -291,7 +295,7 @@ const RoleManagementPanel = () => {
             <p className="text-muted-foreground text-sm text-center py-8">Brak ról niestandardowych. Utwórz pierwszą!</p>
           ) : (
             <div className="space-y-3">
-              {roles.map((role) => {
+              {[...roles].sort((a, b) => (a.is_guest_role === b.is_guest_role ? 0 : a.is_guest_role ? -1 : 1)).map((role) => {
                 const perms = getPermissionsForRole(role.id);
                 const pagePerms = perms.filter((p) => p.permission_type === "page");
                 const actionPerms = perms.filter((p) => p.permission_type === "action");
@@ -301,9 +305,14 @@ const RoleManagementPanel = () => {
                   <div key={role.id} className="rounded-lg border border-border bg-card p-4 card-glow space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Shield className="h-4 w-4 text-primary" />
                           <h3 className="font-display font-bold text-foreground">{role.name}</h3>
+                          {role.is_guest_role && (
+                            <span className="text-[10px] uppercase px-1.5 py-0.5 rounded-full border bg-orange-500/20 border-orange-500/30 text-orange-400 font-display">
+                              👁️ Niezalogowani
+                            </span>
+                          )}
                           <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded-full border font-display ${
                             role.stats_scope === "all_leagues"
                               ? "bg-primary/20 border-primary/30 text-primary"
@@ -317,15 +326,19 @@ const RoleManagementPanel = () => {
                         )}
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setAssignDialog({ open: true, role })}>
-                          <UserPlus className="h-3.5 w-3.5" />
-                        </Button>
+                        {!role.is_guest_role && (
+                          <Button variant="ghost" size="sm" onClick={() => setAssignDialog({ open: true, role })}>
+                            <UserPlus className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => openEditDialog(role)}>
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteRole(role.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {!role.is_guest_role && (
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteRole(role.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -349,7 +362,7 @@ const RoleManagementPanel = () => {
                     </div>
 
                     {/* Assigned users */}
-                    {assignedUsers.length > 0 && (
+                    {!role.is_guest_role && assignedUsers.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
                         <span className="text-[10px] text-muted-foreground mr-1">Użytkownicy:</span>
                         {assignedUsers.map((ur) => (

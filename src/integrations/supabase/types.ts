@@ -129,6 +129,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          is_guest_role: boolean
           name: string
           stats_scope: string
         }
@@ -136,6 +137,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          is_guest_role?: boolean
           name: string
           stats_scope?: string
         }
@@ -143,6 +145,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          is_guest_role?: boolean
           name?: string
           stats_scope?: string
         }

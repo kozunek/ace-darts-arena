@@ -2,12 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LeagueProvider } from "@/contexts/LeagueContext";
 import Navbar from "@/components/Navbar";
 import FloatingChat from "@/components/FloatingChat";
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
+import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import MatchesPage from "./pages/MatchesPage";
 import PlayersPage from "./pages/PlayersPage";
@@ -29,6 +30,7 @@ import ReportBugPage from "./pages/ReportBugPage";
 import DownloadsPage from "./pages/DownloadsPage";
 import HowToPlayPage from "./pages/HowToPlayPage";
 import NotFound from "./pages/NotFound";
+import { ReactNode } from "react";
 
 const queryClient = new QueryClient();
 
@@ -37,41 +39,47 @@ function ExtensionNotifier() {
   return null;
 }
 
+const P = ({ path, children }: { path: string; children: ReactNode }) => (
+  <ProtectedRoute path={path}>{children}</ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <LeagueProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ExtensionNotifier />
-            <Navbar />
-            <FloatingChat />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/matches" element={<MatchesPage />} />
-              <Route path="/players" element={<PlayersPage />} />
-              <Route path="/players/:id" element={<PlayerProfilePage />} />
-              <Route path="/my-matches" element={<MyMatchesPage />} />
-              <Route path="/h2h" element={<HeadToHeadPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/hall-of-fame" element={<HallOfFamePage />} />
-              <Route path="/achievements" element={<AchievementsPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/announcements" element={<AnnouncementsPage />} />
-              <Route path="/submit" element={<SubmitMatchPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/stats" element={<StatsPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/report-bug" element={<ReportBugPage />} />
-              <Route path="/downloads" element={<DownloadsPage />} />
-              <Route path="/how-to-play" element={<HowToPlayPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <PagePermissionsProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ExtensionNotifier />
+              <Navbar />
+              <FloatingChat />
+              <Routes>
+                <Route path="/" element={<P path="/"><Index /></P>} />
+                <Route path="/matches" element={<P path="/matches"><MatchesPage /></P>} />
+                <Route path="/players" element={<P path="/players"><PlayersPage /></P>} />
+                <Route path="/players/:id" element={<P path="/players"><PlayerProfilePage /></P>} />
+                <Route path="/my-matches" element={<P path="/my-matches"><MyMatchesPage /></P>} />
+                <Route path="/h2h" element={<P path="/h2h"><HeadToHeadPage /></P>} />
+                <Route path="/calendar" element={<P path="/calendar"><CalendarPage /></P>} />
+                <Route path="/hall-of-fame" element={<P path="/hall-of-fame"><HallOfFamePage /></P>} />
+                <Route path="/achievements" element={<P path="/achievements"><AchievementsPage /></P>} />
+                <Route path="/chat" element={<P path="/chat"><ChatPage /></P>} />
+                <Route path="/announcements" element={<P path="/announcements"><AnnouncementsPage /></P>} />
+                <Route path="/submit" element={<P path="/submit"><SubmitMatchPage /></P>} />
+                <Route path="/login" element={<P path="/login"><LoginPage /></P>} />
+                <Route path="/admin" element={<P path="/admin"><AdminPage /></P>} />
+                <Route path="/stats" element={<P path="/stats"><StatsPage /></P>} />
+                <Route path="/reset-password" element={<P path="/reset-password"><ResetPasswordPage /></P>} />
+                <Route path="/settings" element={<P path="/settings"><SettingsPage /></P>} />
+                <Route path="/report-bug" element={<P path="/report-bug"><ReportBugPage /></P>} />
+                <Route path="/downloads" element={<P path="/downloads"><DownloadsPage /></P>} />
+                <Route path="/how-to-play" element={<P path="/how-to-play"><HowToPlayPage /></P>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </PagePermissionsProvider>
         </LeagueProvider>
       </AuthProvider>
     </TooltipProvider>
