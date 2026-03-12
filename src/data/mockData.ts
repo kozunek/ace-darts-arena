@@ -1,4 +1,5 @@
 export type LeagueType = "league" | "bracket" | "group_bracket";
+export type LeaguePlatform = "autodarts" | "dartcounter" | "dartsmind" | "manual";
 
 export interface BonusRules {
   win: number;       // punkty za wygraną (domyślnie 3)
@@ -30,6 +31,7 @@ export interface League {
   registration_open?: boolean;
   meetings_per_pair?: number;
   registration_deadline?: string | null;
+  platform?: LeaguePlatform;
 }
 
 export interface Player {
