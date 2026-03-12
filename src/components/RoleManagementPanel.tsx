@@ -362,7 +362,7 @@ const RoleManagementPanel = () => {
                     </div>
 
                     {/* Assigned users */}
-                    {assignedUsers.length > 0 && (
+                    {!role.is_guest_role && assignedUsers.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
                         <span className="text-[10px] text-muted-foreground mr-1">Użytkownicy:</span>
                         {assignedUsers.map((ur) => (
