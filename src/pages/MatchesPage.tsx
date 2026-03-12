@@ -126,5 +126,6 @@ const MatchesPage = () => {
       </div>
     </div>
   );
+};
 
 export default MatchesPage;
