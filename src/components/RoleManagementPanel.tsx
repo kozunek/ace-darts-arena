@@ -179,6 +179,9 @@ const RoleManagementPanel = () => {
       ...rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key),
       ...rolePerms.filter((p) => p.permission_type === "stats_platform").map((p) => p.permission_key),
     ]));
+    // Load channel access for this role
+    const roleChIds = channelRoleLinks.filter((cr) => cr.role_id === role.id).map((cr) => cr.channel_id);
+    setRoleChannels(new Set(roleChIds));
     setRoleDialog({ open: true, editing: role });
   };
 
