@@ -26,10 +26,14 @@ const HeroSection = () => {
   });
 
   const stats = [
-    { icon: <UserCheck className="h-5 w-5" />, label: "Zawodnicy", value: leagueParticipants.toString(), desc: "Zarejestrowanych graczy w lidze" },
-    { icon: <Target className="h-5 w-5" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Meczów zakończonych w tym sezonie" },
+    { icon: <UserCheck className="h-5 w-5" />, label: "Zarejestrowani", value: totalRegistered.toString(), desc: "Kont założonych na platformie" },
+    { icon: <Swords className="h-5 w-5" />, label: "Gracze w ligach", value: leagueParticipants.toString(), desc: "Aktywnych uczestników rozgrywek" },
+    { icon: <Trophy className="h-5 w-5" />, label: "Aktywne ligi", value: activeLeagues.length.toString(), desc: "Trwających rozgrywek w sezonie" },
+    { icon: <Target className="h-5 w-5" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Zakończonych spotkań w sezonie" },
     { icon: <Crosshair className="h-5 w-5" />, label: "Rzutów lotką", value: totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "0", desc: "Łączna liczba rzutów w sezonie" },
     { icon: <Flame className="h-5 w-5" />, label: "Maksów 180", value: total180s.toString(), desc: "Perfekcyjnych wizyt przy tablicy" },
+    { icon: <Crosshair className="h-5 w-5" />, label: "Najwyższy checkout", value: bestCheckout > 0 ? bestCheckout.toString() : "—", desc: "Rekordowe zamknięcie w sezonie" },
+    { icon: <Users className="h-5 w-5" />, label: "Społeczność", value: totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca", desc: "Wielkość naszej społeczności" },
   ];
 
   return (
@@ -91,56 +95,27 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* ─── STATS STRIP ─── */}
+      {/* ─── STATS GRID ─── */}
       <section className="border-b border-border bg-card">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+          <div className="grid grid-cols-2 md:grid-cols-4">
             {stats.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="py-8 md:py-10 px-4 md:px-6"
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className="py-6 md:py-8 px-4 md:px-6 border-b border-r border-border last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r [&:nth-child(4)]:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 md:[&:nth-last-child(-n+4)]:border-b-0 md:[&:nth-last-child(-n+2)]:border-b"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                     {s.icon}
                   </div>
-                  <span className="text-[10px] font-display uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                  <span className="text-[10px] font-display uppercase tracking-widest text-muted-foreground leading-tight">{s.label}</span>
                 </div>
-                <div className="text-3xl md:text-4xl font-display font-bold text-foreground mt-2">{s.value}</div>
-                <p className="text-xs text-muted-foreground font-body mt-1">{s.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── MINI STATS ROW ─── */}
-      <section className="border-b border-border bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
-            {[
-              { icon: <Users className="h-4 w-4" />, label: "Zarejestrowani", value: totalRegistered.toString() },
-              { icon: <Trophy className="h-4 w-4" />, label: "Aktywne ligi", value: activeLeagues.length.toString() },
-              { icon: <Crosshair className="h-4 w-4" />, label: "Najwyższy checkout", value: bestCheckout > 0 ? bestCheckout.toString() : "—" },
-              { icon: <Swords className="h-4 w-4" />, label: "Społeczność", value: totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca" },
-            ].map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 py-5 px-4 md:px-6"
-              >
-                <span className="text-primary">{s.icon}</span>
-                <div>
-                  <div className="text-lg font-display font-bold text-foreground leading-none">{s.value}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</div>
-                </div>
+                <div className="text-2xl md:text-3xl font-display font-bold text-foreground">{s.value}</div>
+                <p className="text-[11px] text-muted-foreground font-body mt-1">{s.desc}</p>
               </motion.div>
             ))}
           </div>
