@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLeague } from "@/contexts/LeagueContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +19,12 @@ import {
 // ─── AVAILABLE PERMISSIONS ───
 const PAGE_PERMISSIONS = [
   { key: "/", label: "Strona główna" },
+  { key: "/tables", label: "Tabele" },
   { key: "/admin", label: "Panel Admina" },
   { key: "/stats", label: "Statystyki" },
   { key: "/matches", label: "Mecze" },
   { key: "/players", label: "Gracze" },
-  { key: "/hall-of-fame", label: "Hall of Fame" },
+  { key: "/hall-of-fame", label: "Rekordy" },
   { key: "/calendar", label: "Kalendarz" },
   { key: "/chat", label: "Czat" },
   { key: "/achievements", label: "Osiągnięcia" },
@@ -75,6 +77,7 @@ interface UserCustomRole {
 
 const RoleManagementPanel = () => {
   const { toast } = useToast();
+  const { leagues } = useLeague();
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [userCustomRoles, setUserCustomRoles] = useState<UserCustomRole[]>([]);
@@ -89,6 +92,7 @@ const RoleManagementPanel = () => {
   const [roleName, setRoleName] = useState("");
   const [roleDesc, setRoleDesc] = useState("");
   const [roleStatsScope, setRoleStatsScope] = useState("own_leagues");
+  const [roleStatsLeagueIds, setRoleStatsLeagueIds] = useState<Set<string>>(new Set());
   const [rolePages, setRolePages] = useState<Set<string>>(new Set());
   const [roleActions, setRoleActions] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -143,6 +147,7 @@ const RoleManagementPanel = () => {
     setRoleName("");
     setRoleDesc("");
     setRoleStatsScope("own_leagues");
+    setRoleStatsLeagueIds(new Set());
     setRolePages(new Set());
     setRoleActions(new Set());
     setRoleDialog({ open: true });
@@ -155,6 +160,7 @@ const RoleManagementPanel = () => {
     const rolePerms = permissions.filter((p) => p.role_id === role.id);
     setRolePages(new Set(rolePerms.filter((p) => p.permission_type === "page").map((p) => p.permission_key)));
     setRoleActions(new Set(rolePerms.filter((p) => p.permission_type === "action").map((p) => p.permission_key)));
+    setRoleStatsLeagueIds(new Set(rolePerms.filter((p) => p.permission_type === "stats_league").map((p) => p.permission_key)));
     setRoleDialog({ open: true, editing: role });
   };
 
@@ -201,6 +207,9 @@ const RoleManagementPanel = () => {
       const permRows: any[] = [];
       rolePages.forEach((key) => permRows.push({ role_id: roleId, permission_type: "page", permission_key: key }));
       roleActions.forEach((key) => permRows.push({ role_id: roleId, permission_type: "action", permission_key: key }));
+      if (roleStatsScope === "selected_leagues") {
+        roleStatsLeagueIds.forEach((key) => permRows.push({ role_id: roleId, permission_type: "stats_league", permission_key: key }));
+      }
 
       if (permRows.length > 0) {
         const { error: permErr } = await supabase.from("custom_role_permissions").insert(permRows);
@@ -271,11 +280,11 @@ const RoleManagementPanel = () => {
   if (loading) return <p className="text-muted-foreground text-sm">Ładowanie...</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto overscroll-contain">
       <h2 className="text-xl font-display font-bold text-foreground">Zarządzanie rolami</h2>
 
       <Tabs defaultValue="custom" className="w-full">
-        <TabsList className="w-full grid grid-cols-2">
+        <TabsList className="w-full grid grid-cols-2 sticky top-0 z-10">
           <TabsTrigger value="custom">🎭 Role niestandardowe</TabsTrigger>
           <TabsTrigger value="system">🛡️ Role systemowe</TabsTrigger>
         </TabsList>
@@ -485,9 +494,29 @@ const RoleManagementPanel = () => {
                   <SelectContent>
                     <SelectItem value="all_leagues">📊 Wszystkie ligi</SelectItem>
                     <SelectItem value="own_leagues">🎯 Tylko ligi, w których gra</SelectItem>
+                    <SelectItem value="selected_leagues">📋 Wybrane ligi</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* League-specific stats selection */}
+              {roleStatsScope === "selected_leagues" && (
+                <div className="space-y-2">
+                  <Label className="font-display text-xs uppercase tracking-wider text-muted-foreground">Ligi ze statystykami</Label>
+                  <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto rounded-md border border-border p-2">
+                    {leagues.map((league) => (
+                      <label key={league.id} className="flex items-center gap-2 text-sm font-body cursor-pointer hover:bg-muted/30 rounded-md px-2 py-1.5">
+                        <Checkbox
+                          checked={roleStatsLeagueIds.has(league.id)}
+                          onCheckedChange={() => togglePerm(roleStatsLeagueIds, league.id, setRoleStatsLeagueIds)}
+                        />
+                        {league.name}
+                        <span className="text-[10px] text-muted-foreground ml-auto">{league.season}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Page permissions */}
               <div className="space-y-2">

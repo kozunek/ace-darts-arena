@@ -16,7 +16,8 @@ import {
 type NavItem = { label: string; href: string; icon: React.ReactElement; authOnly?: boolean; mobileOnly?: boolean };
 
 const allNavItems: NavItem[] = [
-  { label: "Tabela", href: "/", icon: <Target className="h-3.5 w-3.5" /> },
+  { label: "Strona główna", href: "/", icon: <Target className="h-3.5 w-3.5" /> },
+  { label: "Tabele", href: "/tables", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Mecze", href: "/matches", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Gracze", href: "/players", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-3.5 w-3.5" /> },
@@ -26,12 +27,12 @@ const allNavItems: NavItem[] = [
   { label: "Rekordy", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
   { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
   { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
-  { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" /> },
 ];
 
 const extraNavItems: NavItem[] = [
   { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
+  { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Czat", href: "/chat", icon: <MessageCircle className="h-3.5 w-3.5" />, authOnly: true, mobileOnly: true },
   { label: "Zgłoś błąd", href: "/report-bug", icon: <Bug className="h-3.5 w-3.5" />, authOnly: true },
 ];

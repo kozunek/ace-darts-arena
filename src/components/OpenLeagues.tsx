@@ -14,6 +14,13 @@ const LEAGUE_TYPE_LABELS: Record<string, string> = {
   group_bracket: "Grupy + Drabinka",
 };
 
+const PLATFORM_LABELS: Record<string, string> = {
+  autodarts: "🎯 Autodarts",
+  dartcounter: "📱 DartCounter",
+  dartsmind: "🧠 DartsMind",
+  manual: "✍️ Ręczne",
+};
+
 const OpenLeagues = () => {
   const { leagues, players, joinLeague, leaveLeague, refreshData } = useLeague();
   const { user } = useAuth();
@@ -106,6 +113,12 @@ const OpenLeagues = () => {
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" /> {count} zapisanych
                   </span>
+                  {(league as any).platform && (league as any).platform !== "autodarts" && (
+                    <span className="text-xs">{PLATFORM_LABELS[(league as any).platform] || (league as any).platform}</span>
+                  )}
+                  {(league as any).platform === "autodarts" && (
+                    <span className="text-xs">{PLATFORM_LABELS.autodarts}</span>
+                  )}
                   {league.registration_deadline && (
                     <span className="flex items-center gap-1 text-accent">
                       <Calendar className="h-3.5 w-3.5" /> Zapisy do {new Date(league.registration_deadline).toLocaleDateString("pl-PL")}

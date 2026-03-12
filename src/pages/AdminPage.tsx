@@ -19,7 +19,7 @@ import SelfHostConfigPanel from "@/components/SelfHostConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BEST_OF_OPTIONS, type LeagueType, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
+import { BEST_OF_OPTIONS, type LeagueType, type LeaguePlatform, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -466,6 +466,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [leagueType, setLeagueType] = useState<LeagueType>("league");
+  const [leaguePlatform, setLeaguePlatform] = useState<LeaguePlatform>("autodarts");
   const [bonusRules, setBonusRules] = useState<BonusRules>({ ...DEFAULT_BONUS_RULES });
   const [meetingsPerPair, setMeetingsPerPair] = useState(1);
   
@@ -485,7 +486,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
-    setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setBonusRules({ ...DEFAULT_BONUS_RULES });
+    setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setLeaguePlatform("autodarts"); setBonusRules({ ...DEFAULT_BONUS_RULES });
     setMeetingsPerPair(1);
     setShowForm(false); setEditId(null);
   };
@@ -496,6 +497,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setRegistrationOpen(l.registration_open ?? false);
     setRegistrationDeadline(l.registration_deadline || "");
     setLeagueType(l.league_type || "league");
+    setLeaguePlatform(l.platform || "autodarts");
     setBonusRules({ ...DEFAULT_BONUS_RULES, ...(l.bonus_rules || {}) });
     setMeetingsPerPair(l.meetings_per_pair ?? 1);
     setShowForm(true);
@@ -506,10 +508,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     if (!name || !season) { toast({ title: "Błąd", description: "Wypełnij wymagane pola.", variant: "destructive" }); return; }
     const maxLegs = BEST_OF_OPTIONS.find(o => o.value === format)?.maxLegs || 5;
     if (editId) {
-      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair });
+      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform });
       toast({ title: "Zaktualizowano!", description: `${name} została zmieniona.` });
     } else {
-      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair });
+      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform });
       if (result?.error) {
         toast({ title: "Błąd", description: "Nie udało się utworzyć. Sprawdź uprawnienia.", variant: "destructive" });
         return;
@@ -679,7 +681,18 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Format gry</Label>
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Platforma</Label>
+                <Select value={leaguePlatform} onValueChange={(v) => setLeaguePlatform(v as LeaguePlatform)}>
+                  <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="autodarts">🎯 Autodarts</SelectItem>
+                    <SelectItem value="dartcounter">📱 DartCounter</SelectItem>
+                    <SelectItem value="dartsmind">🧠 DartsMind</SelectItem>
+                    <SelectItem value="manual">✍️ Ręczne</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Select value={format} onValueChange={setFormat}>
                   <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>

@@ -12,6 +12,7 @@ import CookieBanner from "@/components/CookieBanner";
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import TablesPage from "./pages/TablesPage";
 import MatchesPage from "./pages/MatchesPage";
 import PlayersPage from "./pages/PlayersPage";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
@@ -64,6 +65,7 @@ const App = () => (
               <CookieBanner />
               <Routes>
                 <Route path="/" element={<P path="/"><Index /></P>} />
+                <Route path="/tables" element={<P path="/tables"><TablesPage /></P>} />
                 <Route path="/matches" element={<P path="/matches"><MatchesPage /></P>} />
                 <Route path="/players" element={<P path="/players"><PlayersPage /></P>} />
                 <Route path="/players/:id" element={<P path="/players"><PlayerProfilePage /></P>} />

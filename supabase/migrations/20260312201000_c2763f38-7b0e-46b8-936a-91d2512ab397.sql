@@ -1,0 +1,1 @@
+ALTER TABLE public.leagues ADD COLUMN platform text NOT NULL DEFAULT 'autodarts';
