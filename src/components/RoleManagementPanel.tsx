@@ -516,7 +516,7 @@ const RoleManagementPanel = () => {
                     ))}
                   </div>
                 </div>
-              )
+              )}
 
               {/* Page permissions */}
               <div className="space-y-2">
