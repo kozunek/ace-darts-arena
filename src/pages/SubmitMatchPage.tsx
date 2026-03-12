@@ -400,8 +400,6 @@ const SubmitMatchPage = () => {
           checkoutHits2: asNumber(finalPayload.checkout_hits2),
           first9Avg1: finalPayload.first_9_avg1 ?? undefined,
           first9Avg2: finalPayload.first_9_avg2 ?? undefined,
-          avgUntil170_1: finalPayload.avg_until_170_1 ?? undefined,
-          avgUntil170_2: finalPayload.avg_until_170_2 ?? undefined,
           autodartsLink: finalPayload.autodarts_link || undefined,
         };
         submitMatchResult(matchedUpcoming.id, data);
