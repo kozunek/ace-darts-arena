@@ -123,7 +123,12 @@ const AdminPage = () => {
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
           {activeTab === "roles" && isAdmin && <RoleManagementPanel />}
-          {activeTab === "integrations" && isAdmin && <ExtensionConfigPanel leagues={leagues} />}
+          {activeTab === "integrations" && isAdmin && (
+            <div className="space-y-8">
+              <ExtensionConfigPanel leagues={leagues} />
+              <SelfHostConfigPanel />
+            </div>
+          )}
           {activeTab === "discord" && isAdmin && <DiscordWebhookPanel leagues={leagues} />}
           {activeTab === "audit" && isAdmin && <AuditLogPanel />}
           {activeTab === "export" && isAdmin && <ExportPanel />}
