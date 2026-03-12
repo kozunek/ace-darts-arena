@@ -14,6 +14,7 @@ import ExtensionConfigPanel from "@/components/ExtensionConfigPanel";
 import BugReportsPanel from "@/components/BugReportsPanel";
 import AdminChatPanel from "@/components/AdminChatPanel";
 import DiscordWebhookPanel from "@/components/DiscordWebhookPanel";
+import RoleManagementPanel from "@/components/RoleManagementPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,7 +121,7 @@ const AdminPage = () => {
           {activeTab === "leagues" && isAdmin && <LeaguesTab leagues={leagues} players={players} addLeague={addLeague} updateLeague={updateLeague} deleteLeague={deleteLeague} addMatch={addMatch} refreshData={refreshData} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} toast={toast} />}
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
-          {activeTab === "roles" && isAdmin && <RolesTab toast={toast} />}
+          {activeTab === "roles" && isAdmin && <RoleManagementPanel />}
           {activeTab === "integrations" && isAdmin && <ExtensionConfigPanel leagues={leagues} />}
           {activeTab === "discord" && isAdmin && <DiscordWebhookPanel leagues={leagues} />}
           {activeTab === "audit" && isAdmin && <AuditLogPanel />}
