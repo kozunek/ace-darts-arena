@@ -217,6 +217,7 @@ const StatsPage = () => {
           </div>
         )}
       </motion.div>
+      </div>
     </div>
   );
 };
