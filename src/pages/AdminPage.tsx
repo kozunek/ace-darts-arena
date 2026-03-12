@@ -129,6 +129,7 @@ const AdminPage = () => {
           {activeTab === "bugs" && <BugReportsPanel />}
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 };
