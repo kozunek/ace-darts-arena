@@ -363,8 +363,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       checkout_hits2: data.checkoutHits2 ?? 0,
       first_9_avg1: data.first9Avg1 ?? null,
       first_9_avg2: data.first9Avg2 ?? null,
-      avg_until_170_1: data.avgUntil170_1 ?? null,
-      avg_until_170_2: data.avgUntil170_2 ?? null,
       autodarts_link: data.autodartsLink,
       screenshot_urls: data.screenshotUrls ?? [],
       source_platform: data.sourcePlatform ?? 'autodarts',
