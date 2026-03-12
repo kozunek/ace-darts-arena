@@ -150,6 +150,13 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     setSenderInfos((prev) => ({ ...prev, ...infos }));
   }, []);
 
+  // Pre-load own sender info
+  useEffect(() => {
+    if (user && !senderInfos[user.id]) {
+      loadSenderInfos([user.id]);
+    }
+  }, [user, loadSenderInfos]);
+
   // Load messages for active channel
   useEffect(() => {
     if (!activeChannel) return;
