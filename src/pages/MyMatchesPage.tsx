@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import LeagueSelector from "@/components/LeagueSelector";
 import MatchProposalSection from "@/components/MatchProposalSection";
+import PageHeader from "@/components/PageHeader";
 
 interface PlayerContact {
   id: string;
