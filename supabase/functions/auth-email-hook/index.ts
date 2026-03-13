@@ -37,9 +37,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "eDART Polska"
-const SENDER_DOMAIN = "notify.edartspolska.pl"
-const ROOT_DOMAIN = "edartspolska.pl"
-const FROM_DOMAIN = "edartspolska.pl" // Domain shown in From address (may be root or sender subdomain)
+const SENDER_DOMAIN = "notify.edartpolska.pl"
+const ROOT_DOMAIN = "edartpolska.pl"
+const FROM_DOMAIN = "edartpolska.pl"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
