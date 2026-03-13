@@ -80,7 +80,8 @@ const SubmitMatchPage = () => {
   const [autodartsLink, setAutodartsLink] = useState("");
   const [score1, setScore1] = useState("");
   const [score2, setScore2] = useState("");
-  const [showAdvanced] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [stats, setStats] = useState<Record<string, string>>({});
   const [fetchingAutodarts, setFetchingAutodarts] = useState(false);
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [extensionToken, setExtensionToken] = useState<string | null>(null);
