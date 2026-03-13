@@ -254,6 +254,35 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
   const [editStats, setEditStats] = useState<Record<string, string>>({});
   const [editScore1, setEditScore1] = useState("");
   const [editScore2, setEditScore2] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === pendingApproval.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingApproval.map((m: any) => m.id)));
+    }
+  };
+
+  const bulkApprove = () => {
+    selectedIds.forEach(id => approveMatch(id));
+    toast({ title: `✅ Zatwierdzono ${selectedIds.size} meczów!` });
+    setSelectedIds(new Set());
+  };
+
+  const bulkReject = () => {
+    selectedIds.forEach(id => rejectMatch(id));
+    toast({ title: `❌ Odrzucono ${selectedIds.size} meczów!` });
+    setSelectedIds(new Set());
+  };
 
   const startEdit = (m: any) => {
     setEditingId(m.id);
