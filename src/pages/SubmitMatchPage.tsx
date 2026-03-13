@@ -642,9 +642,24 @@ const SubmitMatchPage = () => {
       return;
     }
 
-    // Require stats filled for DartCounter/DartsMind
-    if ((sourcePlatform === "dartcounter" || sourcePlatform === "dartsmind") && !stats.avg1 && !stats.avg2) {
-      toast({ title: "Brak statystyk", description: "Uzupełnij statystyki (co najmniej średnią) przed wysłaniem wyniku. Użyj analizy AI lub wpisz ręcznie.", variant: "destructive" });
+    // Require ALL stats filled
+    const requiredStatKeys = [
+      "avg1", "avg2", "first9Avg1", "first9Avg2",
+      "oneEighties1", "oneEighties2", "hc1", "hc2",
+      "ton60_1", "ton60_2", "ton80_1", "ton80_2",
+      "tonPlus1", "tonPlus2", "ton40_1", "ton40_2",
+      "darts1", "darts2",
+      "checkoutAttempts1", "checkoutAttempts2",
+      "checkoutHits1", "checkoutHits2",
+    ];
+    const missingStats = requiredStatKeys.filter((k) => !stats[k] && stats[k] !== "0");
+    if (missingStats.length > 0) {
+      setShowAdvanced(true);
+      toast({
+        title: "Brak statystyk",
+        description: "Wszystkie pola statystyk muszą być wypełnione. Rozwiń szczegółowe statystyki i uzupełnij brakujące pola.",
+        variant: "destructive",
+      });
       return;
     }
 
