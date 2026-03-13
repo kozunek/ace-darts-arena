@@ -19,6 +19,7 @@
     "https://api.autodarts.io/*",
     "https://edartpolska.pl/*",
     "https://www.edartpolska.pl/*",
+    "https://*.lovable.app/*",
     "https://uiolhzctnbskdjteufkj.supabase.co/*"
   ],
   "background": {
@@ -33,7 +34,8 @@
     {
       "matches": [
         "https://edartpolska.pl/*",
-        "https://www.edartpolska.pl/*"
+        "https://www.edartpolska.pl/*",
+        "https://*.lovable.app/*"
       ],
       "js": ["inject-token.js"],
       "run_at": "document_idle"

@@ -9,7 +9,7 @@ import { LeagueProvider } from "@/contexts/LeagueContext";
 import Navbar from "@/components/Navbar";
 import FloatingChat from "@/components/FloatingChat";
 import CookieBanner from "@/components/CookieBanner";
-import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -64,7 +64,7 @@ const App = () => (
               <Navbar />
               <FloatingChat />
               <CookieBanner />
-              <PwaInstallPrompt />
+              
               <Routes>
                 <Route path="/" element={<P path="/"><Index /></P>} />
                 <Route path="/tables" element={<P path="/tables"><TablesPage /></P>} />

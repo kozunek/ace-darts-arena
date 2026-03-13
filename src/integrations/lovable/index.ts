@@ -1,10 +1,11 @@
-// Lovable OAuth integration removed — using standard Supabase Auth.
-// This file is kept as a stub for compatibility.
+// Lovable integration — stub kept for compatibility.
+// Authentication is handled by standard Supabase Auth.
+// Lovable Cloud handles backend, database, edge functions, and AI.
 
 export const lovable = {
   auth: {
     signInWithOAuth: async (_provider: string, _opts?: any) => {
-      return { error: new Error("Lovable OAuth removed. Use standard Supabase Auth.") };
+      return { error: new Error("Use standard Supabase Auth for authentication.") };
     },
   },
 };
