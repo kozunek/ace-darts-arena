@@ -14,4 +14,4 @@ project_id = "uiolhzctnbskdjteufkj"
   [functions.discord-webhook]
     verify_jwt = false
   [functions.process-email-queue]
-    verify_jwt = false
+    verify_jwt = true
