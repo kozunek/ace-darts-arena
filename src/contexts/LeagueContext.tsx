@@ -252,7 +252,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const { data: leaguesData } = await supabase.from("leagues").select("*").order("created_at");
+    // Parallel fetches for speed
+    const [leaguesRes, playersRes, plRes] = await Promise.all([
+      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform").order("created_at"),
+      supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id").order("name"),
+      supabase.from("player_leagues").select("player_id,league_id"),
+    ]);
+    const leaguesData = leaguesRes.data;
     const leagues: League[] = (leaguesData || []).map((l: any) => ({
       id: l.id, name: l.name, season: l.season, description: l.description,
       is_active: l.is_active, format: l.format, max_legs: l.max_legs,
