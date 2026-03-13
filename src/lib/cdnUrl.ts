@@ -18,7 +18,7 @@ const IS_CDN_HOST =
 
 export function cdnUrl(url: string | null | undefined): string | null | undefined {
   if (!url) return url;
-  if (!IS_VERCEL) return url;
+  if (!IS_CDN_HOST) return url;
 
   const match = url.match(SUPABASE_STORAGE_PATTERN);
   if (!match) return url;
