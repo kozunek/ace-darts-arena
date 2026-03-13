@@ -8,10 +8,12 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Img,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -28,30 +30,38 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
-    <Preview>Zaproszenie do eDART Polska</Preview>
+    <Preview>🏆 Zaproszenie do eDART Polska!</Preview>
     <Body style={main}>
-      <Container style={container}>
-        <Img
-          src="https://uiolhzctnbskdjteufkj.supabase.co/storage/v1/object/public/avatars/email-logo.jpg"
-          width="120"
-          height="auto"
-          alt="eDART Polska"
-          style={{ marginBottom: '24px' }}
-        />
-        <Heading style={h1}>Zostałeś zaproszony!</Heading>
-        <Text style={text}>
-          Zostałeś zaproszony do{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>eDART Polska</strong>
-          </Link>
-          . Kliknij poniższy przycisk, aby zaakceptować zaproszenie i utworzyć konto.
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Akceptuj zaproszenie
-        </Button>
-        <Text style={footer}>
-          Jeśli nie spodziewałeś się tego zaproszenia, zignoruj tę wiadomość.
-        </Text>
+      <Container style={wrapper}>
+        <Section style={header}>
+          <Img
+            src="https://uiolhzctnbskdjteufkj.supabase.co/storage/v1/object/public/avatars/email-logo.jpg"
+            width="80"
+            height="auto"
+            alt="eDART Polska"
+            style={logo}
+          />
+        </Section>
+        <Section style={content}>
+          <Heading style={h1}>Zostałeś zaproszony! 🏆</Heading>
+          <Text style={text}>
+            Masz zaproszenie do dołączenia do{' '}
+            <Link href={siteUrl} style={link}><strong>eDART Polska</strong></Link> — 
+            Polskiej Ligi Darta Online. Zaakceptuj zaproszenie i zacznij rywalizację!
+          </Text>
+          <Section style={buttonContainer}>
+            <Button style={button} href={confirmationUrl}>
+              Dołącz do ligi
+            </Button>
+          </Section>
+        </Section>
+        <Hr style={divider} />
+        <Section style={footerSection}>
+          <Text style={footer}>Nie spodziewałeś się tego zaproszenia? Zignoruj tę wiadomość.</Text>
+          <Text style={footerBrand}>
+            <Link href={siteUrl} style={footerLink}>edartpolska.pl</Link> · Polska Liga Darta
+          </Text>
+        </Section>
       </Container>
     </Body>
   </Html>
@@ -59,29 +69,49 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', Arial, sans-serif" }
-const container = { padding: '30px 25px' }
+const main = {
+  backgroundColor: '#0f1318',
+  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+  padding: '40px 0',
+}
+const wrapper = {
+  backgroundColor: '#181d25',
+  borderRadius: '12px',
+  border: '1px solid #262d38',
+  maxWidth: '480px',
+  margin: '0 auto',
+  overflow: 'hidden' as const,
+}
+const header = { backgroundColor: '#dc2626', padding: '24px 30px', textAlign: 'center' as const }
+const logo = { borderRadius: '8px' }
+const content = { padding: '32px 30px 24px' }
 const h1 = {
-  fontSize: '22px',
+  fontSize: '24px',
   fontWeight: 'bold' as const,
-  color: '#0f1318',
-  margin: '0 0 20px',
+  color: '#ece8e1',
+  margin: '0 0 16px',
   fontFamily: "'Oswald', Arial, sans-serif",
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
 }
-const text = {
-  fontSize: '14px',
-  color: '#7a7f8a',
-  lineHeight: '1.6',
-  margin: '0 0 25px',
-}
-const link = { color: '#dc2626', textDecoration: 'underline' }
+const text = { fontSize: '15px', color: '#8b919e', lineHeight: '1.7', margin: '0 0 24px' }
+const link = { color: '#dc2626', textDecoration: 'none' }
+const buttonContainer = { textAlign: 'center' as const, margin: '8px 0' }
 const button = {
   backgroundColor: '#dc2626',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
-  padding: '12px 24px',
+  padding: '14px 32px',
   textDecoration: 'none',
   fontWeight: 'bold' as const,
+  fontFamily: "'Oswald', Arial, sans-serif",
+  textTransform: 'uppercase' as const,
+  letterSpacing: '1px',
+  display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const divider = { borderColor: '#262d38', margin: '0' }
+const footerSection = { padding: '20px 30px' }
+const footer = { fontSize: '12px', color: '#4b5563', margin: '0 0 8px', lineHeight: '1.5' }
+const footerBrand = { fontSize: '11px', color: '#374151', margin: '0' }
+const footerLink = { color: '#dc2626', textDecoration: 'none' }

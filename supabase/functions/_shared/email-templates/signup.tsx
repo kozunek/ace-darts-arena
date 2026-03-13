@@ -8,10 +8,12 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Img,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -30,37 +32,42 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
-    <Preview>Potwierdź swój e-mail – eDART Polska</Preview>
+    <Preview>🎯 Potwierdź rejestrację w eDART Polska</Preview>
     <Body style={main}>
-      <Container style={container}>
-        <Img
-          src="https://uiolhzctnbskdjteufkj.supabase.co/storage/v1/object/public/avatars/email-logo.jpg"
-          width="120"
-          height="auto"
-          alt="eDART Polska"
-          style={{ marginBottom: '24px' }}
-        />
-        <Heading style={h1}>Potwierdź swój adres e-mail</Heading>
-        <Text style={text}>
-          Dziękujemy za rejestrację w{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>eDART Polska</strong>
-          </Link>
-          !
-        </Text>
-        <Text style={text}>
-          Potwierdź swój adres e-mail (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) klikając poniższy przycisk:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Potwierdź e-mail
-        </Button>
-        <Text style={footer}>
-          Jeśli nie zakładałeś konta, zignoruj tę wiadomość.
-        </Text>
+      <Container style={wrapper}>
+        <Section style={header}>
+          <Img
+            src="https://uiolhzctnbskdjteufkj.supabase.co/storage/v1/object/public/avatars/email-logo.jpg"
+            width="80"
+            height="auto"
+            alt="eDART Polska"
+            style={logo}
+          />
+        </Section>
+        <Section style={content}>
+          <Heading style={h1}>Witaj w eDART Polska! 🎯</Heading>
+          <Text style={text}>
+            Dzięki za dołączenie do <strong>Polskiej Ligi Darta Online</strong>. 
+            Potwierdź swój adres e-mail, aby aktywować konto i zacząć rywalizację.
+          </Text>
+          <Section style={buttonContainer}>
+            <Button style={button} href={confirmationUrl}>
+              Potwierdź e-mail i graj!
+            </Button>
+          </Section>
+          <Text style={smallText}>
+            Konto: <Link href={`mailto:${recipient}`} style={link}>{recipient}</Link>
+          </Text>
+        </Section>
+        <Hr style={divider} />
+        <Section style={footerSection}>
+          <Text style={footer}>
+            Nie zakładałeś konta? Zignoruj tę wiadomość.
+          </Text>
+          <Text style={footerBrand}>
+            <Link href={siteUrl} style={footerLink}>edartpolska.pl</Link> · Polska Liga Darta
+          </Text>
+        </Section>
       </Container>
     </Body>
   </Html>
@@ -68,29 +75,87 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', Arial, sans-serif" }
-const container = { padding: '30px 25px' }
+const main = {
+  backgroundColor: '#0f1318',
+  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+  padding: '40px 0',
+}
+const wrapper = {
+  backgroundColor: '#181d25',
+  borderRadius: '12px',
+  border: '1px solid #262d38',
+  maxWidth: '480px',
+  margin: '0 auto',
+  overflow: 'hidden' as const,
+}
+const header = {
+  backgroundColor: '#dc2626',
+  padding: '24px 30px',
+  textAlign: 'center' as const,
+}
+const logo = {
+  borderRadius: '8px',
+}
+const content = {
+  padding: '32px 30px 24px',
+}
 const h1 = {
-  fontSize: '22px',
+  fontSize: '24px',
   fontWeight: 'bold' as const,
-  color: '#0f1318',
-  margin: '0 0 20px',
+  color: '#ece8e1',
+  margin: '0 0 16px',
   fontFamily: "'Oswald', Arial, sans-serif",
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
 }
 const text = {
-  fontSize: '14px',
-  color: '#7a7f8a',
-  lineHeight: '1.6',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#8b919e',
+  lineHeight: '1.7',
+  margin: '0 0 24px',
 }
-const link = { color: '#dc2626', textDecoration: 'underline' }
+const smallText = {
+  fontSize: '13px',
+  color: '#6b7280',
+  margin: '16px 0 0',
+}
+const link = { color: '#dc2626', textDecoration: 'none' }
+const buttonContainer = {
+  textAlign: 'center' as const,
+  margin: '8px 0',
+}
 const button = {
   backgroundColor: '#dc2626',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
-  padding: '12px 24px',
+  padding: '14px 32px',
   textDecoration: 'none',
   fontWeight: 'bold' as const,
+  fontFamily: "'Oswald', Arial, sans-serif",
+  textTransform: 'uppercase' as const,
+  letterSpacing: '1px',
+  display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const divider = {
+  borderColor: '#262d38',
+  margin: '0',
+}
+const footerSection = {
+  padding: '20px 30px',
+}
+const footer = {
+  fontSize: '12px',
+  color: '#4b5563',
+  margin: '0 0 8px',
+  lineHeight: '1.5',
+}
+const footerBrand = {
+  fontSize: '11px',
+  color: '#374151',
+  margin: '0',
+}
+const footerLink = {
+  color: '#dc2626',
+  textDecoration: 'none',
+}
