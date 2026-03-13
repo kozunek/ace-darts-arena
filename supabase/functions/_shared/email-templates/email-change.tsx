@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -27,32 +28,38 @@ export const EmailChangeEmail = ({
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="pl" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>Potwierdź zmianę adresu e-mail – eDART Polska</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
+        <Img
+          src="https://uiolhzctnbskdjteufkj.supabase.co/storage/v1/object/public/avatars/email-logo.jpg"
+          width="120"
+          height="auto"
+          alt="eDART Polska"
+          style={{ marginBottom: '24px' }}
+        />
+        <Heading style={h1}>Potwierdź zmianę e-maila</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
+          Poprosiłeś o zmianę adresu e-mail w eDART Polska z{' '}
           <Link href={`mailto:${email}`} style={link}>
             {email}
           </Link>{' '}
-          to{' '}
+          na{' '}
           <Link href={`mailto:${newEmail}`} style={link}>
             {newEmail}
           </Link>
           .
         </Text>
         <Text style={text}>
-          Click the button below to confirm this change:
+          Kliknij poniższy przycisk, aby potwierdzić zmianę:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
+          Potwierdź zmianę e-maila
         </Button>
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          Jeśli nie prosiłeś o tę zmianę, natychmiast zabezpiecz swoje konto.
         </Text>
       </Container>
     </Body>
@@ -61,27 +68,29 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', Arial, sans-serif" }
+const container = { padding: '30px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#000000',
+  color: '#0f1318',
   margin: '0 0 20px',
+  fontFamily: "'Oswald', Arial, sans-serif",
 }
 const text = {
   fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
+  color: '#7a7f8a',
+  lineHeight: '1.6',
   margin: '0 0 25px',
 }
 const link = { color: 'inherit', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#dc2626',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
-  padding: '12px 20px',
+  padding: '12px 24px',
   textDecoration: 'none',
+  fontWeight: 'bold' as const,
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
