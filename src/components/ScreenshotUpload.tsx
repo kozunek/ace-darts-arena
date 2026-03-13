@@ -79,8 +79,8 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    if (uploadedUrls.length + files.length > 5) {
-      toast({ title: "Limit", description: "Maksymalnie 5 zrzutów ekranu.", variant: "destructive" });
+    if (uploadedUrls.length + files.length > 2) {
+      toast({ title: "Limit", description: "Maksymalnie 2 zrzuty ekranu.", variant: "destructive" });
       return;
     }
 
