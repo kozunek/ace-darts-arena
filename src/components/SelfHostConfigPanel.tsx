@@ -78,11 +78,12 @@ const SelfHostConfigPanel = () => {
     try {
       for (const field of CONFIG_FIELDS) {
         const val = values[field.key] ?? "";
-        // Try update first, then upsert if no rows matched
-        const { error, count } = await supabase
+        const { error } = await supabase
           .from("app_config")
-          .update({ value: val, updated_at: new Date().toISOString() })
-          .eq("key", field.key);
+          .upsert(
+            { key: field.key, value: val, updated_at: new Date().toISOString() },
+            { onConflict: "key" }
+          );
 
         if (error) throw error;
       }
