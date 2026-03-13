@@ -117,21 +117,8 @@ const LeagueTable = () => {
         </div>
       </div>
 
-      {/* Bonus points legend */}
-      <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
-        <h3 className="text-[10px] font-display uppercase tracking-wider text-muted-foreground mb-2">System punktowy</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[10px] font-body text-muted-foreground">
-          {rules.win > 0 && <span>🏆 Wygrana: <strong className="text-foreground">+{rules.win}</strong></span>}
-          {rules.per180 > 0 && <span>🎯 180: <strong className="text-foreground">+{rules.per180}</strong></span>}
-          
-          {rules.checkout100 > 0 && <span>✅ CO 100+: <strong className="text-foreground">+{rules.checkout100}</strong></span>}
-          {rules.checkout150 > 0 && <span>💫 CO 150+: <strong className="text-foreground">+{rules.checkout100 + rules.checkout150}</strong></span>}
-          {rules.avg90 > 0 && <span>📊 Śr. 90+: <strong className="text-foreground">+{rules.avg90}</strong></span>}
-          {rules.avg100 > 0 && <span>📈 Śr. 100+: <strong className="text-foreground">+{rules.avg90 + rules.avg100}</strong></span>}
-          {rules.closeLoss > 0 && <span>🥈 Bliska przegrana: <strong className="text-foreground">+{rules.closeLoss}</strong></span>}
-          {rules.cleanSweep > 0 && <span>💪 Clean sweep: <strong className="text-foreground">+{rules.cleanSweep}</strong></span>}
-        </div>
-      </div>
+      {/* Collapsible column legend */}
+      <ColumnLegend rules={rules} />
     </section>
   );
 };
