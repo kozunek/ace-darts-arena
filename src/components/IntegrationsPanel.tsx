@@ -324,7 +324,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Model</Label>
-            <Input value={model} onChange={e => updateField("custom_ai_model", e.target.value)} placeholder={isCustomKey ? "gemini-2.5-flash" : "Lovable AI (automatycznie)"} />
+            <Input value={model} onChange={e => updateField("custom_ai_model", e.target.value)} placeholder={isCustomKey ? "gemini-2.0-flash" : "Lovable AI (automatycznie)"} />
             <p className="text-xs text-muted-foreground">Aktualnie: <strong>{displayModel}</strong></p>
           </div>
           <div className="space-y-1.5 md:col-span-2">
