@@ -364,7 +364,7 @@ Deno.serve(async (req) => {
       );
 
     if (needsDartsMindScoreFallback) {
-      const fallbackScore = await extractDartsMindScoreFallback(LOVABLE_API_KEY, screenshot_urls, match_context);
+      const fallbackScore = await extractDartsMindScoreFallback(aiConfig, screenshot_urls, match_context);
       if (
         fallbackScore &&
         fallbackScore.confidence !== "none" &&
