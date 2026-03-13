@@ -260,8 +260,8 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
       </div>
 
       <p className="text-[10px] text-muted-foreground font-body">
-        Prześlij zrzuty ekranu z podsumowania meczu. AI rozpozna statystyki automatycznie.
-        {uploadedUrls.length > 0 && ` (${uploadedUrls.length}/5)`}
+        Prześlij zrzuty ekranu z podsumowania meczu (wymagane). AI rozpozna statystyki automatycznie.
+        {uploadedUrls.length > 0 && ` (${uploadedUrls.length}/2)`}
       </p>
     </div>
   );
