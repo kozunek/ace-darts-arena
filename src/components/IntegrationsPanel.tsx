@@ -306,7 +306,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
         <p className="text-xs text-muted-foreground">
           <strong>Instrukcja:</strong> Domyślnie używany jest Lovable AI. Aby użyć własnego modelu,
           wpisz klucz API (OpenAI <code>sk-...</code> lub Gemini <code>AIza...</code>).
-          Model <strong>Gemini Flash 2.0 Free</strong> oferuje 15 000 zapytań/dzień za darmo.
+          Model <strong>Gemini 2.5 Flash</strong> oferuje darmowy tier z limitem zapytań.
         </p>
       </div>
 
