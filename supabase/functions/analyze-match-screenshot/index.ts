@@ -242,13 +242,24 @@ Deno.serve(async (req) => {
       ? `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta. Mecz ligowy: "${match_context.player1_name}" vs "${match_context.player2_name}".`
       : `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta i wyodrębnij statystyki.`;
 
-    const response = await fetch(aiConfig.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${aiConfig.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    // Helper: fetch with automatic retry on 429
+    const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const resp = await fetch(url, options);
+        if (resp.status === 429 && attempt < maxRetries) {
+          const retryAfter = resp.headers.get("retry-after");
+          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : (attempt + 1) * 5000;
+          console.log(`Rate limited (429), retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+          await new Promise(r => setTimeout(r, waitMs));
+          continue;
+        }
+        return resp;
+      }
+      // Should not reach here, but just in case
+      return fetch(url, options);
+    };
+
+    const requestBody = JSON.stringify({
         model: aiConfig.model,
         temperature: 0,
         messages: [
@@ -307,12 +318,20 @@ Deno.serve(async (req) => {
           },
         ],
         tool_choice: { type: "function", function: { name: "extract_match_stats" } },
-      }),
+    });
+
+    const response = await fetchWithRetry(aiConfig.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${aiConfig.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: requestBody,
     });
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Zbyt wiele żądań AI — spróbuj za chwilę" }), {
+        return new Response(JSON.stringify({ error: "Zbyt wiele żądań AI — spróbuj ponownie za 30 sekund" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
