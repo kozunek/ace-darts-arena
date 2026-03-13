@@ -9,6 +9,7 @@ import { LeagueProvider } from "@/contexts/LeagueContext";
 import Navbar from "@/components/Navbar";
 import FloatingChat from "@/components/FloatingChat";
 import CookieBanner from "@/components/CookieBanner";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
