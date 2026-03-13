@@ -907,6 +907,9 @@ const SubmitMatchPage = () => {
                   <p className="text-[10px] text-muted-foreground text-center">
                     Dane z {sourcePlatform === "autodarts" ? "Autodarts" : sourcePlatform === "dartcounter" ? "DartCounter" : "DartsMind"} uzupełniły formularz poniżej.
                   </p>
+                  <p className="text-[10px] text-accent text-center mt-1">
+                    ⚠️ Jeśli dane są niezgodne ze screenshotem, popraw je ręcznie w formularzu przed wysłaniem.
+                  </p>
                 </div>
               )}
 
