@@ -253,7 +253,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
         let testEndpoint = endpoint;
         if (!testEndpoint) {
           if (apiKey.startsWith("sk-")) testEndpoint = "https://api.openai.com/v1/chat/completions";
-          else testEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+          else testEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
         }
 
         if (testEndpoint.includes("generativelanguage.googleapis.com")) {
