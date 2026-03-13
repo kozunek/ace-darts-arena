@@ -41,7 +41,7 @@ async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKe
       return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
     }
     if (customKey.startsWith("AIza")) {
-      return { url: GEMINI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gemini-2.5-pro" };
+      return { url: GEMINI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gemini-2.0-flash" };
     }
     return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
   }
