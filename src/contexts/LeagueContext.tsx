@@ -306,21 +306,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Realtime subscription — auto-refresh on any matches change
+  // Debounced realtime subscription — avoid excessive refetches at scale
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
     const channel = supabase
       .channel('matches-realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
         () => {
-          // Re-fetch all data when any match changes (insert/update/delete)
-          fetchData();
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => fetchData(), 2000);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [fetchData]);
