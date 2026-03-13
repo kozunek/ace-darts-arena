@@ -18,6 +18,8 @@ import AdminChannelPanel from "@/components/AdminChannelPanel";
 import DiscordWebhookPanel from "@/components/DiscordWebhookPanel";
 import RoleManagementPanel from "@/components/RoleManagementPanel";
 import SelfHostConfigPanel from "@/components/SelfHostConfigPanel";
+import LeagueStatusPanel from "@/components/LeagueStatusPanel";
+import ActivityReportPanel from "@/components/ActivityReportPanel";
 import EmailConfigPanel from "@/components/EmailConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -29,7 +31,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats" | "channels";
+type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats" | "channels" | "league-status" | "activity";
 
 const LEAGUE_TYPE_LABELS: Record<LeagueType, string> = {
   league: "Liga (Round-Robin)",
@@ -76,6 +78,8 @@ const AdminPage = () => {
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { id: "overview", label: "Podsumowanie", icon: <Settings className="h-4 w-4" /> },
     { id: "approval", label: `Zatwierdzanie (${pendingApproval.length})`, icon: <CheckCircle2 className="h-4 w-4" /> },
+    { id: "league-status", label: "Status lig", icon: <Calendar className="h-4 w-4" />, adminOnly: true },
+    { id: "activity", label: "Aktywność", icon: <Users className="h-4 w-4" />, adminOnly: true },
     { id: "leagues", label: "Ligi / Turnieje", icon: <Trophy className="h-4 w-4" />, adminOnly: true },
     { id: "players", label: "Gracze", icon: <Users className="h-4 w-4" />, adminOnly: true },
     { id: "matches", label: "Mecze", icon: <Calendar className="h-4 w-4" />, adminOnly: true },
@@ -115,6 +119,8 @@ const AdminPage = () => {
         <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
           {activeTab === "overview" && <OverviewTab leagues={leagues} players={players} completedCount={completedCount} upcomingCount={upcomingCount} pendingPlayers={pendingPlayers} pendingApproval={pendingApproval} approvePlayer={approvePlayer} toast={toast} isAdmin={isAdmin} />}
           {activeTab === "approval" && <ApprovalTab pendingApproval={pendingApproval} approveMatch={approveMatch} rejectMatch={rejectMatch} updateMatchResult={updateMatchResult} toast={toast} />}
+          {activeTab === "league-status" && isAdmin && <LeagueStatusPanel matches={matches} players={players} leagues={leagues} />}
+          {activeTab === "activity" && isAdmin && <ActivityReportPanel matches={matches} players={players} />}
           {activeTab === "leagues" && isAdmin && <LeaguesTab leagues={leagues} players={players} addLeague={addLeague} updateLeague={updateLeague} deleteLeague={deleteLeague} addMatch={addMatch} refreshData={refreshData} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} toast={toast} />}
           {activeTab === "players" && isAdmin && <PlayersTab players={players} leagues={leagues} pendingPlayers={pendingPlayers} approvePlayer={approvePlayer} updatePlayer={updatePlayer} deletePlayer={deletePlayer} assignPlayerToLeague={assignPlayerToLeague} removePlayerFromLeague={removePlayerFromLeague} addPlayer={addPlayer} toast={toast} />}
           {activeTab === "matches" && isAdmin && <MatchesTab matches={matches} players={players} leagues={leagues} addMatch={addMatch} deleteMatch={deleteMatch} toast={toast} />}
@@ -248,6 +254,35 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
   const [editStats, setEditStats] = useState<Record<string, string>>({});
   const [editScore1, setEditScore1] = useState("");
   const [editScore2, setEditScore2] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === pendingApproval.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingApproval.map((m: any) => m.id)));
+    }
+  };
+
+  const bulkApprove = () => {
+    selectedIds.forEach(id => approveMatch(id));
+    toast({ title: `✅ Zatwierdzono ${selectedIds.size} meczów!` });
+    setSelectedIds(new Set());
+  };
+
+  const bulkReject = () => {
+    selectedIds.forEach(id => rejectMatch(id));
+    toast({ title: `❌ Odrzucono ${selectedIds.size} meczów!` });
+    setSelectedIds(new Set());
+  };
 
   const startEdit = (m: any) => {
     setEditingId(m.id);
@@ -313,11 +348,34 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-display font-bold text-foreground">Mecze do zatwierdzenia ({pendingApproval.length})</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-xl font-display font-bold text-foreground">Mecze do zatwierdzenia ({pendingApproval.length})</h2>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={selectAll} className="font-display uppercase tracking-wider text-xs">
+            <Checkbox className="h-3.5 w-3.5 mr-1" checked={selectedIds.size === pendingApproval.length && pendingApproval.length > 0} />
+            {selectedIds.size === pendingApproval.length ? "Odznacz" : "Zaznacz"} wszystkie
+          </Button>
+          {selectedIds.size > 0 && (
+            <>
+              <Button variant="default" size="sm" onClick={bulkApprove} className="font-display uppercase tracking-wider text-xs">
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Zatwierdź ({selectedIds.size})
+              </Button>
+              <Button variant="destructive" size="sm" onClick={bulkReject} className="font-display uppercase tracking-wider text-xs">
+                <XCircle className="h-3.5 w-3.5 mr-1" /> Odrzuć ({selectedIds.size})
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
       <div className="space-y-4">
         {pendingApproval.map((m: any) => (
-          <div key={m.id} className="rounded-lg border border-accent/30 bg-card p-6 card-glow">
+          <div key={m.id} className={`rounded-lg border bg-card p-6 card-glow ${selectedIds.has(m.id) ? "border-primary/50 bg-primary/5" : "border-accent/30"}`}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+              <Checkbox
+                checked={selectedIds.has(m.id)}
+                onCheckedChange={() => toggleSelect(m.id)}
+                className="mr-1"
+              />
               <Clock className="h-3.5 w-3.5" />
               <span className="font-body">{new Date(m.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
               {m.round && <span className="text-[10px] font-display uppercase">Kolejka {m.round}</span>}

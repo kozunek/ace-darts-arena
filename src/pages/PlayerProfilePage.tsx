@@ -5,6 +5,7 @@ import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap } from
 import { achievements } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import PlayerProgressChart from "@/components/PlayerProgressChart";
+import FormComparisonChart from "@/components/FormComparisonChart";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import PageHeader from "@/components/PageHeader";
 
@@ -28,6 +29,7 @@ const RARITY_LABELS: Record<string, string> = {
 const PlayerProfilePage = () => {
   const { id } = useParams();
   const { players, matches, getPlayerAllLeagueStats, getPlayerAchievements } = useLeague();
+  const allMatches = matches;
   const { user } = useAuth();
   const player = players.find((p) => p.id === id);
   const isLoggedIn = !!user;
@@ -82,6 +84,14 @@ const PlayerProfilePage = () => {
 
             {/* Progress chart */}
             <PlayerProgressChart playerId={player.id} matches={matches.filter(m => m.leagueId === league.id)} />
+            
+            {/* Form comparison chart */}
+            <FormComparisonChart
+              playerId={player.id}
+              matches={matches.filter(m => m.leagueId === league.id)}
+              allMatches={allMatches}
+              leagueId={league.id}
+            />
 
             {/* Main stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

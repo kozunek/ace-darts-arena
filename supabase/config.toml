@@ -13,5 +13,7 @@ project_id = "uiolhzctnbskdjteufkj"
     verify_jwt = false
   [functions.discord-webhook]
     verify_jwt = false
+  [functions.match-reminders]
+    verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
