@@ -35,6 +35,7 @@ import DownloadsPage from "./pages/DownloadsPage";
 import HowToPlayPage from "./pages/HowToPlayPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
+import WeeklyChallengesPage from "./pages/WeeklyChallengesPage";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 import { ReactNode } from "react";
@@ -87,6 +88,7 @@ const App = () => (
                 <Route path="/report-bug" element={<P path="/report-bug"><ReportBugPage /></P>} />
                 <Route path="/downloads" element={<P path="/downloads"><DownloadsPage /></P>} />
                 <Route path="/how-to-play" element={<P path="/how-to-play"><HowToPlayPage /></P>} />
+                <Route path="/challenges" element={<P path="/challenges"><WeeklyChallengesPage /></P>} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="*" element={<NotFound />} />

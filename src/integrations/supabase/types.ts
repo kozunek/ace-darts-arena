@@ -1140,6 +1140,143 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_challenge_entries: {
+        Row: {
+          challenge_id: string
+          id: string
+          match_count: number
+          player_id: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          match_count?: number
+          player_id: string
+          score?: number
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          match_count?: number
+          player_id?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_challenge_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_challenge_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_challenge_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_challenge_rewards: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          player_id: string
+          rank: number
+          reward_type: string
+          reward_value: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          player_id: string
+          rank: number
+          reward_type?: string
+          reward_value?: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          rank?: number
+          reward_type?: string
+          reward_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_challenge_rewards_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_challenge_rewards_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_challenge_rewards_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          title: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          challenge_type: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          title: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       players_public: {
