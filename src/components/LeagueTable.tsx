@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useLeague } from "@/contexts/LeagueContext";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Trophy, Medal, Award, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import { DEFAULT_BONUS_RULES } from "@/data/mockData";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const FormBadge = ({ result }: { result: "W" | "L" }) => {
   const styles = {
