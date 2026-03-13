@@ -228,7 +228,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
   const endpoint = config["custom_ai_endpoint"] || "";
 
   const isCustomKey = !!apiKey.trim();
-  const displayModel = model || (isCustomKey ? "gemini-2.5-flash" : "Lovable AI (domyślny)");
+  const displayModel = model || (isCustomKey ? "gemini-2.5-flash-lite" : "Lovable AI (domyślny)");
 
   useEffect(() => {
     if (enabled) setStatus("ok");
