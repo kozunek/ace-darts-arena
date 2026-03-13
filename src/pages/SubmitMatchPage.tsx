@@ -176,7 +176,7 @@ const MatchSelector = ({ matches, selectedMatchId, onSelect }: MatchSelectorProp
 };
 
 const SubmitMatchPage = () => {
-
+  const { user, profile, loading, isAdmin, isModerator } = useAuth();
   const { matches, submitMatchResult } = useLeague();
   const { toast } = useToast();
 
