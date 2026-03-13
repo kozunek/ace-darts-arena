@@ -29,6 +29,7 @@ const RARITY_LABELS: Record<string, string> = {
 const PlayerProfilePage = () => {
   const { id } = useParams();
   const { players, matches, getPlayerAllLeagueStats, getPlayerAchievements } = useLeague();
+  const allMatches = matches;
   const { user } = useAuth();
   const player = players.find((p) => p.id === id);
   const isLoggedIn = !!user;
