@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateLeagueStandings } from "@/lib/leagueRanking";
 import {
   Player, Match, League, PlayerLeagueStats, Achievement,
   achievements, BonusRules, DEFAULT_BONUS_RULES, LeaguePlatform,
@@ -355,9 +356,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const leaguePlayers = playerList.filter((p) => p.approved && matchList.some(
       (m) => m.leagueId === leagueId && (m.player1Id === p.id || m.player2Id === p.id)
     ));
-    return leaguePlayers
-      .map((p) => ({ ...p, stats: calcStats(p.id, leagueId, matchList, rules) }))
-      .sort((a, b) => b.stats.points - a.stats.points || (b.stats.legsWon - b.stats.legsLost) - (a.stats.legsWon - a.stats.legsLost));
+    const entries = leaguePlayers.map((p) => ({ ...p, stats: calcStats(p.id, leagueId, matchList, rules) }));
+    return calculateLeagueStandings(entries, matchList, leagueId);
   }, [matchList, playerList, getLeagueRules]);
 
   const submitMatchResult = useCallback(async (matchId: string, data: MatchResultData) => {

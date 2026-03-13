@@ -51,6 +51,7 @@ const LeagueTable = () => {
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">W</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">L</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Pkt</th>
+                <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">R.L.</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">Śr.</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">180</th>
                 <th className="text-center px-1.5 py-2 text-[10px] font-display uppercase tracking-wider text-muted-foreground">HC</th>
@@ -63,7 +64,7 @@ const LeagueTable = () => {
                 const achiev = getPlayerAchievements(entry.id, activeLeagueId);
                 return (
                   <tr key={entry.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="px-2 py-2"><RankIcon rank={index + 1} /></td>
+                    <td className="px-2 py-2"><RankIcon rank={(entry as any).rank ?? (index + 1)} /></td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
                         <PlayerAvatar avatarUrl={entry.avatar_url} initials={entry.avatar} size="sm" className="w-7 h-7 text-[9px]" />
@@ -82,6 +83,12 @@ const LeagueTable = () => {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="text-center px-1.5 py-2 text-xs font-body">
+                      {(() => {
+                        const ld = (entry.stats as any).legDifference ?? (entry.stats.legsWon - entry.stats.legsLost);
+                        return <span className={ld > 0 ? "text-secondary font-semibold" : ld < 0 ? "text-destructive font-semibold" : "text-muted-foreground"}>{ld > 0 ? `+${ld}` : ld}</span>;
+                      })()}
                     </td>
                     <td className="text-center px-1.5 py-2 text-xs font-body text-muted-foreground">{entry.stats.avg.toFixed(1)}</td>
                     <td className="text-center px-1.5 py-2 text-xs font-body text-muted-foreground">{entry.stats.oneEighties}</td>

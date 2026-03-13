@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy, Zap, MessageCircle, Megaphone, MoreHorizontal, ClipboardEdit, Target, Bug, Download, Gamepad2, Flame } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy, Zap, MessageCircle, Megaphone, MoreHorizontal, ClipboardEdit, Target, Bug, Download, Gamepad2, Flame, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,7 @@ const moreNavItems: NavItem[] = [
   { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
   { label: "Wyzwania", href: "/challenges", icon: <Flame className="h-3.5 w-3.5" /> },
+  { label: "Regulamin", href: "/rules", icon: <BookOpen className="h-3.5 w-3.5" /> },
   { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Zgłoś błąd", href: "/report-bug", icon: <Bug className="h-3.5 w-3.5" />, authOnly: true },
 ];

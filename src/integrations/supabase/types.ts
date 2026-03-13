@@ -518,6 +518,44 @@ export type Database = {
           },
         ]
       }
+      league_rules: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_global: boolean
+          league_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_global?: boolean
+          league_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_global?: boolean
+          league_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_rules_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leagues: {
         Row: {
           bonus_rules: Json | null
