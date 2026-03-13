@@ -129,9 +129,9 @@ const AdminPage = () => {
           {activeTab === "roles" && isAdmin && <RoleManagementPanel />}
           {activeTab === "integrations" && isAdmin && (
             <div className="space-y-8">
+              <IntegrationsPanel />
               <EmailConfigPanel />
               <ExtensionConfigPanel leagues={leagues} />
-              <SelfHostConfigPanel />
             </div>
           )}
           {activeTab === "discord" && isAdmin && <DiscordWebhookPanel leagues={leagues} />}
