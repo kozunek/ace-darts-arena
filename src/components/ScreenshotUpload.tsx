@@ -12,6 +12,42 @@ interface ScreenshotUploadProps {
   matchContext?: { player1_name: string; player2_name: string };
 }
 
+/**
+ * Compress image client-side before upload to save storage.
+ * Target: max 1200px wide, JPEG quality 0.7 (~50-80KB per screenshot)
+ */
+const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let w = img.width;
+      let h = img.height;
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w);
+        w = maxWidth;
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else resolve(file);
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
+    img.src = url;
+  });
+};
+
 const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }: ScreenshotUploadProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,12 +57,13 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
   const [previews, setPreviews] = useState<string[]>([]);
 
   const uploadFile = async (file: File): Promise<string | null> => {
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${matchId || "temp"}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    // Compress before upload
+    const compressed = await compressImage(file);
+    const path = `${matchId || "temp"}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
 
     const { error } = await supabase.storage
       .from("match-screenshots")
-      .upload(path, file, { contentType: file.type });
+      .upload(path, compressed, { contentType: "image/jpeg" });
 
     if (error) {
       console.error("Upload error:", error);
@@ -54,7 +91,7 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) continue;
 
-      // Local preview
+      // Local preview (use compressed version)
       const reader = new FileReader();
       const previewPromise = new Promise<string>((resolve) => {
         reader.onload = (e) => resolve(e.target?.result as string);
@@ -94,13 +131,26 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
       });
 
       if (error) {
-        toast({ title: "Błąd analizy", description: error.message, variant: "destructive" });
+        // Handle rate limit and payment errors
+        const errorMsg = error.message || "";
+        if (errorMsg.includes("429") || errorMsg.includes("rate")) {
+          toast({ title: "⏳ Limit żądań", description: "Zbyt wiele żądań AI. Poczekaj chwilę i spróbuj ponownie.", variant: "destructive" });
+        } else if (errorMsg.includes("402") || errorMsg.includes("payment") || errorMsg.includes("kredyty")) {
+          toast({ title: "💳 Brak kredytów AI", description: "Wyczerpano limit AI. Doładuj kredyty lub ustaw własny klucz API w Ustawieniach → Integracje.", variant: "destructive" });
+        } else {
+          toast({ title: "Błąd analizy", description: error.message, variant: "destructive" });
+        }
         setAnalyzing(false);
         return;
       }
 
       if (!data?.success || !data?.data) {
-        toast({ title: "Błąd", description: data?.error || "Nie udało się przeanalizować", variant: "destructive" });
+        const errMsg = data?.error || "Nie udało się przeanalizować";
+        if (errMsg.includes("kredyty") || errMsg.includes("402")) {
+          toast({ title: "💳 Brak kredytów AI", description: errMsg, variant: "destructive" });
+        } else {
+          toast({ title: "Błąd", description: errMsg, variant: "destructive" });
+        }
         setAnalyzing(false);
         return;
       }
@@ -151,7 +201,7 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
         <div className="grid grid-cols-3 gap-2">
           {previews.map((preview, i) => (
             <div key={i} className="relative group rounded-lg overflow-hidden border border-border aspect-video">
-              <img src={preview} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" />
+              <img src={preview} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
               <button
                 type="button"
                 onClick={() => removeScreenshot(i)}
