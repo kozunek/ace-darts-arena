@@ -252,7 +252,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const { data: leaguesData } = await supabase.from("leagues").select("*").order("created_at");
+    // Parallel fetches for speed
+    const [leaguesRes, playersRes, plRes] = await Promise.all([
+      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform").order("created_at"),
+      supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id").order("name"),
+      supabase.from("player_leagues").select("player_id,league_id"),
+    ]);
+    const leaguesData = leaguesRes.data;
     const leagues: League[] = (leaguesData || []).map((l: any) => ({
       id: l.id, name: l.name, season: l.season, description: l.description,
       is_active: l.is_active, format: l.format, max_legs: l.max_legs,
@@ -268,11 +274,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       setActiveLeagueId(leagues.find(l => l.is_active)?.id || leagues[0].id);
     }
 
-    const { data: playersData } = await supabase.from("players_public" as any).select("*").order("name");
-    const { data: plData } = await supabase.from("player_leagues").select("*");
-    const playerLeagues = plData || [];
+    const playerLeagues = plRes.data || [];
 
-    const allPlayers: Player[] = (playersData || []).map((p: any) => ({
+    const allPlayers: Player[] = (playersRes.data || []).map((p: any) => ({
       id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
       phone: p.phone ?? null, discord: p.discord ?? null,
       avatar_url: p.avatar_url ?? null,
@@ -283,7 +287,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     setPlayerList(approved);
     setPendingPlayers(pending);
 
-    const { data: matchesData } = await supabase.from("matches").select("*").order("date", { ascending: false });
+    // Fetch matches - only active leagues, limit 2000 for scale
+    const activeLeagueIds = leagues.filter(l => l.is_active).map(l => l.id);
+    let matchQuery = supabase.from("matches")
+      .select("id,league_id,player1_id,player2_id,score1,score2,legs_won1,legs_won2,status,date,round,autodarts_link,avg1,avg2,one_eighties1,one_eighties2,high_checkout1,high_checkout2,ton60_1,ton60_2,ton80_1,ton80_2,ton_plus1,ton_plus2,ton40_1,ton40_2,darts_thrown1,darts_thrown2,checkout_attempts1,checkout_attempts2,checkout_hits1,checkout_hits2,bracket_round,bracket_position,group_name,first_9_avg1,first_9_avg2,confirmed_date,screenshot_urls,source_platform,is_walkover,nine_darters1,nine_darters2,avg_until_170_1,avg_until_170_2")
+      .order("date", { ascending: false })
+      .limit(2000);
+
+    if (activeLeagueIds.length > 0) {
+      matchQuery = matchQuery.in("league_id", activeLeagueIds);
+    }
+
+    const { data: matchesData } = await matchQuery;
     setMatchList((matchesData || []).map((m: any) => mapDbMatch(m, allPlayers)));
 
     setLoading(false);
@@ -291,21 +306,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Realtime subscription — auto-refresh on any matches change
+  // Debounced realtime subscription — avoid excessive refetches at scale
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
     const channel = supabase
       .channel('matches-realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches' },
         () => {
-          // Re-fetch all data when any match changes (insert/update/delete)
-          fetchData();
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => fetchData(), 2000);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [fetchData]);
