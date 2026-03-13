@@ -348,11 +348,34 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-display font-bold text-foreground">Mecze do zatwierdzenia ({pendingApproval.length})</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-xl font-display font-bold text-foreground">Mecze do zatwierdzenia ({pendingApproval.length})</h2>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={selectAll} className="font-display uppercase tracking-wider text-xs">
+            <Checkbox className="h-3.5 w-3.5 mr-1" checked={selectedIds.size === pendingApproval.length && pendingApproval.length > 0} />
+            {selectedIds.size === pendingApproval.length ? "Odznacz" : "Zaznacz"} wszystkie
+          </Button>
+          {selectedIds.size > 0 && (
+            <>
+              <Button variant="default" size="sm" onClick={bulkApprove} className="font-display uppercase tracking-wider text-xs">
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Zatwierdź ({selectedIds.size})
+              </Button>
+              <Button variant="destructive" size="sm" onClick={bulkReject} className="font-display uppercase tracking-wider text-xs">
+                <XCircle className="h-3.5 w-3.5 mr-1" /> Odrzuć ({selectedIds.size})
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
       <div className="space-y-4">
         {pendingApproval.map((m: any) => (
-          <div key={m.id} className="rounded-lg border border-accent/30 bg-card p-6 card-glow">
+          <div key={m.id} className={`rounded-lg border bg-card p-6 card-glow ${selectedIds.has(m.id) ? "border-primary/50 bg-primary/5" : "border-accent/30"}`}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+              <Checkbox
+                checked={selectedIds.has(m.id)}
+                onCheckedChange={() => toggleSelect(m.id)}
+                className="mr-1"
+              />
               <Clock className="h-3.5 w-3.5" />
               <span className="font-body">{new Date(m.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
               {m.round && <span className="text-[10px] font-display uppercase">Kolejka {m.round}</span>}
