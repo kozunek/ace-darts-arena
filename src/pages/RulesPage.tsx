@@ -39,11 +39,11 @@ const RulesPage = () => {
 
   const fetchRules = async () => {
     const { data } = await supabase
-      .from("league_rules")
+      .from("league_rules" as any)
       .select("*")
       .order("is_global", { ascending: false })
       .order("created_at", { ascending: false });
-    setRules((data as LeagueRule[]) || []);
+    setRules((data as unknown as LeagueRule[]) || []);
     setLoading(false);
   };
 
