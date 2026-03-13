@@ -843,43 +843,11 @@ const SubmitMatchPage = () => {
         </div>
       ) : (
         <>
-          <div className="space-y-2 mb-6">
-            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
-              Wybierz mecz
-            </Label>
-            <div className="space-y-2">
-              {upcomingMatches.map((match) => {
-                const isSelected = selectedMatchId === match.id;
-                return (
-                  <button
-                    key={match.id}
-                    type="button"
-                    onClick={() => setSelectedMatchId(match.id)}
-                    className={`w-full rounded-lg border p-4 text-left transition-all ${
-                      isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-body font-medium text-foreground">
-                          {match.player1Name} vs {match.player2Name}
-                        </span>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Termin:{" "}
-                          {new Date(match.date).toLocaleDateString("pl-PL", {
-                            day: "numeric",
-                            month: "long",
-                          })}
-                          {match.round && ` · Kolejka ${match.round}`}
-                        </div>
-                      </div>
-                      {isSelected && <span className="text-xs font-display text-primary uppercase">Wybrany</span>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+           <MatchSelector
+              matches={upcomingMatches}
+              selectedMatchId={selectedMatchId}
+              onSelect={setSelectedMatchId}
+            />
 
           {selectedMatch && (
             <form onSubmit={handleSubmit} className="space-y-6">
