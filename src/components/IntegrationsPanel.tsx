@@ -228,7 +228,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
   const endpoint = config["custom_ai_endpoint"] || "";
 
   const isCustomKey = !!apiKey.trim();
-  const displayModel = model || (isCustomKey ? "gemini-2.0-flash" : "Lovable AI (domyślny)");
+  const displayModel = model || (isCustomKey ? "gemini-2.5-flash" : "Lovable AI (domyślny)");
 
   useEffect(() => {
     if (enabled) setStatus("ok");
@@ -253,7 +253,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
         let testEndpoint = endpoint;
         if (!testEndpoint) {
           if (apiKey.startsWith("sk-")) testEndpoint = "https://api.openai.com/v1/chat/completions";
-          else testEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+          else testEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
         }
 
         if (testEndpoint.includes("generativelanguage.googleapis.com")) {
@@ -306,7 +306,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
         <p className="text-xs text-muted-foreground">
           <strong>Instrukcja:</strong> Domyślnie używany jest Lovable AI. Aby użyć własnego modelu,
           wpisz klucz API (OpenAI <code>sk-...</code> lub Gemini <code>AIza...</code>).
-          Model <strong>Gemini Flash 2.0 Free</strong> oferuje 15 req/min i 1500 req/dzień za darmo.
+          Model <strong>Gemini 2.5 Flash</strong> (darmowy tier: 500 req/dzień, 10 req/min) — następca wycofanego 2.0 Flash.
         </p>
       </div>
 
@@ -324,7 +324,7 @@ const AiSection = ({ config, updateField, showSecrets, toggleSecret, toast }: an
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Model</Label>
-            <Input value={model} onChange={e => updateField("custom_ai_model", e.target.value)} placeholder={isCustomKey ? "gemini-2.0-flash" : "Lovable AI (automatycznie)"} />
+            <Input value={model} onChange={e => updateField("custom_ai_model", e.target.value)} placeholder={isCustomKey ? "gemini-2.5-flash" : "Lovable AI (automatycznie)"} />
             <p className="text-xs text-muted-foreground">Aktualnie: <strong>{displayModel}</strong></p>
           </div>
           <div className="space-y-1.5 md:col-span-2">
