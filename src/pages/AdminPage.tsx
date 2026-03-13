@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BEST_OF_OPTIONS, type LeagueType, type LeaguePlatform, type BonusRules, DEFAULT_BONUS_RULES } from "@/data/mockData";
 import { generateRoundRobin, generateBracket, generateGroupStage, shuffle, getRecommendedGroups } from "@/lib/tournamentUtils";
 import MatchStatFields from "@/components/MatchStatFields";
+import { cdnUrl } from "@/lib/cdnUrl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -483,7 +484,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {m.screenshotUrls.map((url: string, i: number) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
-                          <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-auto object-cover" />
+                          <img src={cdnUrl(url) ?? url} alt={`Screenshot ${i + 1}`} className="w-full h-auto object-cover" loading="lazy" />
                         </a>
                       ))}
                     </div>

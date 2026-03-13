@@ -1,3 +1,5 @@
+import { cdnUrl } from "@/lib/cdnUrl";
+
 interface PlayerAvatarProps {
   avatarUrl?: string | null;
   initials: string;
@@ -15,7 +17,7 @@ const PlayerAvatar = ({ avatarUrl, initials, size = "md", className = "" }: Play
   return (
     <div className={`rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center font-display font-bold text-primary overflow-hidden ${sizeMap[size]} ${className}`}>
       {avatarUrl ? (
-        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+        <img src={cdnUrl(avatarUrl) ?? avatarUrl} alt="Avatar" className="w-full h-full object-cover" loading="lazy" decoding="async" />
       ) : (
         initials
       )}
