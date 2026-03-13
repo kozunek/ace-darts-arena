@@ -64,6 +64,7 @@ const App = () => (
               <Navbar />
               <FloatingChat />
               <CookieBanner />
+              <PwaInstallPrompt />
               <Routes>
                 <Route path="/" element={<P path="/"><Index /></P>} />
                 <Route path="/tables" element={<P path="/tables"><TablesPage /></P>} />
