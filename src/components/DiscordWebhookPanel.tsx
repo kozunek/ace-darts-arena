@@ -4,9 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Check, TestTube, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const EVENT_TYPES = [
+  { value: "match_result", label: "🏆 Wyniki meczów", description: "Powiadomienia o zatwierdzonych wynikach" },
+  { value: "new_player", label: "👤 Nowi gracze", description: "Gdy nowy gracz dołączy do systemu" },
+  { value: "announcement", label: "📢 Ogłoszenia", description: "Nowe ogłoszenia od adminów" },
+  { value: "league_registration", label: "📋 Zapisy do lig", description: "Gdy gracz zapisze się do ligi" },
+  { value: "walkover", label: "⚠️ Walkowery", description: "Powiadomienia o walkowerach" },
+  { value: "match_proposal", label: "📅 Propozycje terminów", description: "Nowe propozycje terminów meczów" },
+];
 
 interface Webhook {
   id?: string;
@@ -14,6 +24,7 @@ interface Webhook {
   webhook_url: string;
   enabled: boolean;
   label: string;
+  event_types: string[];
   isNew?: boolean;
 }
 
@@ -41,6 +52,7 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
         webhook_url: w.webhook_url,
         enabled: w.enabled,
         label: w.label || "",
+        event_types: w.event_types || ["match_result"],
       })));
     }
     setLoading(false);
@@ -52,12 +64,22 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
       webhook_url: "",
       enabled: true,
       label: "",
+      event_types: ["match_result"],
       isNew: true,
     }]);
   };
 
   const updateLocal = (index: number, changes: Partial<Webhook>) => {
     setWebhooks(prev => prev.map((w, i) => i === index ? { ...w, ...changes } : w));
+  };
+
+  const toggleEventType = (index: number, eventType: string) => {
+    const wh = webhooks[index];
+    const current = wh.event_types || [];
+    const updated = current.includes(eventType)
+      ? current.filter(t => t !== eventType)
+      : [...current, eventType];
+    updateLocal(index, { event_types: updated });
   };
 
   const handleSave = async (index: number) => {
@@ -73,6 +95,7 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
           webhook_url: wh.webhook_url,
           enabled: wh.enabled,
           label: wh.label,
+          event_types: wh.event_types,
         },
       });
 
@@ -137,7 +160,7 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground font-body mb-6">
-          Każda liga/turniej może mieć własny webhook Discord. Webhooki bez przypisanej ligi wysyłają wyniki wszystkich meczów.
+          Każda liga/turniej może mieć własny webhook Discord. Wybierz jakie powiadomienia mają być wysyłane na dany kanał.
         </p>
 
         {webhooks.length === 0 && (
@@ -210,12 +233,35 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
                   />
                 </div>
 
+                {/* Event types */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Typy powiadomień</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {EVENT_TYPES.map((et) => (
+                      <label
+                        key={et.value}
+                        className="flex items-start gap-2 rounded-lg border border-border bg-muted/10 p-2.5 cursor-pointer hover:bg-muted/20 transition-colors"
+                      >
+                        <Checkbox
+                          checked={wh.event_types.includes(et.value)}
+                          onCheckedChange={() => toggleEventType(index, et.value)}
+                          className="mt-0.5"
+                        />
+                        <div>
+                          <div className="text-xs font-display text-foreground">{et.label}</div>
+                          <div className="text-[10px] text-muted-foreground">{et.description}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex gap-2">
                   <Button
                     variant="hero"
                     size="sm"
                     onClick={() => handleSave(index)}
-                    disabled={savingId === key || !wh.webhook_url.trim()}
+                    disabled={savingId === key || !wh.webhook_url.trim() || wh.event_types.length === 0}
                   >
                     <Check className="h-4 w-4 mr-1" /> {savingId === key ? "Zapisywanie..." : "Zapisz"}
                   </Button>
@@ -236,18 +282,30 @@ const DiscordWebhookPanel = ({ leagues }: { leagues: any[] }) => {
 
       {/* Preview */}
       <div className="rounded-lg border border-border bg-card p-6 card-glow">
-        <h4 className="font-display font-bold text-foreground mb-3 text-sm">Przykładowa wiadomość na Discord</h4>
-        <div className="rounded-lg bg-[#36393f] p-4 text-sm space-y-1">
-          <div className="text-[#b9bbbe] text-xs mb-2">🎯 <span className="text-white font-semibold">eDART Polska</span></div>
-          <div className="border-l-4 border-[#5865F2] pl-3 space-y-1">
-            <div className="text-white font-bold">🏆 Wynik meczu — Liga Sezon 1</div>
-            <div className="text-[#dcddde]">
-              <span className="text-[#00b0f4] font-semibold">Jan Kowalski</span> <span className="text-white font-bold text-lg">3</span> : <span className="text-white font-bold text-lg">1</span> <span className="text-[#00b0f4] font-semibold">Adam Nowak</span>
+        <h4 className="font-display font-bold text-foreground mb-3 text-sm">Przykładowe wiadomości na Discord</h4>
+        <div className="space-y-3">
+          <div className="rounded-lg bg-[#36393f] p-4 text-sm space-y-1">
+            <div className="text-[#b9bbbe] text-xs mb-2">🎯 <span className="text-white font-semibold">eDART Polska</span></div>
+            <div className="border-l-4 border-[#57F287] pl-3 space-y-1">
+              <div className="text-white font-bold">🏆 Wynik meczu — Liga Sezon 1</div>
+              <div className="text-[#dcddde]">
+                <span className="text-[#00b0f4] font-semibold">Jan Kowalski</span> <span className="text-white font-bold text-lg">3</span> : <span className="text-white font-bold text-lg">1</span> <span className="text-[#00b0f4] font-semibold">Adam Nowak</span>
+              </div>
+              <div className="text-[#b9bbbe] text-xs">📊 Średnia: 65.2 / 58.1 · 🎯 180s: 2 / 0</div>
             </div>
-            <div className="text-[#b9bbbe] text-xs space-y-0.5">
-              <div>📊 Średnia: 65.2 / 58.1</div>
-              <div>🎯 180s: 2 / 0</div>
-              <div>✅ High CO: 110 / 80</div>
+          </div>
+          <div className="rounded-lg bg-[#36393f] p-4 text-sm space-y-1">
+            <div className="text-[#b9bbbe] text-xs mb-2">🎯 <span className="text-white font-semibold">eDART Polska</span></div>
+            <div className="border-l-4 border-[#5865F2] pl-3 space-y-1">
+              <div className="text-white font-bold">👤 Nowy gracz dołączył!</div>
+              <div className="text-[#dcddde]">Witamy <span className="text-[#00b0f4] font-semibold">Piotr Wiśniewski</span> w eDART Polska!</div>
+            </div>
+          </div>
+          <div className="rounded-lg bg-[#36393f] p-4 text-sm space-y-1">
+            <div className="text-[#b9bbbe] text-xs mb-2">🎯 <span className="text-white font-semibold">eDART Polska</span></div>
+            <div className="border-l-4 border-[#FEE75C] pl-3 space-y-1">
+              <div className="text-white font-bold">📢 Nowe ogłoszenie</div>
+              <div className="text-[#dcddde]">Zmiana regulaminu — nowe zasady od poniedziałku</div>
             </div>
           </div>
         </div>

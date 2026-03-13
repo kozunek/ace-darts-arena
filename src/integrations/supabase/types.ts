@@ -203,6 +203,7 @@ export type Database = {
         Row: {
           created_at: string
           enabled: boolean
+          event_types: string[]
           id: string
           label: string | null
           league_id: string | null
@@ -212,6 +213,7 @@ export type Database = {
         Insert: {
           created_at?: string
           enabled?: boolean
+          event_types?: string[]
           id?: string
           label?: string | null
           league_id?: string | null
@@ -221,6 +223,7 @@ export type Database = {
         Update: {
           created_at?: string
           enabled?: boolean
+          event_types?: string[]
           id?: string
           label?: string | null
           league_id?: string | null

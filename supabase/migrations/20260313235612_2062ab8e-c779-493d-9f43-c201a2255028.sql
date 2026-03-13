@@ -1,0 +1,1 @@
+ALTER TABLE public.discord_webhooks ADD COLUMN IF NOT EXISTS event_types text[] NOT NULL DEFAULT '{match_result}'::text[];

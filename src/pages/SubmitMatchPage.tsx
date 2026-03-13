@@ -80,7 +80,7 @@ const SubmitMatchPage = () => {
   const [autodartsLink, setAutodartsLink] = useState("");
   const [score1, setScore1] = useState("");
   const [score2, setScore2] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
   const [stats, setStats] = useState<Record<string, string>>({});
   const [fetchingAutodarts, setFetchingAutodarts] = useState(false);
   const [extensionInstalled, setExtensionInstalled] = useState(false);
@@ -1021,23 +1021,13 @@ const SubmitMatchPage = () => {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors"
-              >
-                {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                {showAdvanced ? "Ukryj szczegółowe statystyki" : "Dodaj szczegółowe statystyki"}
-              </button>
-
-              {showAdvanced && (
-                <MatchStatFields
-                  stats={stats}
-                  setStats={setStats}
-                  p1={selectedMatch.player1Name}
-                  p2={selectedMatch.player2Name}
-                />
-              )}
+              {/* Stats - always visible */}
+              <MatchStatFields
+                stats={stats}
+                setStats={setStats}
+                p1={selectedMatch.player1Name}
+                p2={selectedMatch.player2Name}
+              />
 
               <Button type="submit" variant="hero" size="lg" className="w-full">
                 <Send className="h-4 w-4 mr-2" /> Zgłoś Wynik (do zatwierdzenia)
