@@ -6,39 +6,48 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_GATEWAY = "https://api.openai.com/v1/chat/completions";
 const GEMINI_GATEWAY = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-/** Resolve which AI endpoint + key to use. Custom key from app_config takes priority. */
-async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKey: string }> {
-  // Check if custom AI API key is configured in app_config
+/**
+ * Resolve AI config from app_config table.
+ * Requires custom_ai_api_key to be set — no Lovable fallback.
+ */
+async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKey: string; model: string }> {
   const { data } = await serviceClient
     .from("app_config")
-    .select("value")
-    .eq("key", "custom_ai_api_key")
-    .maybeSingle();
+    .select("key, value")
+    .in("key", ["custom_ai_api_key", "custom_ai_model", "custom_ai_endpoint"])
 
-  const customKey = data?.value?.trim();
-
-  if (customKey) {
-    // Detect provider from key prefix
-    if (customKey.startsWith("sk-")) {
-      return { url: OPENAI_GATEWAY, apiKey: customKey };
-    }
-    if (customKey.startsWith("AIza")) {
-      return { url: GEMINI_GATEWAY, apiKey: customKey };
-    }
-    // Fallback: treat as OpenAI-compatible
-    return { url: OPENAI_GATEWAY, apiKey: customKey };
+  const configMap: Record<string, string> = {};
+  for (const row of data || []) {
+    if (row.value?.trim()) configMap[row.key] = row.value.trim();
   }
 
-  // Default: use Lovable AI gateway
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) {
-    throw new Error("AI not configured");
+  const customKey = configMap["custom_ai_api_key"];
+  if (!customKey) {
+    throw new Error("AI not configured. Set custom_ai_api_key in admin panel → Integrations.");
   }
-  return { url: LOVABLE_AI_GATEWAY, apiKey: lovableKey };
+
+  // Custom endpoint override
+  if (configMap["custom_ai_endpoint"]) {
+    return {
+      url: configMap["custom_ai_endpoint"],
+      apiKey: customKey,
+      model: configMap["custom_ai_model"] || "gpt-4o",
+    };
+  }
+
+  // Auto-detect provider from key prefix
+  if (customKey.startsWith("sk-")) {
+    return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
+  }
+  if (customKey.startsWith("AIza")) {
+    return { url: GEMINI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gemini-2.5-pro" };
+  }
+
+  // Fallback: treat as OpenAI-compatible
+  return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
 }
 
 const buildSystemPrompt = (matchContext?: { player1_name: string; player2_name: string }) => {
@@ -65,36 +74,32 @@ Rozpoznaj platformę po wyglądzie interfejsu:
 - DartCounter: zwykle ciemny motyw, zielone/niebieskie akcenty
 - DartsMind: ciemny motyw ze złotymi/beżowymi akcentami. KRYTYCZNE ZASADY DLA DARTSMIND:
   1. Duże liczby u góry (np. 141, 0) to POZOSTAŁE PUNKTY w bieżącym legu — to NIE jest wynik meczu!
-  2. WYNIK MECZU (score1/score2) = liczba kolorowych kropek na CZARNYM PASKU pomiędzy sekcją z nazwami graczy a statystykami. Ten czarny pasek zawiera małe okrągłe kropki (pomarańczowe/żółte/złote). Każda kropka = 1 wygrany leg. Policz kropki osobno dla lewej i prawej strony.
-  3. Przykład: jeśli na czarnym pasku są 2 kropki po prawej stronie i 0 po lewej → score dla prawego gracza = 2, lewego = 0.
-  4. Jeśli widzisz tekst "Player X wins this match" — ten gracz wygrał cały mecz.
-  5. Zakładka "LEG STATS" pokazuje statystyki z jednego lega. Zakładka "MATCH STATS" pokazuje statystyki z całego meczu — preferuj MATCH STATS jeśli jest widoczna.
-  6. "PPR" = Points Per Round = 3-dart average (avg). "FIRST 9 PPR" = first 9 darts average. "CHECKOUT POINTS" = highest checkout. "CHECKOUT%" z formatem "X% (Y/Z)" → hits=Y, attempts=Z.
-  7. KRYTYCZNE — MAPOWANIE STATYSTYK DO GRACZY: Statystyki w DartsMind są wyświetlane w DWÓCH KOLUMNACH — lewa kolumna należy do gracza po LEWEJ stronie ekranu, prawa kolumna do gracza po PRAWEJ stronie. MUSISZ przypisać statystyki (PPR, checkout, 180s itd.) do TEGO SAMEGO gracza co wynik (kropki). Jeśli gracz po lewej ma więcej kropek i wygrał, to statystyki z LEWEJ kolumny należą do niego. NIE odwracaj statystyk względem wyniku — wynik i statystyki muszą być spójne dla tego samego gracza.
-  8. BARDZO WAŻNE: NIE ZWRACAJ 0:0 domyślnie. Zwróć score1=0 i score2=0 TYLKO jeśli WYRAŹNIE widzisz zero kropek po obu stronach. Jeśli kropki są niewyraźne lub zasłonięte, ustaw score1/score2 na null (nie zgaduj).
+  2. WYNIK MECZU (score1/score2) = liczba kolorowych kropek na CZARNYM PASKU pomiędzy sekcją z nazwami graczy a statystykami.
+  3. Jeśli widzisz tekst "Player X wins this match" — ten gracz wygrał cały mecz.
+  4. "PPR" = Points Per Round = 3-dart average (avg). "FIRST 9 PPR" = first 9 darts average.
+  5. KRYTYCZNE — MAPOWANIE STATYSTYK DO GRACZY: Statystyki są w DWÓCH KOLUMNACH — lewa do lewego gracza, prawa do prawego.
+  6. NIE ZWRACAJ 0:0 domyślnie.
 - Autodarts: specyficzny interfejs webowy`;
 
   if (matchContext) {
     prompt += `
 
 KONTEKST MECZU LIGOWEGO:
-W systemie ligowym ten mecz jest zapisany jako:
 - Gracz 1 (player1): "${matchContext.player1_name}"
 - Gracz 2 (player2): "${matchContext.player2_name}"
 
 KRYTYCZNE ZADANIE - MAPOWANIE GRACZY:
-1. Odczytaj nicki/nazwy graczy widoczne na screenie (lewy/prawy lub góra/dół)
-2. Dopasuj je do graczy z kontekstu meczu (player1 i player2) — porównaj nicki, mogą się nieznacznie różnić (np. skróty, wielkie/małe litery, brak polskich znaków)
-3. Ustaw statystyki player1_* i player2_* TAK, aby odpowiadały graczom z kontekstu meczu, NIE pozycji na screenie
-4. Przykład: jeśli na screenie "Jan" jest po lewej a "Anna" po prawej, ale w kontekście player1="Anna" a player2="Jan", to statystyki "Anna" (prawa strona screena) powinny trafić do player1_*, a "Jan" (lewa) do player2_*
-5. Jeśli nie możesz jednoznacznie dopasować nicków, ustaw matched_to_context na false`;
+1. Odczytaj nicki/nazwy graczy widoczne na screenie
+2. Dopasuj je do graczy z kontekstu meczu
+3. Ustaw statystyki player1_* i player2_* TAK, aby odpowiadały graczom z kontekstu
+4. Jeśli nie możesz jednoznacznie dopasować nicków, ustaw matched_to_context na false`;
   }
 
   return prompt;
 };
 
 const extractDartsMindScoreFallback = async (
-  aiConfig: { url: string; apiKey: string },
+  aiConfig: { url: string; apiKey: string; model: string },
   screenshotUrls: string[],
   matchContext?: { player1_name: string; player2_name: string },
 ) => {
@@ -115,13 +120,12 @@ const extractDartsMindScoreFallback = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: aiConfig.model,
         temperature: 0,
         messages: [
           {
             role: "system",
-            content:
-              "Analizujesz WYŁĄCZNIE wynik meczu w aplikacji DartsMind. Wynik to liczba kolorowych kropek na czarnym pasku pod nazwami graczy (każda kropka = 1 leg). Duże liczby u góry to punkty pozostałe i należy je zignorować. NIE zwracaj 0:0, jeśli widzisz choć jedną kropkę. Jeśli nie da się odczytać, zwróć null.",
+            content: "Analizujesz WYŁĄCZNIE wynik meczu w aplikacji DartsMind. Wynik to liczba kolorowych kropek na czarnym pasku pod nazwami graczy.",
           },
           {
             role: "user",
@@ -140,22 +144,10 @@ const extractDartsMindScoreFallback = async (
               parameters: {
                 type: "object",
                 properties: {
-                  confidence: {
-                    type: "string",
-                    enum: ["high", "low", "none"],
-                  },
-                  matched_to_context: {
-                    type: "boolean",
-                    description: "True if score1/score2 could be mapped to match context players",
-                  },
-                  score1: {
-                    type: ["number", "null"],
-                    description: "Legs won by player1 from match context (or left side if no context)",
-                  },
-                  score2: {
-                    type: ["number", "null"],
-                    description: "Legs won by player2 from match context (or right side if no context)",
-                  },
+                  confidence: { type: "string", enum: ["high", "low", "none"] },
+                  matched_to_context: { type: "boolean" },
+                  score1: { type: ["number", "null"] },
+                  score2: { type: ["number", "null"] },
                 },
                 required: ["confidence"],
                 additionalProperties: false,
@@ -175,10 +167,7 @@ const extractDartsMindScoreFallback = async (
 
     const aiData = await response.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      return null;
-    }
-
+    if (!toolCall?.function?.arguments) return null;
     return JSON.parse(toolCall.function.arguments);
   } catch (err) {
     console.error("DartsMind score fallback error:", err);
@@ -192,16 +181,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Create service client for config lookup
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    let aiConfig: { url: string; apiKey: string };
+    let aiConfig: { url: string; apiKey: string; model: string };
     try {
       aiConfig = await resolveAiConfig(serviceClient);
     } catch (e) {
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
+      return new Response(JSON.stringify({ error: (e as Error).message }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -234,16 +222,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build image content for Gemini
     const imageContents = screenshot_urls.map((url: string) => ({
       type: "image_url" as const,
       image_url: { url },
     }));
 
     const systemPrompt = buildSystemPrompt(match_context);
-
     const userText = match_context
-      ? `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta. Mecz ligowy: "${match_context.player1_name}" vs "${match_context.player2_name}". Dopasuj graczy ze screena do tych z kontekstu i zwróć statystyki w odpowiedniej kolejności (player1_* = ${match_context.player1_name}, player2_* = ${match_context.player2_name}).`
+      ? `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta. Mecz ligowy: "${match_context.player1_name}" vs "${match_context.player2_name}".`
       : `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta i wyodrębnij statystyki.`;
 
     const response = await fetch(aiConfig.url, {
@@ -253,7 +239,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: aiConfig.model,
         temperature: 0,
         messages: [
           { role: "system", content: systemPrompt },
@@ -274,46 +260,35 @@ Deno.serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
-                  confidence: {
-                    type: "string",
-                    enum: ["high", "low", "none"],
-                    description: "How confident you are in the extracted data. 'none' if this is not a darts match screenshot.",
-                  },
-                  platform: {
-                    type: "string",
-                    enum: ["dartcounter", "dartsmind", "autodarts", "unknown"],
-                    description: "Detected platform/app",
-                  },
-                  matched_to_context: {
-                    type: "boolean",
-                    description: "True if player names from screenshot were successfully matched to the match context players. False if names couldn't be matched.",
-                  },
-                  screenshot_player1_name: { type: "string", description: "Raw name of player shown on left/top of screenshot (before mapping)" },
-                  screenshot_player2_name: { type: "string", description: "Raw name of player shown on right/bottom of screenshot (before mapping)" },
-                  player1_name: { type: "string", description: "Name mapped to match context player1 (or left/top if no context)" },
-                  player2_name: { type: "string", description: "Name mapped to match context player2 (or right/bottom if no context)" },
-                  score1: { type: ["number", "null"], description: "Legs won by player 1 (mapped to context). Use null if dots/score are unreadable." },
-                  score2: { type: ["number", "null"], description: "Legs won by player 2 (mapped to context). Use null if dots/score are unreadable." },
-                  avg1: { type: "number", description: "3-dart average player 1" },
-                  avg2: { type: "number", description: "3-dart average player 2" },
-                  first_9_avg1: { type: "number", description: "First 9 darts average player 1" },
-                  first_9_avg2: { type: "number", description: "First 9 darts average player 2" },
-                  one_eighties1: { type: "number", description: "180s count player 1" },
-                  one_eighties2: { type: "number", description: "180s count player 2" },
-                  high_checkout1: { type: "number", description: "Highest checkout player 1" },
-                  high_checkout2: { type: "number", description: "Highest checkout player 2" },
-                  checkout_attempts1: { type: "number", description: "Checkout attempts player 1" },
-                  checkout_attempts2: { type: "number", description: "Checkout attempts player 2" },
-                  checkout_hits1: { type: "number", description: "Checkout hits player 1" },
-                  checkout_hits2: { type: "number", description: "Checkout hits player 2" },
-                  darts_thrown1: { type: "number", description: "Total darts thrown player 1" },
-                  darts_thrown2: { type: "number", description: "Total darts thrown player 2" },
-                  ton60_1: { type: "number", description: "60+ scores (60-99) player 1" },
-                  ton60_2: { type: "number", description: "60+ scores (60-99) player 2" },
-                  ton80_1: { type: "number", description: "100+ scores (100-139) player 1" },
-                  ton80_2: { type: "number", description: "100+ scores (100-139) player 2" },
-                  ton_plus1: { type: "number", description: "140+ scores (140-179) player 1" },
-                  ton_plus2: { type: "number", description: "140+ scores (140-179) player 2" },
+                  confidence: { type: "string", enum: ["high", "low", "none"] },
+                  platform: { type: "string", enum: ["dartcounter", "dartsmind", "autodarts", "unknown"] },
+                  matched_to_context: { type: "boolean" },
+                  screenshot_player1_name: { type: "string" },
+                  screenshot_player2_name: { type: "string" },
+                  player1_name: { type: "string" },
+                  player2_name: { type: "string" },
+                  score1: { type: ["number", "null"] },
+                  score2: { type: ["number", "null"] },
+                  avg1: { type: "number" },
+                  avg2: { type: "number" },
+                  first_9_avg1: { type: "number" },
+                  first_9_avg2: { type: "number" },
+                  one_eighties1: { type: "number" },
+                  one_eighties2: { type: "number" },
+                  high_checkout1: { type: "number" },
+                  high_checkout2: { type: "number" },
+                  checkout_attempts1: { type: "number" },
+                  checkout_attempts2: { type: "number" },
+                  checkout_hits1: { type: "number" },
+                  checkout_hits2: { type: "number" },
+                  darts_thrown1: { type: "number" },
+                  darts_thrown2: { type: "number" },
+                  ton60_1: { type: "number" },
+                  ton60_2: { type: "number" },
+                  ton80_1: { type: "number" },
+                  ton80_2: { type: "number" },
+                  ton_plus1: { type: "number" },
+                  ton_plus2: { type: "number" },
                 },
                 required: ["confidence", "platform"],
                 additionalProperties: false,
@@ -331,11 +306,6 @@ Deno.serve(async (req) => {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Brak kredytów AI" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "Błąd analizy AI" }), {
@@ -345,7 +315,7 @@ Deno.serve(async (req) => {
 
     const aiData = await response.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (!toolCall?.function?.arguments) {
       console.error("No tool call in response:", JSON.stringify(aiData));
       return new Response(JSON.stringify({ error: "AI nie zwróciło danych" }), {
@@ -355,75 +325,54 @@ Deno.serve(async (req) => {
 
     const stats = JSON.parse(toolCall.function.arguments);
 
+    // DartsMind score fallback
     const needsDartsMindScoreFallback =
       stats?.platform === "dartsmind" &&
-      (
-        stats?.score1 == null ||
-        stats?.score2 == null ||
-        (Number(stats?.score1) === 0 && Number(stats?.score2) === 0)
-      );
+      (stats?.score1 == null || stats?.score2 == null || (Number(stats?.score1) === 0 && Number(stats?.score2) === 0));
 
     if (needsDartsMindScoreFallback) {
       const fallbackScore = await extractDartsMindScoreFallback(aiConfig, screenshot_urls, match_context);
-      if (
-        fallbackScore &&
-        fallbackScore.confidence !== "none" &&
-        fallbackScore.score1 != null &&
-        fallbackScore.score2 != null &&
-        !(Number(fallbackScore.score1) === 0 && Number(fallbackScore.score2) === 0)
-      ) {
-        stats.score1 = fallbackScore.score1;
-        stats.score2 = fallbackScore.score2;
-        if (typeof fallbackScore.matched_to_context === "boolean") {
-          stats.matched_to_context = fallbackScore.matched_to_context;
+      if (fallbackScore && fallbackScore.confidence !== "none" && fallbackScore.score1 != null && fallbackScore.score2 != null) {
+        if (!(Number(fallbackScore.score1) === 0 && Number(fallbackScore.score2) === 0)) {
+          stats.score1 = fallbackScore.score1;
+          stats.score2 = fallbackScore.score2;
+          if (fallbackScore.matched_to_context !== undefined) {
+            stats.matched_to_context = fallbackScore.matched_to_context;
+          }
         }
-        console.log("Applied DartsMind score fallback:", JSON.stringify({ score1: stats.score1, score2: stats.score2 }));
       }
     }
 
-    const isReversedAgainstContext = !!(
-      match_context &&
-      typeof stats?.player1_name === "string" &&
-      typeof stats?.player2_name === "string" &&
-      stats.player1_name.toLowerCase() === match_context.player2_name.toLowerCase() &&
-      stats.player2_name.toLowerCase() === match_context.player1_name.toLowerCase()
-    );
+    // Swap check for context mapping
+    if (match_context && stats.matched_to_context === false && stats.screenshot_player1_name && stats.screenshot_player2_name) {
+      const sp1 = (stats.screenshot_player1_name || "").toLowerCase();
+      const sp2 = (stats.screenshot_player2_name || "").toLowerCase();
+      const cp1 = match_context.player1_name.toLowerCase();
+      const cp2 = match_context.player2_name.toLowerCase();
 
-    if (isReversedAgainstContext) {
-      const swapPairs: Array<[string, string]> = [
-        ["score1", "score2"],
-        ["avg1", "avg2"],
-        ["first_9_avg1", "first_9_avg2"],
-        ["one_eighties1", "one_eighties2"],
-        ["high_checkout1", "high_checkout2"],
-        ["checkout_attempts1", "checkout_attempts2"],
-        ["checkout_hits1", "checkout_hits2"],
-        ["darts_thrown1", "darts_thrown2"],
-        ["ton60_1", "ton60_2"],
-        ["ton80_1", "ton80_2"],
-        ["ton_plus1", "ton_plus2"],
-      ];
+      const needsSwap = (sp1.includes(cp2) || cp2.includes(sp1)) && (sp2.includes(cp1) || cp1.includes(sp2));
 
-      for (const [leftKey, rightKey] of swapPairs) {
-        const tmp = stats[leftKey];
-        stats[leftKey] = stats[rightKey];
-        stats[rightKey] = tmp;
+      if (needsSwap) {
+        const swapKeys = [
+          "score", "avg", "first_9_avg", "one_eighties", "high_checkout",
+          "checkout_attempts", "checkout_hits", "darts_thrown", "ton60", "ton80", "ton_plus"
+        ];
+        for (const key of swapKeys) {
+          const k1 = `${key}1`, k2 = `${key}2`;
+          [stats[k1], stats[k2]] = [stats[k2], stats[k1]];
+        }
+        [stats.player1_name, stats.player2_name] = [stats.player2_name, stats.player1_name];
+        stats.matched_to_context = true;
+        stats.was_swapped = true;
       }
-
-      stats.player1_name = match_context.player1_name;
-      stats.player2_name = match_context.player2_name;
-      stats.matched_to_context = true;
-      console.log("Reversed stats detected and swapped to match context order");
     }
-
-    console.log("Extracted stats:", JSON.stringify(stats));
 
     return new Response(JSON.stringify({ success: true, data: stats }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Error:", err);
-    return new Response(JSON.stringify({ error: "Błąd analizy zrzutu ekranu" }), {
+    console.error("Analysis error:", err);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
