@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Potwierdź swój e-mail – eDART Polska',
+  invite: 'Zaproszenie do eDART Polska',
+  magiclink: 'Link do logowania – eDART Polska',
+  recovery: 'Resetowanie hasła – eDART Polska',
+  email_change: 'Potwierdź zmianę e-maila – eDART Polska',
+  reauthentication: 'Twój kod weryfikacyjny – eDART Polska',
 }
 
 // Template mapping
