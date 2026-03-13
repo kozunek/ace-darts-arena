@@ -483,7 +483,8 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {m.screenshotUrls.map((url: string, i: number) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
-                          <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-auto object-cover" />
+                          <img src={cdnUrl(url) ?? url} alt={`Screenshot ${i + 1}`} className="w-full h-auto object-cover" loading="lazy" />
+                        </a>
                         </a>
                       ))}
                     </div>
