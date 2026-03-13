@@ -8,16 +8,18 @@ const corsHeaders = {
 
 const OPENAI_GATEWAY = "https://api.openai.com/v1/chat/completions";
 const GEMINI_GATEWAY = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 /**
- * Resolve AI config from app_config table.
- * Requires custom_ai_api_key to be set — no Lovable fallback.
+ * Resolve AI config — priority:
+ * 1. Custom key from app_config (user's own OpenAI/Gemini key)
+ * 2. Lovable AI Gateway (free tier, uses LOVABLE_API_KEY secret)
  */
 async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKey: string; model: string }> {
   const { data } = await serviceClient
     .from("app_config")
     .select("key, value")
-    .in("key", ["custom_ai_api_key", "custom_ai_model", "custom_ai_endpoint"])
+    .in("key", ["custom_ai_api_key", "custom_ai_model", "custom_ai_endpoint"]);
 
   const configMap: Record<string, string> = {};
   for (const row of data || []) {
@@ -25,29 +27,37 @@ async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKe
   }
 
   const customKey = configMap["custom_ai_api_key"];
-  if (!customKey) {
-    throw new Error("AI not configured. Set custom_ai_api_key in admin panel → Integrations.");
+
+  // If custom key is set, use it (priority)
+  if (customKey) {
+    if (configMap["custom_ai_endpoint"]) {
+      return {
+        url: configMap["custom_ai_endpoint"],
+        apiKey: customKey,
+        model: configMap["custom_ai_model"] || "gpt-4o",
+      };
+    }
+    if (customKey.startsWith("sk-")) {
+      return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
+    }
+    if (customKey.startsWith("AIza")) {
+      return { url: GEMINI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gemini-2.5-pro" };
+    }
+    return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
   }
 
-  // Custom endpoint override
-  if (configMap["custom_ai_endpoint"]) {
+  // Fallback: Lovable AI Gateway (free tier)
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
     return {
-      url: configMap["custom_ai_endpoint"],
-      apiKey: customKey,
-      model: configMap["custom_ai_model"] || "gpt-4o",
+      url: LOVABLE_AI_GATEWAY,
+      apiKey: lovableKey,
+      // Use flash for cost efficiency on free tier
+      model: configMap["custom_ai_model"] || "google/gemini-2.5-flash",
     };
   }
 
-  // Auto-detect provider from key prefix
-  if (customKey.startsWith("sk-")) {
-    return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
-  }
-  if (customKey.startsWith("AIza")) {
-    return { url: GEMINI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gemini-2.5-pro" };
-  }
-
-  // Fallback: treat as OpenAI-compatible
-  return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
+  throw new Error("AI not configured. Set custom_ai_api_key in admin panel → Integrations, or enable Lovable AI.");
 }
 
 const buildSystemPrompt = (matchContext?: { player1_name: string; player2_name: string }) => {
@@ -302,8 +312,13 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Zbyt wiele żądań, spróbuj za chwilę" }), {
+        return new Response(JSON.stringify({ error: "Zbyt wiele żądań AI — spróbuj za chwilę" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Wyczerpano limit AI — doładuj kredyty lub ustaw własny klucz API w panelu Integracje" }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
