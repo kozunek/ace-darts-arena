@@ -35,17 +35,33 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   reauthentication: ReauthenticationEmail,
 }
 
-// Configuration
-const SITE_NAME = "eDART Polska"
-const SENDER_DOMAIN = "notify.edartpolska.pl"
-const ROOT_DOMAIN = "edartpolska.pl"
-const FROM_DOMAIN = "edartpolska.pl"
+// Default configuration (overridden by app_config table values)
+let SITE_NAME = "eDART Polska"
+let SENDER_DOMAIN = "notify.edartpolska.pl"
+let ROOT_DOMAIN = "edartpolska.pl"
+let FROM_DOMAIN = "edartpolska.pl"
 
-// Sample data for preview mode ONLY (not used in actual email sending).
-// URLs are baked in at scaffold time from the project's real data.
-// The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
-// can always find-and-replace it with the actual recipient when sending test emails,
-// even if the project's domain has changed since the template was scaffolded.
+async function loadEmailConfig() {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
+  const { data } = await supabase
+    .from('app_config')
+    .select('key, value')
+    .in('key', ['email_site_name', 'email_sender_domain', 'email_from_domain', 'email_root_domain'])
+
+  if (data) {
+    for (const row of data) {
+      if (row.key === 'email_site_name' && row.value) SITE_NAME = row.value
+      if (row.key === 'email_sender_domain' && row.value) SENDER_DOMAIN = row.value
+      if (row.key === 'email_from_domain' && row.value) FROM_DOMAIN = row.value
+      if (row.key === 'email_root_domain' && row.value) ROOT_DOMAIN = row.value
+    }
+  }
+}
+
+// Sample data for preview mode ONLY
 const SAMPLE_PROJECT_URL = "https://edartpolska.pl"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
@@ -131,8 +147,10 @@ async function handlePreview(req: Request): Promise<Response> {
 
 // Webhook handler - verifies signature and sends email
 async function handleWebhook(req: Request): Promise<Response> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  // Load config from DB on each webhook call
+  await loadEmailConfig()
 
+  const apiKey = Deno.env.get('LOVABLE_API_KEY')
   if (!apiKey) {
     console.error('LOVABLE_API_KEY not configured')
     return new Response(
