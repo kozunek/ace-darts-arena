@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { pl } from "@/lib/pluralize";
 
 const PlayersPage = () => {
   const { players, leagues, activeLeagueId, getPlayerLeagueStats, getPlayerAchievements, matches } = useLeague();
@@ -33,7 +34,7 @@ const PlayersPage = () => {
 
   return (
     <div>
-      <PageHeader title="Gracze" subtitle={`${approved.length} uczestników ligi`} />
+      <PageHeader title="Gracze" subtitle={`${pl.participant(approved.length)} ligi`} />
       <div className="container mx-auto px-4 py-8">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -42,7 +43,7 @@ const PlayersPage = () => {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Szukaj gracza..."
+            placeholder="Szukaj po nicku lub nazwie..."
             className="pl-9 bg-muted/30 border-border"
           />
         </div>

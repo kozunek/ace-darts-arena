@@ -91,11 +91,11 @@ const MyNextMatchWidget = () => {
           ) : daysLeft <= 3 ? (
             <span className="text-xs font-display uppercase text-destructive border border-destructive/30 rounded-full px-2 py-0.5 flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {daysLeft <= 0 ? "Dziś!" : `Za ${daysLeft} dni`}
+              {daysLeft <= 0 ? "Dziś!" : daysLeft === 1 ? "Za 1 dzień" : `Za ${daysLeft} dni`}
             </span>
           ) : (
             <span className="text-xs font-display uppercase text-accent border border-accent/30 rounded-full px-2 py-0.5">
-              Za {daysLeft} dni
+              {daysLeft === 1 ? "Za 1 dzień" : `Za ${daysLeft} dni`}
             </span>
           )}
           {next.round && (

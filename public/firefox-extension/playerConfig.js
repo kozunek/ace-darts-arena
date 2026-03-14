@@ -7,6 +7,7 @@ const DEFAULT_PLAYER_CONFIG = {
   autodartsTokenCapture: true,
   leagueNotificationsOnly: true,
   language: "pl",
+  theme: "dark",
 };
 
 const PlayerConfig = {

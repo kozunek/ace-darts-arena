@@ -19,8 +19,8 @@ const STAT_GROUPS: StatGroup[] = [
     title: "Średnie",
     icon: "📊",
     rows: [
-      { label: "Średnia (3 darts)", k1: "avg1", k2: "avg2", step: "0.01" },
-      { label: "Średnia z pierwszych 9 rzutów", k1: "first9Avg1", k2: "first9Avg2", step: "0.01" },
+      { label: "Średnia (3 lotki)", k1: "avg1", k2: "avg2", step: "0.01" },
+      { label: "Średnia z pierwszych 9 lotek", k1: "first9Avg1", k2: "first9Avg2", step: "0.01" },
     ],
   },
   {
@@ -28,27 +28,27 @@ const STAT_GROUPS: StatGroup[] = [
     icon: "🏆",
     rows: [
       { label: "180-tki", k1: "oneEighties1", k2: "oneEighties2" },
-      { label: "9-darters", k1: "nineDarters1", k2: "nineDarters2" },
+      { label: "9-dartery", k1: "nineDarters1", k2: "nineDarters2" },
       { label: "Najwyższy checkout", k1: "hc1", k2: "hc2" },
     ],
   },
   {
-    title: "Zakresy tonów",
+    title: "Zakresy punktowe",
     icon: "🎯",
     rows: [
-      { label: "60+ (60-99)", k1: "ton60_1", k2: "ton60_2" },
-      { label: "100+ (100-139)", k1: "ton80_1", k2: "ton80_2" },
-      { label: "140+ (140-169)", k1: "tonPlus1", k2: "tonPlus2" },
-      { label: "170+ (170-179)", k1: "ton40_1", k2: "ton40_2" },
+      { label: "60+ (60–99 pkt)", k1: "ton60_1", k2: "ton60_2" },
+      { label: "100+ (100–139 pkt)", k1: "ton80_1", k2: "ton80_2" },
+      { label: "140+ (140–169 pkt)", k1: "tonPlus1", k2: "tonPlus2" },
+      { label: "170+ (170–179 pkt)", k1: "ton40_1", k2: "ton40_2" },
     ],
   },
   {
     title: "Rzuty i checkouty",
     icon: "✅",
     rows: [
-      { label: "Rzuty (darts)", k1: "darts1", k2: "darts2" },
-      { label: "Checkout próby", k1: "checkoutAttempts1", k2: "checkoutAttempts2" },
-      { label: "Checkout trafione", k1: "checkoutHits1", k2: "checkoutHits2" },
+      { label: "Rzucone lotki", k1: "darts1", k2: "darts2" },
+      { label: "Próby checkoutu", k1: "checkoutAttempts1", k2: "checkoutAttempts2" },
+      { label: "Trafione checkouty", k1: "checkoutHits1", k2: "checkoutHits2" },
     ],
   },
 ];

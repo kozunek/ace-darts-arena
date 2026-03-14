@@ -1,6 +1,7 @@
 import { achievements } from "@/data/mockData";
 import { Trophy, Zap } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { pl } from "@/lib/pluralize";
 
 const RARITY_ORDER: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
@@ -32,14 +33,13 @@ const CATEGORIES: { prefix: string; label: string; icon: string }[] = [
   { prefix: "e", label: "180-tki", icon: "💯" },
   { prefix: "c", label: "Checkouty", icon: "🎯" },
   { prefix: "a", label: "Średnie", icon: "📊" },
-  { prefix: "f", label: "Średnia z pierwszych 9 rzutów", icon: "⚡" },
+  { prefix: "f", label: "Średnia z pierwszych 9 lotek", icon: "⚡" },
   { prefix: "u", label: "Średnia do 170", icon: "📊" },
-  { prefix: "t", label: "Tony (Scoring)", icon: "🎪" },
+  { prefix: "t", label: "Zakresy punktowe", icon: "🎪" },
   { prefix: "r", label: "Procent wygranych", icon: "📈" },
   { prefix: "l", label: "Legi", icon: "🦵" },
-  { prefix: "d", label: "Rzuty (Darty)", icon: "🤖" },
+  { prefix: "d", label: "Rzuty (lotki)", icon: "🤖" },
   { prefix: "x", label: "Specjalne", icon: "💫" },
-  
 ];
 
 const AchievementsPage = () => {

@@ -8,21 +8,21 @@ import LeagueSelector from "@/components/LeagueSelector";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import PageHeader from "@/components/PageHeader";
 
-type StatsTab = "tons" | "averages" | "checkouts" | "winrate";
+type StatsTab = "scoring" | "averages" | "checkouts" | "winrate";
 
 const StatsPage = () => {
   const { getGlobalTonStats, getLeagueTonStats, activeLeagueId, leagues } = useLeague();
   const [viewMode, setViewMode] = useState<"global" | "league">("global");
-  const [activeTab, setActiveTab] = useState<StatsTab>("tons");
+  const [activeTab, setActiveTab] = useState<StatsTab>("scoring");
 
   const stats = viewMode === "global" ? getGlobalTonStats() : getLeagueTonStats(activeLeagueId);
   const activeLg = leagues.find((l) => l.id === activeLeagueId);
 
   const tabs: { id: StatsTab; label: string; icon: React.ReactNode }[] = [
-    { id: "tons", label: "Ton Scores", icon: <Target className="h-3.5 w-3.5" /> },
+    { id: "scoring", label: "Punktacja", icon: <Target className="h-3.5 w-3.5" /> },
     { id: "averages", label: "Średnie", icon: <TrendingUp className="h-3.5 w-3.5" /> },
     { id: "checkouts", label: "Checkout %", icon: <Crosshair className="h-3.5 w-3.5" /> },
-    { id: "winrate", label: "Win Rate", icon: <Percent className="h-3.5 w-3.5" /> },
+    { id: "winrate", label: "Wygrane %", icon: <Percent className="h-3.5 w-3.5" /> },
   ];
 
   const sortedStats = [...stats].sort((a, b) => {
@@ -36,7 +36,7 @@ const StatsPage = () => {
     if (activeTab === "averages") return entry.bestAvg > 0 ? entry.bestAvg.toFixed(1) : "—";
     if (activeTab === "checkouts") return `${entry.checkoutRate}%`;
     if (activeTab === "winrate") return `${entry.winRate}%`;
-    return `${entry.totalTons} tonów`;
+    return `${entry.totalTons} pkt`;
   };
 
   return (
@@ -100,7 +100,7 @@ const StatsPage = () => {
                 <tr className="bg-muted/50 border-b border-border">
                   <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground w-12">#</th>
                   <th className="text-left px-4 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Gracz</th>
-                  {activeTab === "tons" && (
+                  {activeTab === "scoring" && (
                     <>
                        <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">60+</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-primary">100+</th>
@@ -112,24 +112,24 @@ const StatsPage = () => {
                   )}
                   {activeTab === "averages" && (
                     <>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Najl. Śr.</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Najl. śr.</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Mecze</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Tony</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Punkty</th>
                     </>
                   )}
                   {activeTab === "checkouts" && (
                     <>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Checkout %</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">Trafione</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Rzucone</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Najw. HC</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Próby</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Najw. CO</th>
                     </>
                   )}
                   {activeTab === "winrate" && (
                     <>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Win Rate</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-foreground">Wygrane %</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-secondary">W</th>
-                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-destructive">L</th>
+                      <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-destructive">P</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Mecze</th>
                       <th className="text-center px-3 py-3 text-xs font-display uppercase tracking-wider text-muted-foreground">Śr.</th>
                     </>
@@ -152,7 +152,7 @@ const StatsPage = () => {
                         <span className="font-body font-medium text-foreground text-sm group-hover:text-primary transition-colors">{entry.playerName}</span>
                       </Link>
                     </td>
-                    {activeTab === "tons" && (
+                    {activeTab === "scoring" && (
                       <>
                          <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-secondary/10 text-secondary text-sm font-display font-bold border border-secondary/20">{entry.ton60}</span></td>
                         <td className="text-center px-3 py-3"><span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-display font-bold border border-primary/20">{entry.ton80}</span></td>
@@ -207,12 +207,12 @@ const StatsPage = () => {
           </div>
         )}
 
-        {activeTab === "tons" && (
+        {activeTab === "scoring" && (
           <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-3">
-            <LegendItem label="60+" desc="Rzuty 60-99 pkt" color="bg-secondary/10 border-secondary/20 text-secondary" />
-            <LegendItem label="100+" desc="Rzuty 100-139 pkt" color="bg-primary/10 border-primary/20 text-primary" />
-            <LegendItem label="140+" desc="Rzuty 140-169 pkt" color="bg-muted border-border text-foreground" />
-            <LegendItem label="170+" desc="Rzuty 170-179 pkt" color="bg-accent/10 border-accent/20 text-accent" />
+            <LegendItem label="60+" desc="Rzuty 60–99 pkt" color="bg-secondary/10 border-secondary/20 text-secondary" />
+            <LegendItem label="100+" desc="Rzuty 100–139 pkt" color="bg-primary/10 border-primary/20 text-primary" />
+            <LegendItem label="140+" desc="Rzuty 140–169 pkt" color="bg-muted border-border text-foreground" />
+            <LegendItem label="170+" desc="Rzuty 170–179 pkt" color="bg-accent/10 border-accent/20 text-accent" />
             <LegendItem label="180" desc="Maksymalny wynik" color="bg-destructive/10 border-destructive/20 text-destructive" />
           </div>
         )}
