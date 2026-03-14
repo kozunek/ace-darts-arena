@@ -592,8 +592,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>    </div>  );
 };
 
 export default GroupChat;
