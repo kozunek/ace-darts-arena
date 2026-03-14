@@ -1,25 +1,32 @@
-// ─── Central Supabase API wrapper ───
-// All server communication goes through edge functions only (no direct REST)
+// ─── Central backend API wrapper ───
+// All server communication goes through backend functions only (no direct REST)
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 async function getStoredTokens() {
   return new Promise((resolve) => {
     browserAPI.storage.local.get(
-      ["edart_session_token", "autodarts_token"],
+      ["edart_session_token", "autodarts_token", "token_timestamp"],
       (result) => resolve(result || {})
     );
   });
 }
 
+async function clearStaleSessionToken() {
+  return new Promise((resolve) => {
+    browserAPI.storage.local.remove(["edart_session_token", "edart_session_timestamp", "edart_session_source"], resolve);
+  });
+}
+
 /**
- * Call a Supabase edge function.
+ * Call a backend function.
  * @param {string} functionName - e.g. "check-league-match"
  * @param {object} payload - JSON body
  * @param {string|null} authToken - JWT token (falls back to anon key)
+ * @param {boolean} canRetryWithAnon - retry once with anon key when user token is stale
  * @returns {Promise<object>} parsed JSON response
  */
-async function callSupabase(functionName, payload, authToken) {
+async function callSupabase(functionName, payload, authToken, canRetryWithAnon = true) {
   await RateLimiter.waitIfNeeded();
 
   const token = authToken || CONFIG.SUPABASE_ANON_KEY;
@@ -39,6 +46,19 @@ async function callSupabase(functionName, payload, authToken) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
+
+    const shouldRetryWithAnon =
+      canRetryWithAnon &&
+      authToken &&
+      authToken !== CONFIG.SUPABASE_ANON_KEY &&
+      (res.status === 401 || res.status === 403);
+
+    if (shouldRetryWithAnon) {
+      logError(`API ${functionName} returned ${res.status}, retrying with anon token`);
+      await clearStaleSessionToken();
+      return callSupabase(functionName, payload, CONFIG.SUPABASE_ANON_KEY, false);
+    }
+
     logError(`API error ${functionName}: HTTP ${res.status}`, errText);
     throw new Error(`HTTP ${res.status}: ${errText}`);
   }
@@ -112,7 +132,7 @@ async function autoSubmitMatch(matchPayload) {
 }
 
 /**
- * Save Autodarts User ID to player profile via edge function.
+ * Save Autodarts User ID to player profile via backend function.
  */
 async function saveAutodartsUserId(autodartsUserId) {
   const stored = await new Promise(r =>
