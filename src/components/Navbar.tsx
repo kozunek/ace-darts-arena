@@ -116,8 +116,13 @@ const Navbar = () => {
           <div className="flex items-center gap-1">
             {user && (
               <Link to="/my-matches">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hidden lg:flex">
-                  <Handshake className="h-4 w-4" />
+                <Button 
+                  variant={location.pathname === "/my-matches" ? "default" : "outline"} 
+                  size="sm" 
+                  className="hidden lg:flex items-center gap-1.5 h-8 px-3 font-display uppercase tracking-wider text-[10px]"
+                >
+                  <Handshake className="h-3.5 w-3.5" />
+                  Moje Mecze
                 </Button>
               </Link>
             )}

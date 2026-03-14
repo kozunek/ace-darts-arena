@@ -100,7 +100,7 @@ const BracketView = () => {
 /** Bracket with SVG connector lines between rounds */
 const BracketWithLines = ({ rounds }: { rounds: [string, Match[]][] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; midX: number }[]>([]);
+  const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; midX: number; completed: boolean }[]>([]);
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const registerRef = (matchId: string, el: HTMLDivElement | null) => {
@@ -124,7 +124,6 @@ const BracketWithLines = ({ rounds }: { rounds: [string, Match[]][] }) => {
         const sortedCurrent = [...currentMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
         const sortedNext = [...nextMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
 
-        // Each pair of current matches feeds into one next match
         for (let i = 0; i < sortedCurrent.length; i++) {
           const currentMatch = sortedCurrent[i];
           const nextMatchIdx = Math.floor(i / 2);
@@ -144,14 +143,16 @@ const BracketWithLines = ({ rounds }: { rounds: [string, Match[]][] }) => {
           const y2 = nextRect.top + nextRect.height / 2 - containerRect.top;
           const midX = (x1 + x2) / 2;
 
-          newLines.push({ x1, y1, x2, y2, midX });
+          // Line is "completed" (green) when the source match is completed
+          const isCompleted = currentMatch.status === "completed";
+
+          newLines.push({ x1, y1, x2, y2, midX, completed: isCompleted });
         }
       }
 
       setLines(newLines);
     };
 
-    // Calculate after layout
     const timer = setTimeout(calculateLines, 100);
     window.addEventListener("resize", calculateLines);
     return () => {
@@ -169,34 +170,68 @@ const BracketWithLines = ({ rounds }: { rounds: [string, Match[]][] }) => {
             className="absolute inset-0 pointer-events-none"
             style={{ width: "100%", height: "100%", overflow: "visible" }}
           >
-            {lines.map((line, idx) => (
-              <g key={idx}>
-                {/* Horizontal from current match to midpoint */}
-                <line
-                  x1={line.x1} y1={line.y1}
-                  x2={line.midX} y2={line.y1}
-                  stroke="hsl(var(--border))"
-                  strokeWidth={2}
-                  strokeOpacity={0.6}
-                />
-                {/* Vertical from y1 to y2 at midpoint */}
-                <line
-                  x1={line.midX} y1={line.y1}
-                  x2={line.midX} y2={line.y2}
-                  stroke="hsl(var(--border))"
-                  strokeWidth={2}
-                  strokeOpacity={0.6}
-                />
-                {/* Horizontal from midpoint to next match */}
-                <line
-                  x1={line.midX} y1={line.y2}
-                  x2={line.x2} y2={line.y2}
-                  stroke="hsl(var(--border))"
-                  strokeWidth={2}
-                  strokeOpacity={0.6}
-                />
-              </g>
-            ))}
+            <defs>
+              <linearGradient id="line-gradient-green" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0.5" />
+              </linearGradient>
+            </defs>
+            {lines.map((line, idx) => {
+              const strokeColor = line.completed ? "url(#line-gradient-green)" : "hsl(var(--border))";
+              const strokeW = line.completed ? 2.5 : 1.5;
+              const opacity = line.completed ? 1 : 0.4;
+              return (
+                <g key={idx} className={line.completed ? "animate-fade-in" : ""}>
+                  <line
+                    x1={line.x1} y1={line.y1}
+                    x2={line.midX} y2={line.y1}
+                    stroke={strokeColor}
+                    strokeWidth={strokeW}
+                    strokeOpacity={opacity}
+                  />
+                  <line
+                    x1={line.midX} y1={line.y1}
+                    x2={line.midX} y2={line.y2}
+                    stroke={strokeColor}
+                    strokeWidth={strokeW}
+                    strokeOpacity={opacity}
+                  />
+                  <line
+                    x1={line.midX} y1={line.y2}
+                    x2={line.x2} y2={line.y2}
+                    stroke={strokeColor}
+                    strokeWidth={strokeW}
+                    strokeOpacity={opacity}
+                  />
+                  {/* Glow effect for completed lines */}
+                  {line.completed && (
+                    <>
+                      <line
+                        x1={line.x1} y1={line.y1}
+                        x2={line.midX} y2={line.y1}
+                        stroke="hsl(var(--secondary))"
+                        strokeWidth={6}
+                        strokeOpacity={0.15}
+                      />
+                      <line
+                        x1={line.midX} y1={line.y1}
+                        x2={line.midX} y2={line.y2}
+                        stroke="hsl(var(--secondary))"
+                        strokeWidth={6}
+                        strokeOpacity={0.15}
+                      />
+                      <line
+                        x1={line.midX} y1={line.y2}
+                        x2={line.x2} y2={line.y2}
+                        stroke="hsl(var(--secondary))"
+                        strokeWidth={6}
+                        strokeOpacity={0.15}
+                      />
+                    </>
+                  )}
+                </g>
+              );
+            })}
           </svg>
         )}
 
