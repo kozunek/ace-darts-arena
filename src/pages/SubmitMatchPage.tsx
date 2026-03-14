@@ -753,7 +753,8 @@ const SubmitMatchPage = () => {
     // Require ALL stats filled
     const requiredStatKeys = [
       "avg1", "avg2", "first9Avg1", "first9Avg2",
-      "oneEighties1", "oneEighties2", "hc1", "hc2",
+      "oneEighties1", "oneEighties2", "nineDarters1", "nineDarters2",
+      "hc1", "hc2",
       "ton60_1", "ton60_2", "ton80_1", "ton80_2",
       "tonPlus1", "tonPlus2", "ton40_1", "ton40_2",
       "darts1", "darts2",
