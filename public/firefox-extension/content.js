@@ -473,17 +473,40 @@
     if (msg?.type !== "EDART_REFRESH_TOKEN") return false;
     console.log("[eDART] Token refresh requested by background:", msg.reason);
 
-    // Try storage scan
-    const result = scanStorageForToken();
-    if (result?.token) {
-      saveToken(result.token, "refresh-request:" + (msg.reason || "manual"));
+    let responded = false;
+    const finish = (payload) => {
+      if (responded) return;
+      responded = true;
+      sendResponse(payload);
+    };
+
+    const attempt = (label) => {
+      const result = scanStorageForToken();
+      if (!result?.token) return false;
+
+      saveToken(result.token, `${label}:${msg.reason || "manual"}`);
       if (result.userId) {
         storageSet({ autodarts_user_id: result.userId });
         sendMsg({ type: "AUTODARTS_USER_ID_DETECTED", userId: result.userId });
       }
-    }
 
-    sendResponse({ ok: true, hasToken: !!result?.token });
+      finish({ ok: true, hasToken: true, sourceKey: result.sourceKey || null });
+      return true;
+    };
+
+    if (attempt("refresh-immediate")) return true;
+
+    const retryDelays = [350, 1200, 2800];
+    retryDelays.forEach((delay, index) => {
+      safeTimeout(() => {
+        if (responded) return;
+        const ok = attempt(`refresh-retry-${index + 1}`);
+        if (!ok && index === retryDelays.length - 1) {
+          finish({ ok: true, hasToken: false });
+        }
+      }, delay);
+    });
+
     return true;
   });
 
