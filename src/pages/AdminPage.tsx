@@ -653,7 +653,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
             status: "upcoming",
           });
         }
-        toast({ title: "🎯 Harmonogram wygenerowany!", description: `${matchesToInsert.length} meczów w ${roundsToGenerate.length} kolejkach.` });
+        toast({ title: "🎯 Harmonogram wygenerowany!", description: `${pl.match(matchesToInsert.length)} w ${roundsToGenerate.length} kolejkach.` });
 
       } else if (lt === "bracket") {
         // Single elimination bracket
