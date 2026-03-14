@@ -3,51 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <title>eDART Polska — Ustawienia</title>
+  <link rel="stylesheet" href="styles/design-system.css">
+  <link rel="stylesheet" href="styles/themes.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 420px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0a0a;
-      color: #e0e0e0;
-      padding: 24px;
+    body { width: 480px; padding: var(--sp-xl); }
+
+    .page-title {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--sp-xl);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
     }
-    h1 { font-size: 18px; margin-bottom: 20px; color: #fff; }
-    .setting {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 0; border-bottom: 1px solid #1a1a1a;
+
+    .settings-group {
+      margin-bottom: var(--sp-xl);
     }
-    .setting-label { font-size: 13px; max-width: 280px; }
-    .setting-label small { display: block; color: #666; margin-top: 2px; font-size: 11px; }
+    .settings-group-title {
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      margin-bottom: var(--sp-sm);
+      font-weight: 600;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-md) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-info { max-width: 320px; }
+    .setting-label { font-size: var(--font-size-sm); color: var(--color-text); font-weight: 500; }
+    .setting-desc { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
+
+    /* Theme selector */
+    .theme-options {
+      display: flex;
+      gap: var(--sp-sm);
+    }
+    .theme-option {
+      flex: 1;
+      padding: var(--sp-md);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      background: var(--color-card);
+    }
+    .theme-option:hover {
+      border-color: var(--color-text-muted);
+    }
+    .theme-option.active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 1px var(--color-primary);
+    }
+    .theme-option .theme-preview {
+      width: 100%;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--sp-xs);
+    }
+    .theme-option .theme-name {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .preview-dark { background: linear-gradient(135deg, #0a0a0a, #27272a, #dc2626); }
+    .preview-darts { background: linear-gradient(135deg, #0c0c0c, #065f46, #dc2626); }
+    .preview-league { background: linear-gradient(135deg, #0b1120, #1e293b, #c9a227); }
+
+    /* Toggle */
     .toggle {
-      position: relative; width: 40px; height: 22px;
-      background: #333; border-radius: 11px; cursor: pointer;
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: #3f3f46;
+      border-radius: 11px;
+      cursor: pointer;
       transition: background 0.2s;
+      flex-shrink: 0;
     }
-    .toggle.active { background: #dc2626; }
+    .toggle.active { background: var(--color-primary); }
     .toggle::after {
-      content: ''; position: absolute; top: 2px; left: 2px;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: #fff; transition: transform 0.2s;
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
     }
     .toggle.active::after { transform: translateX(18px); }
-    .saved {
-      text-align: center; color: #4ade80; font-size: 12px;
-      margin-top: 16px; opacity: 0; transition: opacity 0.3s;
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: var(--sp-lg);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--color-success);
+      color: #052e16;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      padding: var(--sp-sm) var(--sp-lg);
+      border-radius: var(--radius-md);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
     }
-    .saved.show { opacity: 1; }
-    .footer { margin-top: 20px; text-align: center; }
-    .footer a { color: #60a5fa; text-decoration: none; font-size: 12px; }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .footer {
+      margin-top: var(--sp-xl);
+      text-align: center;
+      padding-top: var(--sp-md);
+      border-top: 1px solid var(--color-border);
+    }
+    .footer a {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: var(--font-size-xs);
+      transition: color 0.15s;
+    }
+    .footer a:hover { color: var(--color-primary); }
+
+    /* Debug section */
+    .debug-section {
+      margin-top: var(--sp-lg);
+      padding: var(--sp-md);
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+    .debug-btn {
+      padding: var(--sp-sm) var(--sp-md);
+      background: var(--color-error);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      font-family: var(--font-family);
+    }
+    .debug-btn:hover { opacity: 0.85; }
   </style>
 </head>
-<body>
-  <h1>⚙️ Ustawienia eDART Polska</h1>
+<body class="theme-dark">
+  <div class="page-title">⚙️ Ustawienia eDART Polska</div>
 
-  <div id="settings"></div>
-  <div class="saved" id="savedMsg">✅ Zapisano</div>
+  <!-- Theme selection -->
+  <div class="settings-group">
+    <div class="settings-group-title">Motyw</div>
+    <div class="theme-options" id="themeOptions">
+      <div class="theme-option" data-theme="dark">
+        <div class="theme-preview preview-dark"></div>
+        <div class="theme-name">Ciemny</div>
+      </div>
+      <div class="theme-option" data-theme="darts">
+        <div class="theme-preview preview-darts"></div>
+        <div class="theme-name">Darts</div>
+      </div>
+      <div class="theme-option" data-theme="league">
+        <div class="theme-preview preview-league"></div>
+        <div class="theme-name">Liga</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle settings -->
+  <div class="settings-group">
+    <div class="settings-group-title">Automatyczne zgłaszanie</div>
+    <div id="autoSubmitSettings"></div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Powiadomienia</div>
+    <div id="notificationSettings"></div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Inne</div>
+    <div id="otherSettings"></div>
+  </div>
+
+  <!-- Debug -->
+  <div class="debug-section">
+    <div class="settings-group-title">Zaawansowane</div>
+    <div style="display:flex; gap:var(--sp-sm); flex-wrap:wrap; margin-top:var(--sp-sm);">
+      <button class="debug-btn" id="clearCache">🗑️ Wyczyść cache</button>
+      <button class="debug-btn" id="clearHistory">📜 Wyczyść historię</button>
+      <button class="debug-btn" id="clearToken">🔑 Wyczyść token</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">✅ Zapisano</div>
 
   <div class="footer">
-    <a href="https://edartpolska.pl" target="_blank">edartpolska.pl</a>
+    <a href="https://edartpolska.pl" target="_blank">edartpolska.pl</a> · v2.1
   </div>
 
   <script src="config.js"></script>
