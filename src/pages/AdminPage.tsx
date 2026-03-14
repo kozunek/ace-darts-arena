@@ -530,6 +530,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [leaguePlatform, setLeaguePlatform] = useState<LeaguePlatform>("autodarts");
   const [bonusRules, setBonusRules] = useState<BonusRules>({ ...DEFAULT_BONUS_RULES });
   const [meetingsPerPair, setMeetingsPerPair] = useState(1);
+  const [thirdPlaceEnabled, setThirdPlaceEnabled] = useState(false);
+  const [luckyLoserEnabled, setLuckyLoserEnabled] = useState(false);
   
   // Tournament generation state
   const [showGenerate, setShowGenerate] = useState<string | null>(null);
