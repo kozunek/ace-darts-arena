@@ -12,34 +12,58 @@ import CookieBanner from "@/components/CookieBanner";
 
 import { useExtensionNotifications } from "@/hooks/useExtensionNotifications";
 import { PagePermissionsProvider, ProtectedRoute } from "@/components/ProtectedRoute";
-import { lazy, Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import Index from "./pages/Index";
+import TablesPage from "./pages/TablesPage";
+import MatchesPage from "./pages/MatchesPage";
+import PlayersPage from "./pages/PlayersPage";
+import PlayerProfilePage from "./pages/PlayerProfilePage";
 import SubmitMatchPage from "./pages/SubmitMatchPage";
-const Index = lazy(() => import("./pages/Index"));
-const TablesPage = lazy(() => import("./pages/TablesPage"));
-const MatchesPage = lazy(() => import("./pages/MatchesPage"));
-const PlayersPage = lazy(() => import("./pages/PlayersPage"));
-const PlayerProfilePage = lazy(() => import("./pages/PlayerProfilePage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const AdminPage = lazy(() => import("./pages/AdminPage"));
-const StatsPage = lazy(() => import("./pages/StatsPage"));
-const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const MyMatchesPage = lazy(() => import("./pages/MyMatchesPage"));
-const HeadToHeadPage = lazy(() => import("./pages/HeadToHeadPage"));
-const CalendarPage = lazy(() => import("./pages/CalendarPage"));
-const HallOfFamePage = lazy(() => import("./pages/HallOfFamePage"));
-const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
-const ChatPage = lazy(() => import("./pages/ChatPage"));
-const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
-const ReportBugPage = lazy(() => import("./pages/ReportBugPage"));
-const DownloadsPage = lazy(() => import("./pages/DownloadsPage"));
-const HowToPlayPage = lazy(() => import("./pages/HowToPlayPage"));
-const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
-const TermsPage = lazy(() => import("./pages/TermsPage"));
-const WeeklyChallengesPage = lazy(() => import("./pages/WeeklyChallengesPage"));
-const RulesPage = lazy(() => import("./pages/RulesPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import LoginPage from "./pages/LoginPage";
+import AdminPage from "./pages/AdminPage";
+import StatsPage from "./pages/StatsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage";
+import MyMatchesPage from "./pages/MyMatchesPage";
+import HeadToHeadPage from "./pages/HeadToHeadPage";
+import CalendarPage from "./pages/CalendarPage";
+import HallOfFamePage from "./pages/HallOfFamePage";
+import AchievementsPage from "./pages/AchievementsPage";
+import ChatPage from "./pages/ChatPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import ReportBugPage from "./pages/ReportBugPage";
+import DownloadsPage from "./pages/DownloadsPage";
+import HowToPlayPage from "./pages/HowToPlayPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import WeeklyChallengesPage from "./pages/WeeklyChallengesPage";
+import RulesPage from "./pages/RulesPage";
+import NotFound from "./pages/NotFound";
+import Footer from "./components/Footer";
+import { ReactNode } from "react";
+import Index from "./pages/Index";
+import TablesPage from "./pages/TablesPage";
+import MatchesPage from "./pages/MatchesPage";
+import PlayersPage from "./pages/PlayersPage";
+import PlayerProfilePage from "./pages/PlayerProfilePage";
+import LoginPage from "./pages/LoginPage";
+import AdminPage from "./pages/AdminPage";
+import StatsPage from "./pages/StatsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage";
+import MyMatchesPage from "./pages/MyMatchesPage";
+import HeadToHeadPage from "./pages/HeadToHeadPage";
+import CalendarPage from "./pages/CalendarPage";
+import HallOfFamePage from "./pages/HallOfFamePage";
+import AchievementsPage from "./pages/AchievementsPage";
+import ChatPage from "./pages/ChatPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import ReportBugPage from "./pages/ReportBugPage";
+import DownloadsPage from "./pages/DownloadsPage";
+import HowToPlayPage from "./pages/HowToPlayPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import WeeklyChallengesPage from "./pages/WeeklyChallengesPage";
+import RulesPage from "./pages/RulesPage";
 import Footer from "./components/Footer";
 import { ReactNode } from "react";
 
@@ -79,7 +103,7 @@ const App = () => (
               <Navbar />
               <FloatingChat />
               <CookieBanner />
-              <Suspense fallback={<Skeleton className="h-screen w-full" />}>
+              
               <Routes>
                 <Route path="/" element={<P path="/"><Index /></P>} />
                 <Route path="/tables" element={<P path="/tables"><TablesPage /></P>} />
@@ -108,7 +132,6 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              </Suspense>
               <Footer />
             </BrowserRouter>
             </PagePermissionsProvider>
