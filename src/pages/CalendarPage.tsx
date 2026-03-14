@@ -135,7 +135,7 @@ const CalendarPage = () => {
       {selectedDay && (
         <div>
           <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3">
-            {selectedDay} {MONTHS_PL[month]} {year} — {selectedMatches.length} {selectedMatches.length === 1 ? "mecz" : "meczów"}
+            {selectedDay} {MONTHS_PL[month]} {year} — {pl.match(selectedMatches.length)}
           </h3>
           {selectedMatches.length === 0 ? (
             <p className="text-muted-foreground font-body text-sm">Brak meczów w tym dniu.</p>
