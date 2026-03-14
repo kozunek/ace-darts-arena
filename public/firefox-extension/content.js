@@ -598,23 +598,41 @@
     return originalSetRequestHeader.apply(this, arguments);
   };
 
-  // ─── Initial capture ───
-  const token = getAutodartsToken();
-  if (token) storageSet({ autodarts_token: token, token_timestamp: Date.now() });
+  // ─── Initial capture (with retry for late-loading SPAs) ───
+  function initialCapture() {
+    const token = getAutodartsToken();
+    if (token) {
+      storageSet({ autodarts_token: token, token_timestamp: Date.now() });
+      console.log("[eDART] Token captured from storage on init");
+    }
 
-  const userId = detectAutodartsUserId();
-  if (userId) {
-    storageSet({ autodarts_user_id: userId });
-    sendMsg({ type: "AUTODARTS_USER_ID_DETECTED", userId });
-    console.log("[eDART] Detected Autodarts User ID:", userId);
+    const userId = detectAutodartsUserId();
+    if (userId) {
+      storageSet({ autodarts_user_id: userId });
+      sendMsg({ type: "AUTODARTS_USER_ID_DETECTED", userId });
+      console.log("[eDART] Detected Autodarts User ID:", userId);
+    }
   }
+
+  initialCapture();
+  safeTimeout(initialCapture, 2000);
+  safeTimeout(initialCapture, 5000);
 
   safeInterval(() => {
     const t = getAutodartsToken();
     if (t) storageSet({ autodarts_token: t, token_timestamp: Date.now() });
     const uid = detectAutodartsUserId();
     if (uid) storageSet({ autodarts_user_id: uid });
-  }, 10000);
+  }, 5000);
+
+  window.addEventListener("storage", (event) => {
+    if (!isAlive()) return;
+    const parsed = safeJsonParse(event.newValue);
+    if (parsed?.access_token) {
+      storageSet({ autodarts_token: parsed.access_token, token_timestamp: Date.now() });
+      console.log("[eDART] Token captured from storage event");
+    }
+  });
 
   checkForHistoryPage();
   console.log("[eDART] Content script loaded (v2.0.0)");
