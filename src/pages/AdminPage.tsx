@@ -566,6 +566,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setLeaguePlatform(l.platform || "autodarts");
     setBonusRules({ ...DEFAULT_BONUS_RULES, ...(l.bonus_rules || {}) });
     setMeetingsPerPair(l.meetings_per_pair ?? 1);
+    setThirdPlaceEnabled(l.third_place_match ?? false);
+    setLuckyLoserEnabled(l.lucky_loser ?? false);
     setShowForm(true);
   };
 
