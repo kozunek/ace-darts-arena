@@ -762,7 +762,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setRoundDeadlines({});
   };
 
-  const approvedPlayers = players.filter((p: any) => p.approved);
+  const approvedPlayers = players.filter((p: any) => p.approved && p.id !== "00000000-0000-0000-0000-000000000000" && p.name !== "TBD");
 
   return (
     <>
@@ -1796,7 +1796,7 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
     toast({ title: "✅ Wynik zapisany i mecz zatwierdzony!", description: `${m.player1Name} ${s1}:${s2} ${m.player2Name}` });
   };
 
-  const approvedPlayers = players.filter((p: any) => p.approved);
+  const approvedPlayers = players.filter((p: any) => p.approved && p.id !== "00000000-0000-0000-0000-000000000000" && p.name !== "TBD");
   const leagueMatches = selectedLeague ? matches.filter((m: any) => m.leagueId === selectedLeague) : matches;
 
   const groupedByBracket = leagueMatches.reduce((acc: any, m: any) => {
