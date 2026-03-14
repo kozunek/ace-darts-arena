@@ -984,10 +984,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                         <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground font-body space-y-1">
                           <div>👥 <strong className="text-foreground">{selectedPlayers.length}</strong> graczy w <strong className="text-foreground">{numGroups}</strong> grupach</div>
                           <div>📊 ~<strong className="text-foreground">{Math.ceil(selectedPlayers.length / numGroups)}</strong> graczy na grupę</div>
-                          <div>⚽ ~<strong className="text-foreground">{(() => {
+                          <div>⚽ ~{(() => {
                             const perGroup = Math.ceil(selectedPlayers.length / numGroups);
-                            return perGroup * (perGroup - 1) / 2;
-                          })()}</strong> {(() => { const c = Math.ceil(selectedPlayers.length / numGroups); return pl.match(c * (c - 1) / 2).split(' ').slice(1).join(' '); })()} w grupie (każdy z każdym)</div>
+                            return pl.match(perGroup * (perGroup - 1) / 2);
+                          })()} w grupie (każdy z każdym)</div>
                           <div>🏆 Po fazie grupowej — drabinka z najlepszymi z każdej grupy</div>
                         </div>
                       )}
