@@ -909,7 +909,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       players: playerList, matches: matchList, leagues: leagueList,
       activeLeagueId, setActiveLeagueId,
       getLeagueMatches, getPlayerLeagueStats, getPlayerAllLeagueStats,
-      getPlayerAchievements, getLeagueStandings,
+      getPlayerAchievements, getPlayerGlobalAchievements, getLeagueStandings,
       submitMatchResult, updateMatchResult, approveMatch, rejectMatch,
       addMatch, approvePlayer, pendingPlayers, addPendingPlayer, addPlayer,
       addLeague, updateLeague, deleteLeague,
