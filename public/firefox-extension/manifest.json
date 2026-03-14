@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "eDART Polska - Autodarts Stats",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "Automatycznie wysyła wyniki meczów ligowych z Autodarts do eDART Polska",
   "browser_specific_settings": {
     "gecko": {
@@ -13,6 +13,7 @@
     "storage",
     "notifications",
     "webRequest",
+    "alarms",
     "https://api.autodarts.io/*",
     "https://play.autodarts.io/*",
     "https://edartpolska.pl/*",

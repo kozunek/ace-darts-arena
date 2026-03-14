@@ -5,8 +5,62 @@
   <link rel="stylesheet" href="styles/design-system.css">
   <link rel="stylesheet" href="styles/themes.css">
   <style>
-    body { padding: var(--sp-lg); }
+    body { padding: var(--sp-lg); min-height: 400px; }
     .actions { display: flex; flex-direction: column; gap: var(--sp-xs); margin-top: var(--sp-md); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 2px; margin-bottom: var(--sp-md); background: var(--color-bg-soft); border-radius: var(--radius-md); padding: 2px; }
+    .tab-btn {
+      flex: 1; padding: 8px 4px; border: none; background: transparent; color: var(--color-text-muted);
+      font-size: var(--font-size-xs); font-weight: 600; cursor: pointer; border-radius: var(--radius-sm);
+      transition: all 0.15s; font-family: var(--font-family); text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .tab-btn.active { background: var(--color-primary); color: white; }
+    .tab-btn:hover:not(.active) { color: var(--color-text); background: var(--color-card); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* League list */
+    .league-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--sp-sm) var(--sp-md); background: var(--color-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); margin-bottom: var(--sp-xs); cursor: pointer; transition: all 0.15s;
+    }
+    .league-item:hover { border-color: var(--color-primary); background: var(--color-bg-soft); }
+    .league-item .league-name { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text); }
+    .league-item .league-meta { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+    /* Add match form */
+    .form-group { margin-bottom: var(--sp-sm); }
+    .form-group label { display: block; font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .form-input {
+      width: 100%; padding: 8px var(--sp-sm); background: var(--color-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm); color: var(--color-text); font-size: var(--font-size-sm); font-family: var(--font-family);
+    }
+    .form-input:focus { outline: none; border-color: var(--color-primary); }
+    .form-input::placeholder { color: var(--color-text-muted); }
+
+    /* Log entries */
+    .log-entry { font-size: var(--font-size-xs); color: var(--color-text-muted); padding: 4px 0; border-bottom: 1px solid var(--color-border); }
+    .log-entry.success { color: var(--color-success); }
+    .log-entry.error { color: var(--color-error); }
+    .log-entry.info { color: #60a5fa; }
+
+    /* Token debug */
+    .token-debug { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--sp-xs); word-break: break-all; }
+
+    /* Refresh button */
+    .btn-icon { 
+      background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); 
+      padding: 4px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-size-sm);
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { border-color: var(--color-primary); color: var(--color-text); }
+    .btn-sm { padding: 6px 12px; font-size: var(--font-size-xs); }
+
+    .flex-row { display: flex; align-items: center; gap: var(--sp-sm); }
+    .ml-auto { margin-left: auto; }
+    .loading { text-align: center; padding: var(--sp-lg); color: var(--color-text-muted); font-size: var(--font-size-sm); }
   </style>
 </head>
 <body class="theme-dark">
@@ -15,7 +69,7 @@
   <div class="header">
     <div class="header-left">
       <h1>🎯 eDART Polska</h1>
-      <span class="version">v2.1</span>
+      <span class="version">v2.2</span>
     </div>
     <a class="gear" id="openSettings" title="Ustawienia">⚙️</a>
   </div>
@@ -24,58 +78,108 @@
   <div id="status" class="status disconnected">
     <span>⏳</span> Sprawdzanie...
   </div>
+  <div id="tokenDebug" class="token-debug" style="display:none"></div>
 
-  <!-- Last match -->
-  <div id="lastMatchSection" class="section" style="display:none">
-    <div class="section-title">Ostatni mecz</div>
-    <div id="lastMatch" class="card"></div>
+  <!-- Tabs -->
+  <div class="tabs" style="margin-top: var(--sp-md);">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="leagues">Ligi</button>
+    <button class="tab-btn" data-tab="addmatch">+ Mecz</button>
+    <button class="tab-btn" data-tab="logs">Logi</button>
   </div>
 
-  <!-- Match timeline -->
-  <div id="timelineSection" class="section" style="display:none">
-    <div class="section-title">Status zgłoszenia</div>
-    <div id="matchTimeline" class="card">
-      <div class="timeline">
-        <div class="timeline-step" id="tl-finished">
-          <span class="timeline-dot pending">●</span>
-          <span class="timeline-label muted">Mecz zakończony</span>
+  <!-- TAB: Dashboard -->
+  <div id="tab-dashboard" class="tab-content active">
+    <!-- Last match -->
+    <div id="lastMatchSection" class="section" style="display:none">
+      <div class="section-title">Ostatni mecz</div>
+      <div id="lastMatch" class="card"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timelineSection" class="section" style="display:none">
+      <div class="section-title">Status zgłoszenia</div>
+      <div class="card">
+        <div class="timeline">
+          <div class="timeline-step" id="tl-finished"><span class="timeline-dot pending">●</span><span class="timeline-label muted">Mecz zakończony</span></div>
+          <div class="timeline-step" id="tl-submitted"><span class="timeline-dot pending">●</span><span class="timeline-label muted">Wynik zgłoszony</span></div>
+          <div class="timeline-step" id="tl-approved"><span class="timeline-dot pending">●</span><span class="timeline-label muted">Zatwierdzony</span></div>
         </div>
-        <div class="timeline-step" id="tl-submitted">
-          <span class="timeline-dot pending">●</span>
-          <span class="timeline-label muted">Wynik zgłoszony</span>
-        </div>
-        <div class="timeline-step" id="tl-approved">
-          <span class="timeline-dot pending">●</span>
-          <span class="timeline-label muted">Zatwierdzony przez admina</span>
-        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div id="statsSection" class="section" style="display:none">
+      <div class="section-title">Twoje statystyki</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="value" id="totalMatches">0</div><div class="label">Mecze</div></div>
+        <div class="stat-box"><div class="value" id="winRate">-</div><div class="label">Wygrane</div></div>
+        <div class="stat-box"><div class="value" id="avgScore">-</div><div class="label">Śr. avg</div></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="section">
+      <div class="flex-row">
+        <div class="section-title" style="margin-bottom:0">Ostatnie mecze</div>
+        <button class="btn-icon ml-auto" id="refreshHistory" title="Odśwież">🔄</button>
+      </div>
+      <div id="matchHistory" style="margin-top: var(--sp-sm);"></div>
+    </div>
+
+    <!-- Autodarts ID -->
+    <div id="autodartsId" class="info" style="display:none"></div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="copyBtn" style="display:none">📋 Kopiuj token</button>
+      <button class="btn btn-primary" id="refreshTokenBtn">🔄 Odśwież token</button>
+      <a class="btn btn-secondary" href="https://edartpolska.pl/matches" target="_blank">📊 eDART — Mecze</a>
+      <button class="btn btn-secondary" id="openAutodarts">🔗 Otwórz Autodarts</button>
+    </div>
+  </div>
+
+  <!-- TAB: Leagues -->
+  <div id="tab-leagues" class="tab-content">
+    <div class="flex-row" style="margin-bottom: var(--sp-sm);">
+      <div class="section-title" style="margin-bottom:0">Aktywne ligi</div>
+      <button class="btn-icon ml-auto" id="refreshLeagues" title="Odśwież ligi">🔄</button>
+    </div>
+    <div id="leaguesList"><div class="loading">Ładowanie lig...</div></div>
+    
+    <div id="leagueMatchesSection" style="display:none; margin-top: var(--sp-md);">
+      <div class="flex-row" style="margin-bottom: var(--sp-sm);">
+        <div class="section-title" style="margin-bottom:0" id="leagueMatchesTitle">Mecze</div>
+        <button class="btn-icon ml-auto" id="backToLeagues">← Wróć</button>
+      </div>
+      <div id="leagueMatches"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Add Match -->
+  <div id="tab-addmatch" class="tab-content">
+    <div class="section-title">Dodaj mecz przez link</div>
+    <div class="card">
+      <div class="form-group">
+        <label>Link do meczu Autodarts</label>
+        <input type="text" class="form-input" id="matchLinkInput" placeholder="https://play.autodarts.io/history/matches/...">
+      </div>
+      <div id="matchLinkError" style="display:none; color: var(--color-error); font-size: var(--font-size-xs); margin-bottom: var(--sp-sm);"></div>
+      <div id="matchLinkSuccess" style="display:none; color: var(--color-success); font-size: var(--font-size-xs); margin-bottom: var(--sp-sm);"></div>
+      <button class="btn btn-primary btn-sm" id="submitMatchLink">📤 Pobierz i wyślij mecz</button>
+      <div class="info" style="margin-top: var(--sp-sm);">
+        Wklej link do meczu z Autodarts. Wtyczka pobierze dane i sprawdzi, czy to mecz ligowy.
       </div>
     </div>
   </div>
 
-  <!-- Stats summary -->
-  <div id="statsSection" class="section" style="display:none">
-    <div class="section-title">Twoje statystyki</div>
-    <div class="stats-row">
-      <div class="stat-box"><div class="value" id="totalMatches">0</div><div class="label">Mecze</div></div>
-      <div class="stat-box"><div class="value" id="winRate">-</div><div class="label">Wygrane</div></div>
-      <div class="stat-box"><div class="value" id="avgScore">-</div><div class="label">Śr. avg</div></div>
+  <!-- TAB: Logs -->
+  <div id="tab-logs" class="tab-content">
+    <div class="flex-row" style="margin-bottom: var(--sp-sm);">
+      <div class="section-title" style="margin-bottom:0">Log aktywności</div>
+      <button class="btn-icon ml-auto" id="clearLogs">🗑️ Wyczyść</button>
     </div>
-  </div>
-
-  <!-- Match history -->
-  <div id="historySection" class="section">
-    <div class="section-title">Ostatnie mecze ligowe</div>
-    <div id="matchHistory"></div>
-  </div>
-
-  <!-- Autodarts ID -->
-  <div id="autodartsId" class="info" style="display:none"></div>
-
-  <!-- Actions -->
-  <div class="actions">
-    <button class="btn btn-primary" id="copyBtn" style="display:none">📋 Kopiuj token</button>
-    <a class="btn btn-secondary" href="https://edartpolska.pl/matches" target="_blank">📊 Otwórz eDART — Mecze</a>
-    <button class="btn btn-secondary" id="openAutodarts">🔗 Otwórz Autodarts</button>
+    <div id="logsContainer"><div class="empty">Brak logów</div></div>
   </div>
 
   <script src="config.js"></script>

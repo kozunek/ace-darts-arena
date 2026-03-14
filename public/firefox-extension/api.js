@@ -1,5 +1,5 @@
 // ─── Central backend API wrapper ───
-// All server communication goes through backend functions only (no direct REST)
+// All server communication goes through backend functions
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -19,12 +19,7 @@ async function clearStaleSessionToken() {
 }
 
 /**
- * Call a backend function.
- * @param {string} functionName - e.g. "check-league-match"
- * @param {object} payload - JSON body
- * @param {string|null} authToken - JWT token (falls back to anon key)
- * @param {boolean} canRetryWithAnon - retry once with anon key when user token is stale
- * @returns {Promise<object>} parsed JSON response
+ * Call a backend function with automatic retry and token fallback.
  */
 async function callSupabase(functionName, payload, authToken, canRetryWithAnon = true) {
   await RateLimiter.waitIfNeeded();
@@ -47,14 +42,9 @@ async function callSupabase(functionName, payload, authToken, canRetryWithAnon =
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
 
-    const shouldRetryWithAnon =
-      canRetryWithAnon &&
-      authToken &&
-      authToken !== CONFIG.SUPABASE_ANON_KEY &&
-      (res.status === 401 || res.status === 403);
-
-    if (shouldRetryWithAnon) {
-      logError(`API ${functionName} returned ${res.status}, retrying with anon token`);
+    // Retry with anon key if user token is stale
+    if (canRetryWithAnon && authToken && authToken !== CONFIG.SUPABASE_ANON_KEY && (res.status === 401 || res.status === 403)) {
+      logError(`API ${functionName} ${res.status}, retrying with anon key`);
       await clearStaleSessionToken();
       return callSupabase(functionName, payload, CONFIG.SUPABASE_ANON_KEY, false);
     }
@@ -67,16 +57,12 @@ async function callSupabase(functionName, payload, authToken, canRetryWithAnon =
 }
 
 /**
- * Check if a match is a league match.
- * Uses cache to reduce API calls.
+ * Check if a match is a league match. Uses cache.
  */
 async function checkLeagueMatch(player1AutodartsId, player2AutodartsId, player1Name, player2Name) {
   const cacheKey = `league-check:${player1AutodartsId || player1Name}:${player2AutodartsId || player2Name}`;
   const cached = Cache.get(cacheKey);
-  if (cached) {
-    log("League check from cache:", cacheKey);
-    return cached;
-  }
+  if (cached) return cached;
 
   const stored = await getStoredTokens();
   const result = await callSupabase("check-league-match", {
@@ -132,16 +118,16 @@ async function autoSubmitMatch(matchPayload) {
 }
 
 /**
- * Save Autodarts User ID to player profile via backend function.
+ * Save Autodarts User ID to player profile.
  */
 async function saveAutodartsUserId(autodartsUserId) {
-  const stored = await new Promise(r =>
+  const stored = await new Promise((r) =>
     browserAPI.storage.local.get(["edart_user_id", "autodarts_id_saved"], r)
   );
 
   if (stored.autodarts_id_saved === autodartsUserId) return;
   if (!stored.edart_user_id) {
-    log("No eDART user ID stored, skipping autodarts ID save");
+    log("No eDART user ID, skipping autodarts ID save");
     return;
   }
 
@@ -153,6 +139,5 @@ async function saveAutodartsUserId(autodartsUserId) {
 
   browserAPI.storage.local.set({ autodarts_id_saved: autodartsUserId });
   logAlways("✅ Autodarts User ID saved:", autodartsUserId);
-
   Notifications.autodartsIdSaved();
 }
