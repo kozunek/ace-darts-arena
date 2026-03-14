@@ -1,0 +1,80 @@
+/* ─── eDART Polska Extension — Theme System ─── */
+
+/* ─── Dark Theme (default) ─── */
+.theme-dark {
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-secondary: #27272a;
+  --color-accent: #f59e0b;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-bg: #0a0a0a;
+  --color-bg-soft: #111111;
+  --color-card: #141414;
+  --color-text: #e8e8e8;
+  --color-text-muted: #888888;
+  --color-border: #222222;
+}
+
+/* ─── Darts Theme ─── */
+.theme-darts {
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-secondary: #065f46;
+  --color-accent: #fbbf24;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-bg: #0c0c0c;
+  --color-bg-soft: #0f1a14;
+  --color-card: #0d1912;
+  --color-text: #e0f0e8;
+  --color-text-muted: #6b8f7a;
+  --color-border: #1a3328;
+}
+
+.theme-darts .header { border-bottom-color: #1a3328; }
+.theme-darts .btn-primary { background: #dc2626; }
+.theme-darts .btn-primary:hover { background: #b91c1c; }
+.theme-darts .btn-secondary {
+  background: #0d1912;
+  border-color: #1a3328;
+  color: #e0f0e8;
+}
+.theme-darts .btn-secondary:hover {
+  background: #163d29;
+  border-color: #22c55e33;
+}
+
+/* ─── League Theme ─── */
+.theme-league {
+  --color-primary: #c9a227;
+  --color-primary-hover: #a88420;
+  --color-secondary: #1e293b;
+  --color-accent: #fbbf24;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-bg: #0b1120;
+  --color-bg-soft: #0f172a;
+  --color-card: #111827;
+  --color-text: #e2e8f0;
+  --color-text-muted: #64748b;
+  --color-border: #1e293b;
+}
+
+.theme-league .header { border-bottom-color: #1e293b; }
+.theme-league .header .version { background: #c9a227; color: #0b1120; }
+.theme-league .btn-primary { background: linear-gradient(135deg, #c9a227, #a88420); color: #0b1120; }
+.theme-league .btn-primary:hover { background: linear-gradient(135deg, #a88420, #8b6914); }
+.theme-league .btn-secondary {
+  background: #111827;
+  border-color: #1e293b;
+  color: #e2e8f0;
+}
+.theme-league .btn-secondary:hover {
+  background: #1e293b;
+  border-color: #334155;
+}
+.theme-league .badge-primary { background: rgba(201,162,39,0.15); color: #c9a227; border-color: rgba(201,162,39,0.3); }
