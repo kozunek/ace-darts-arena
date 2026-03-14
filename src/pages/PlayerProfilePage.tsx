@@ -1,13 +1,14 @@
 import { useParams, Link } from "react-router-dom";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap } from "lucide-react";
+import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap, Percent } from "lucide-react";
 import { achievements } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import PlayerProgressChart from "@/components/PlayerProgressChart";
 import FormComparisonChart from "@/components/FormComparisonChart";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import PageHeader from "@/components/PageHeader";
+import { pl } from "@/lib/pluralize";
 
 const RARITY_ORDER: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const RARITY_STYLES: Record<string, string> = {
@@ -45,6 +46,37 @@ const PlayerProfilePage = () => {
 
   const allLeagueStats = getPlayerAllLeagueStats(player.id);
 
+  // Aggregate stats across all leagues
+  const totalStats = allLeagueStats.reduce(
+    (acc, { stats }) => ({
+      points: acc.points + stats.points,
+      matches: acc.matches + stats.matchesPlayed,
+      wins: acc.wins + stats.wins,
+      losses: acc.losses + stats.losses,
+      oneEighties: acc.oneEighties + stats.oneEighties,
+      highestCheckout: Math.max(acc.highestCheckout, stats.highestCheckout),
+      bestAvg: Math.max(acc.bestAvg, stats.bestAvg),
+      bestFirst9Avg: Math.max(acc.bestFirst9Avg, stats.bestFirst9Avg),
+      ton60: acc.ton60 + stats.ton60,
+      ton80: acc.ton80 + stats.ton80,
+      tonPlus: acc.tonPlus + stats.tonPlus,
+      checkoutHits: acc.checkoutHits + stats.checkoutHits,
+      checkoutAttempts: acc.checkoutAttempts + stats.checkoutAttempts,
+      totalDartsThrown: acc.totalDartsThrown + stats.totalDartsThrown,
+    }),
+    { points: 0, matches: 0, wins: 0, losses: 0, oneEighties: 0, highestCheckout: 0, bestAvg: 0, bestFirst9Avg: 0, ton60: 0, ton80: 0, tonPlus: 0, checkoutHits: 0, checkoutAttempts: 0, totalDartsThrown: 0 }
+  );
+
+  const totalCheckoutRate = totalStats.checkoutAttempts > 0
+    ? ((totalStats.checkoutHits / totalStats.checkoutAttempts) * 100).toFixed(1)
+    : "0";
+  const totalWinRate = totalStats.matches > 0
+    ? ((totalStats.wins / totalStats.matches) * 100).toFixed(0)
+    : "0";
+
+  const allAchievements = allLeagueStats.flatMap(({ league, stats }) => getPlayerAchievements(player.id, league.id));
+  const uniqueAchievements = Array.from(new Map(allAchievements.map(a => [a.id, a])).values());
+
   return (
     <div>
       <PageHeader title={player.name} subtitle={`Aktywny w ${allLeagueStats.length} ${allLeagueStats.length === 1 ? "lidze" : "ligach"}`}>
@@ -68,12 +100,73 @@ const PlayerProfilePage = () => {
         </div>
       </div>
 
+      {/* Global summary stats */}
+      {totalStats.matches > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" /> Podsumowanie ze wszystkich lig
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <StatCard icon={<Trophy className="h-5 w-5" />} label="Suma punktów" value={totalStats.points.toString()} color="text-accent" />
+            <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Najlepsza śr." value={totalStats.bestAvg > 0 ? totalStats.bestAvg.toFixed(1) : "—"} color="text-secondary" />
+            <StatCard icon={<Target className="h-5 w-5" />} label="180-tki" value={totalStats.oneEighties.toString()} color="text-primary" />
+            <StatCard icon={<Crosshair className="h-5 w-5" />} label="Najw. checkout" value={totalStats.highestCheckout > 0 ? totalStats.highestCheckout.toString() : "—"} color="text-foreground" />
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
+            <MiniStatBox label="Mecze" value={totalStats.matches} />
+            <MiniStatBox label="Wygrane" value={totalStats.wins} />
+            <MiniStatBox label="Przegrane" value={totalStats.losses} />
+            <MiniStatBox label="Wygrane %" value={`${totalWinRate}%`} />
+            <MiniStatBox label="Checkout %" value={`${totalCheckoutRate}%`} />
+            <MiniStatBox label="First 9 avg" value={totalStats.bestFirst9Avg > 0 ? totalStats.bestFirst9Avg.toFixed(1) : "—"} />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <MiniStatBox label="60+ pkt" value={totalStats.ton60} />
+            <MiniStatBox label="100+ pkt" value={totalStats.ton80} />
+            <MiniStatBox label="140+ pkt" value={totalStats.tonPlus} />
+            <MiniStatBox label="Rzucone lotki" value={totalStats.totalDartsThrown} />
+            <MiniStatBox label="Osiągnięcia" value={uniqueAchievements.length} />
+          </div>
+        </div>
+      )}
+
+      {/* All achievements */}
+      {uniqueAchievements.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+            <Zap className="h-4 w-4" /> Wszystkie osiągnięcia ({uniqueAchievements.length}/{achievements.length})
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {uniqueAchievements
+              .sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity])
+              .map((a) => (
+              <div key={a.id} className={`rounded-lg border p-3 flex items-center gap-3 ${RARITY_STYLES[a.rarity]}`}>
+                <span className="text-2xl">{a.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-body font-semibold text-foreground text-sm flex items-center gap-1.5">
+                    {a.name}
+                    <span className={`text-[9px] font-display uppercase tracking-widest px-1.5 py-0.5 rounded-full ${RARITY_BADGE[a.rarity]}`}>
+                      {RARITY_LABELS[a.rarity]}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">{a.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Per-league stats */}
       {allLeagueStats.map(({ league, stats }) => {
         const achiev = getPlayerAchievements(player.id, league.id);
         const playerMatches = matches.filter(
           (m) => m.leagueId === league.id && m.status === "completed" && (m.player1Id === id || m.player2Id === id)
         );
+
+        const checkoutRate = stats.checkoutAttempts > 0
+          ? ((stats.checkoutHits / stats.checkoutAttempts) * 100).toFixed(1)
+          : "0";
 
         return (
           <div key={league.id} className="mb-10">
@@ -107,18 +200,18 @@ const PlayerProfilePage = () => {
               <MiniStatBox label="Wygrane" value={stats.wins} />
               <MiniStatBox label="Przegrane" value={stats.losses} />
               <MiniStatBox label="Legi +" value={stats.legsWon} />
-              <MiniStatBox label="Legi -" value={stats.legsLost} />
+              <MiniStatBox label="Legi −" value={stats.legsLost} />
+              <MiniStatBox label="Checkout %" value={`${checkoutRate}%`} />
             </div>
 
             {/* Scoring breakdown */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
-              <MiniStatBox label="Najl. Śr." value={stats.bestAvg > 0 ? stats.bestAvg.toFixed(1) : "—"} />
-              <MiniStatBox label="First 9 Avg" value={stats.bestFirst9Avg > 0 ? stats.bestFirst9Avg.toFixed(1) : "—"} />
-              
-              <MiniStatBox label="60+" value={stats.ton60} />
-              <MiniStatBox label="100+" value={stats.ton80} />
-              <MiniStatBox label="140+" value={stats.tonPlus} />
-              <MiniStatBox label="170+" value={stats.ton40} />
+              <MiniStatBox label="Najl. śr." value={stats.bestAvg > 0 ? stats.bestAvg.toFixed(1) : "—"} />
+              <MiniStatBox label="First 9 avg" value={stats.bestFirst9Avg > 0 ? stats.bestFirst9Avg.toFixed(1) : "—"} />
+              <MiniStatBox label="60+ pkt" value={stats.ton60} />
+              <MiniStatBox label="100+ pkt" value={stats.ton80} />
+              <MiniStatBox label="140+ pkt" value={stats.tonPlus} />
+              <MiniStatBox label="170+ pkt" value={stats.ton40} />
             </div>
 
             {/* Form */}
@@ -135,11 +228,11 @@ const PlayerProfilePage = () => {
               </div>
             )}
 
-            {/* Achievements */}
+            {/* Achievements for this league */}
             {achiev.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                  <Zap className="h-4 w-4" /> Osiągnięcia ({achiev.length}/{achievements.length})
+                  <Zap className="h-4 w-4" /> Osiągnięcia w tej lidze ({achiev.length})
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {achiev
@@ -164,7 +257,7 @@ const PlayerProfilePage = () => {
 
             {/* Match history */}
             <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" /> Historia meczów
+              <BarChart3 className="h-4 w-4" /> Historia meczów ({pl.match(playerMatches.length)})
             </h3>
             {playerMatches.length === 0 ? (
               <p className="text-muted-foreground font-body text-sm">Brak rozegranych meczów.</p>
