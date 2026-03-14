@@ -1,587 +1,546 @@
-// Background script (Firefox MV2)
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
-const EDART_URL = "https://edartpolska.pl";
-const SUPABASE_URL = "https://uiolhzctnbskdjteufkj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpb2xoemN0bmJza2RqdGV1ZmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTc4NjEsImV4cCI6MjA4ODQ5Mzg2MX0.SEGOONfttWCS7jbacT5NxlbiOGSxmrVRp4DFqQRDYkk";
+// ─── Background script (Firefox MV2) ───
+// Token management, league checks, auto-submit, bootstrap data
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+(function () {
+  "use strict";
 
-async function requestTokenRefreshFromAutodartsTabs(reason = "manual") {
-  if (!browserAPI.tabs?.query) return false;
+  const bAPI = typeof browser !== "undefined" ? browser : chrome;
 
-  const tabs = await new Promise((resolve) => {
-    browserAPI.tabs.query({ url: ["https://play.autodarts.io/*"] }, (results) => {
-      if (browserAPI.runtime.lastError) {
-        resolve([]);
-        return;
+  // ─── Storage helpers ───
+  function storageGetLocal(keys) {
+    return new Promise((resolve) => {
+      bAPI.storage.local.get(keys, (r) => resolve(r || {}));
+    });
+  }
+
+  function storageSetLocal(data) {
+    return new Promise((resolve) => {
+      bAPI.storage.local.set(data, resolve);
+    });
+  }
+
+  function storageRemoveLocal(keys) {
+    return new Promise((resolve) => {
+      bAPI.storage.local.remove(keys, resolve);
+    });
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function isUuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  }
+
+  // ─── Token refresh: ask Autodarts tabs to re-scan ───
+  async function requestTokenRefreshFromTabs(reason = "manual") {
+    if (!bAPI.tabs?.query) return false;
+
+    const tabs = await new Promise((resolve) => {
+      bAPI.tabs.query({ url: ["https://play.autodarts.io/*"] }, (results) => {
+        if (bAPI.runtime.lastError) resolve([]);
+        else resolve(results || []);
+      });
+    });
+
+    if (!tabs.length) {
+      log("No Autodarts tabs found for token refresh");
+      return false;
+    }
+
+    for (const tab of tabs) {
+      if (!tab?.id) continue;
+      bAPI.tabs.sendMessage(tab.id, { type: "EDART_REFRESH_TOKEN", reason }, () => {
+        if (bAPI.runtime.lastError) log("Refresh ping failed for tab", tab.id);
+      });
+    }
+
+    return true;
+  }
+
+  // ─── Get current token state ───
+  async function getAutodartsTokenState(forceRefresh = false) {
+    let result = await storageGetLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
+
+    const age = Date.now() - (result.token_timestamp || 0);
+    const isFresh = !!result.autodarts_token && age < CONFIG.TOKEN_FRESH_MS;
+    const isExpired = !result.autodarts_token || age > CONFIG.TOKEN_MAX_AGE_MS;
+
+    if (forceRefresh || isExpired) {
+      const sent = await requestTokenRefreshFromTabs(forceRefresh ? "forced" : "expired");
+      if (sent) {
+        await wait(1700);
+        result = await storageGetLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
       }
-      resolve(results || []);
-    });
-  });
+    }
 
-  if (!tabs.length) return false;
+    const updatedAge = Date.now() - (result.token_timestamp || 0);
+    return {
+      token: result.autodarts_token || null,
+      timestamp: result.token_timestamp || null,
+      source: result.autodarts_token_source || null,
+      fresh: !!result.autodarts_token && updatedAge < CONFIG.TOKEN_FRESH_MS,
+      age: updatedAge,
+    };
+  }
 
-  tabs.forEach((tab) => {
-    if (!tab?.id) return;
-    browserAPI.tabs.sendMessage(tab.id, { type: "EDART_REFRESH_TOKEN", reason }, () => {
-      if (browserAPI.runtime.lastError) {
-        // ignore missing content script on non-ready tabs
+  async function fetchLeagues() {
+    const cached = Cache.get("leagues");
+    if (cached) return cached;
+
+    const stored = await storageGetLocal(["edart_session_token"]);
+    const res = await callSupabase("check-league-match", {
+      action: "list_leagues",
+    }, stored.edart_session_token);
+
+    // Fallback: directly query backend table
+    if (!res?.leagues) {
+      const directRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/leagues?is_active=eq.true&select=id,name,season,league_type,is_active&order=name.asc`, {
+        headers: {
+          "apikey": CONFIG.SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        },
+      });
+
+      if (directRes.ok) {
+        const leagues = await directRes.json();
+        Cache.set("leagues", leagues, 300000);
+        return leagues;
       }
-    });
-  });
+    }
 
-  return true;
-}
+    const leagues = res?.leagues || [];
+    Cache.set("leagues", leagues, 300000);
+    return leagues;
+  }
 
-async function getAutodartsTokenState(forceRefresh = false) {
-  let result = await new Promise((resolve) => {
-    browserAPI.storage.local.get(["autodarts_token", "token_timestamp", "autodarts_token_source"], (stored) => {
-      resolve(stored || {});
-    });
-  });
+  async function fetchLeagueMatches(leagueId) {
+    if (!isUuid(leagueId)) return [];
 
-  const age = Date.now() - (result.token_timestamp || 0);
-  const fresh = !!result.autodarts_token && age < 300000;
+    const cacheKey = `league-matches:${leagueId}`;
+    const cached = Cache.get(cacheKey);
+    if (cached) return cached;
 
-  if (forceRefresh || !fresh) {
-    const refreshRequested = await requestTokenRefreshFromAutodartsTabs(
-      forceRefresh ? "forced-by-popup" : "missing-or-stale"
+    const directRes = await fetch(
+      `${CONFIG.SUPABASE_URL}/rest/v1/matches?league_id=eq.${leagueId}&select=id,player1_id,player2_id,score1,score2,status,date,avg1,avg2&order=date.desc&limit=80`,
+      {
+        headers: {
+          "apikey": CONFIG.SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        },
+      }
     );
 
-    if (refreshRequested) {
-      await wait(1200);
-      result = await new Promise((resolve) => {
-        browserAPI.storage.local.get(["autodarts_token", "token_timestamp", "autodarts_token_source"], (stored) => {
-          resolve(stored || {});
-        });
+    if (!directRes.ok) throw new Error(`HTTP ${directRes.status}`);
+
+    const matches = await directRes.json();
+    Cache.set(cacheKey, matches, 120000);
+    return matches;
+  }
+
+  async function warmBootstrapData() {
+    try {
+      const leagues = await fetchLeagues();
+      const stored = await storageGetLocal(["selected_league_id"]);
+      const selectedLeagueId = isUuid(stored.selected_league_id)
+        ? stored.selected_league_id
+        : leagues?.[0]?.id || null;
+
+      const matches = selectedLeagueId ? await fetchLeagueMatches(selectedLeagueId) : [];
+
+      await storageSetLocal({
+        extension_bootstrap: {
+          leagues,
+          selectedLeagueId,
+          matches,
+          timestamp: Date.now(),
+        },
       });
+    } catch (err) {
+      logError("Warm bootstrap failed:", err);
     }
   }
 
-  const updatedAge = Date.now() - (result.token_timestamp || 0);
-  return {
-    token: result.autodarts_token || null,
-    timestamp: result.token_timestamp || null,
-    source: result.autodarts_token_source || null,
-    fresh: !!result.autodarts_token && updatedAge < 300000,
-  };
-}
+  async function handleLeagueCheck(payload) {
+    const config = await PlayerConfig.get();
+    if (!config.showLeagueNotifications) return { is_league_match: false };
 
-browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'GET_AUTODARTS_TOKEN') {
-    getAutodartsTokenState(message?.forceRefresh === true)
-      .then((tokenState) => sendResponse(tokenState))
-      .catch(() => sendResponse({ token: null, timestamp: null, fresh: false }));
-    return true;
-  }
-
-  if (message.type === 'CLEAR_TOKEN') {
-    browserAPI.storage.local.remove(['autodarts_token', 'token_timestamp', 'autodarts_token_source']);
-    sendResponse({ success: true });
-    return true;
-  }
-
-  if (message.type === 'AUTO_SUBMIT_LEAGUE_MATCH') {
-    autoSubmitLeagueMatch(message.payload)
-      .then((result) => {
-        sendResponse(result);
-        handleAutoSubmitResult(result, message.payload);
-      })
-      .catch((err) => {
-        console.error("[eDART] Auto-submit failed:", err);
-        const errorResult = { is_league_match: false, submitted: false, error: String(err) };
-        sendResponse(errorResult);
-        showManualFallbackNotification(message.payload, String(err));
-      });
-    return true;
-  }
-
-  if (message.type === 'CHECK_LEAGUE_MATCH_LIVE') {
-    checkLeagueMatchLive(message.payload)
-      .then((result) => {
-        sendResponse(result);
-      })
-      .catch((err) => {
-        console.error("[eDART] League match check failed:", err);
-        sendResponse({ is_league_match: false });
-      });
-    return true;
-  }
-
-  if (message.type === 'LIVE_MATCH_UPDATE') {
-    handleLiveMatchUpdate(message.payload)
-      .then(() => sendResponse({ ok: true }))
-      .catch((err) => {
-        console.error("[eDART] Live match update failed:", err);
-        sendResponse({ ok: false });
-      });
-    return true;
-  }
-
-  if (message.type === 'LIVE_MATCH_ENDED') {
-    handleLiveMatchEnded(message.matchId)
-      .then(() => sendResponse({ ok: true }))
-      .catch(() => sendResponse({ ok: false }));
-    return true;
-  }
-
-  if (message.type === 'AUTODARTS_USER_ID_DETECTED') {
-    saveAutodartsUserId(message.userId)
-      .then(() => sendResponse({ ok: true }))
-      .catch(() => sendResponse({ ok: false }));
-    return true;
-  }
-});
-
-async function checkLeagueMatchLive(payload) {
-  try {
-    const stored = await new Promise((resolve) => {
-      browserAPI.storage.local.get(["edart_session_token"], resolve);
-    });
-    const edartToken = stored.edart_session_token || null;
-    const authToken = edartToken || SUPABASE_ANON_KEY;
-
-    const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        player1_autodarts_id: payload.player1_autodarts_id,
-        player2_autodarts_id: payload.player2_autodarts_id,
-        player1_name: payload.player1_name,
-        player2_name: payload.player2_name,
-      }),
-    });
-
-    if (!checkRes.ok) return { is_league_match: false };
-    const checkData = await checkRes.json();
+    const checkData = await checkLeagueMatch(
+      payload.player1_autodarts_id,
+      payload.player2_autodarts_id,
+      payload.player1_name,
+      payload.player2_name
+    );
 
     if (checkData.is_league_match) {
-      const p1 = payload.player1_name || "Gracz 1";
-      const p2 = payload.player2_name || "Gracz 2";
-
-      browserAPI.notifications.create(`league-live-${payload.autodarts_match_id}`, {
-        type: "basic",
-        iconUrl: "icon128.png",
-        title: "🎯 Mecz ligowy rozpoczęty!",
-        message: `${p1} vs ${p2}\n${checkData.league_name || "Liga"}\nWynik zostanie wysłany automatycznie po zakończeniu meczu.`,
-        priority: 2,
-        requireInteraction: false,
-      });
-
-      console.log("[eDART] League match detected live:", checkData.league_name);
+      Notifications.leagueMatchDetected(
+        payload.player1_name || "Gracz 1",
+        payload.player2_name || "Gracz 2",
+        checkData.league_name || "Liga",
+        payload.autodarts_match_id
+      );
+      logAlways("League match detected:", checkData.league_name);
     }
 
     return checkData;
-  } catch (err) {
-    console.error("[eDART] Check league match error:", err);
-    return { is_league_match: false };
   }
-}
 
-function showManualFallbackNotification(matchPayload, errorMsg) {
-  const p1 = matchPayload?.player1_name || "Gracz 1";
-  const p2 = matchPayload?.player2_name || "Gracz 2";
-  const matchId = matchPayload?.match_id || "";
+  async function handleAutoSubmit(matchPayload) {
+    const matchId = matchPayload.match_id;
+    const p1 = matchPayload.player1_name || "Gracz 1";
+    const p2 = matchPayload.player2_name || "Gracz 2";
 
-  browserAPI.storage.local.set({
-    edart_manual_fallback: {
-      autodarts_link: `https://play.autodarts.io/history/matches/${matchId}`,
-      player1_name: p1,
-      player2_name: p2,
-    }
-  });
-
-  browserAPI.notifications.create(`league-error-${Date.now()}`, {
-    type: "basic",
-    iconUrl: "icon128.png",
-    title: "⚠️ Błąd wysyłania wyniku",
-    message: `${p1} vs ${p2}\nNie udało się automatycznie wysłać wyniku.\nKliknij aby wprowadzić wynik ręcznie.`,
-    priority: 2,
-    requireInteraction: true,
-  });
-}
-
-async function handleLiveMatchUpdate(payload) {
-  try {
-    const stored = await new Promise((resolve) => {
-      browserAPI.storage.local.get(["edart_session_token"], resolve);
-    });
-    const edartToken = stored.edart_session_token || null;
-    const authToken = edartToken || SUPABASE_ANON_KEY;
-
-    const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        player1_autodarts_id: payload.player1_autodarts_id,
-        player2_autodarts_id: payload.player2_autodarts_id,
-        player1_name: payload.player1_name,
-        player2_name: payload.player2_name,
-      }),
-    });
-
-    if (!checkRes.ok) return;
-    const checkData = await checkRes.json();
-    if (!checkData.is_league_match) return;
-
-    if (!edartToken) {
-      console.warn("[eDART] No session token for live match update — user must be logged in");
-      return;
-    }
-
-    await fetch(`${SUPABASE_URL}/rest/v1/live_matches`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${edartToken}`,
-        "Prefer": "resolution=merge-duplicates",
-      },
-      body: JSON.stringify({
-        autodarts_match_id: payload.autodarts_match_id,
-        autodarts_link: payload.autodarts_link,
-        match_id: checkData.match_id || null,
-        player1_score: payload.player1_score || 0,
-        player2_score: payload.player2_score || 0,
-        updated_at: new Date().toISOString(),
-      }),
-    });
-
-    console.log("[eDART] Live match updated:", payload.autodarts_match_id);
-  } catch (err) {
-    console.error("[eDART] Live match update error:", err);
-  }
-}
-
-async function handleLiveMatchEnded(autodartsMatchId) {
-  try {
-    await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        action: "end_live_match",
-        autodarts_match_id: autodartsMatchId,
-      }),
-    });
-    console.log("[eDART] Live match ended:", autodartsMatchId);
-  } catch (err) {
-    console.error("[eDART] Live match end error:", err);
-  }
-}
-
-async function saveAutodartsUserId(autodartsUserId) {
-  try {
-    const stored = await new Promise((resolve) => {
-      browserAPI.storage.local.get(["edart_user_id", "autodarts_id_saved"], resolve);
-    });
-
-    if (stored.autodarts_id_saved === autodartsUserId) return;
-
-    const edartUserId = stored.edart_user_id;
-    if (!edartUserId) {
-      console.log("[eDART] No eDART user ID stored, skipping autodarts ID save");
-      return;
-    }
-
-    await fetch(`${SUPABASE_URL}/rest/v1/players?user_id=eq.${edartUserId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "Prefer": "return=minimal",
-      },
-      body: JSON.stringify({ autodarts_user_id: autodartsUserId }),
-    });
-
-    browserAPI.storage.local.set({ autodarts_id_saved: autodartsUserId });
-    console.log("[eDART] ✅ Autodarts User ID saved to eDART:", autodartsUserId);
-
-    browserAPI.notifications.create(`autodarts-id-${Date.now()}`, {
-      type: "basic",
-      iconUrl: "icon128.png",
-      title: "🎯 Autodarts ID zapisane!",
-      message: `Twój Autodarts User ID został automatycznie powiązany z kontem eDART.`,
-      priority: 1,
-    });
-  } catch (err) {
-    console.error("[eDART] Save autodarts ID error:", err);
-  }
-}
-
-async function autoSubmitLeagueMatch(matchPayload) {
-  try {
-    // Step 1: Check if it's a league match (no auth required)
-    const checkRes = await fetch(`${SUPABASE_URL}/functions/v1/check-league-match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        player1_autodarts_id: matchPayload.player1_autodarts_id || null,
-        player2_autodarts_id: matchPayload.player2_autodarts_id || null,
-        player1_name: matchPayload.player1_name,
-        player2_name: matchPayload.player2_name,
-      }),
-    });
-
-    if (!checkRes.ok) {
-      console.error("[eDART] check-league-match HTTP error:", checkRes.status);
-      return { is_league_match: false, submitted: false, error: `Check HTTP ${checkRes.status}` };
-    }
-
-    const checkData = await checkRes.json();
-    if (!checkData.is_league_match) {
-      console.log("[eDART] Not a league match according to check-league-match");
+    const config = await PlayerConfig.get();
+    if (!config.autoSubmitLeagueMatches) {
+      log("Auto-submit disabled by config");
       return { is_league_match: false, submitted: false };
     }
 
-    console.log("[eDART] ✅ League match confirmed:", checkData.league_name, "match_id:", checkData.match_id);
-
-    // Step 2: Auto-submit (use eDART session if available, anon key as fallback)
-    const stored = await new Promise((resolve) => {
-      browserAPI.storage.local.get(["autodarts_token", "edart_session_token"], resolve);
-    });
-    const playerToken = stored.autodarts_token || null;
-    const edartToken = stored.edart_session_token || null;
-    const authToken = edartToken || SUPABASE_ANON_KEY;
-
-    if (!edartToken) {
-      console.log("[eDART] No eDART session — submitting with autodarts_user_id verification");
+    if (SubmissionLock.isLocked(matchId)) {
+      log("Submission locked:", matchId);
+      return { is_league_match: true, submitted: false, reason: "Zgłoszenie w trakcie." };
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/auto-submit-league-match`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        autodarts_match_id: matchPayload.match_id,
-        autodarts_token: playerToken,
-        player1_name: matchPayload.player1_name,
-        player2_name: matchPayload.player2_name,
-        player1_autodarts_id: matchPayload.player1_autodarts_id || null,
-        player2_autodarts_id: matchPayload.player2_autodarts_id || null,
-        client_stats: {
-          score1: matchPayload.score1,
-          score2: matchPayload.score2,
-          avg1: matchPayload.avg1,
-          avg2: matchPayload.avg2,
-          first_9_avg1: matchPayload.first_9_avg1,
-          first_9_avg2: matchPayload.first_9_avg2,
-          one_eighties1: matchPayload.one_eighties1,
-          one_eighties2: matchPayload.one_eighties2,
-          high_checkout1: matchPayload.high_checkout1,
-          high_checkout2: matchPayload.high_checkout2,
-          ton60_1: matchPayload.ton60_1,
-          ton60_2: matchPayload.ton60_2,
-          ton80_1: matchPayload.ton80_1,
-          ton80_2: matchPayload.ton80_2,
-          ton_plus1: matchPayload.ton_plus1,
-          ton_plus2: matchPayload.ton_plus2,
-          darts_thrown1: matchPayload.darts_thrown1,
-          darts_thrown2: matchPayload.darts_thrown2,
-          checkout_attempts1: matchPayload.checkout_attempts1,
-          checkout_attempts2: matchPayload.checkout_attempts2,
-          checkout_hits1: matchPayload.checkout_hits1,
-          checkout_hits2: matchPayload.checkout_hits2,
-        },
-      }),
-    });
+    SubmissionLock.lock(matchId);
 
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      console.error("[eDART] auto-submit HTTP error:", response.status, errText);
-      return {
-        is_league_match: true,
-        submitted: false,
-        reason: `Błąd wysyłania (${response.status}). Sesja mogła wygasnąć — zaloguj się ponownie na eDART.`,
-        match_id: checkData.match_id,
-        league_name: checkData.league_name,
-      };
+    try {
+      // Przed akcją wymagającą auth próbujemy mieć świeży token Autodarts
+      const tokenState = await getAutodartsTokenState(false);
+      if (!tokenState.token || !tokenState.fresh) {
+        await getAutodartsTokenState(true);
+      }
+
+      const checkData = await checkLeagueMatch(
+        matchPayload.player1_autodarts_id,
+        matchPayload.player2_autodarts_id,
+        matchPayload.player1_name,
+        matchPayload.player2_name
+      );
+
+      if (!checkData.is_league_match) {
+        return { is_league_match: false, submitted: false };
+      }
+
+      logAlways("✅ League match confirmed:", checkData.league_name);
+
+      // Submit with retry
+      let result;
+      let retries = 0;
+      while (retries < 3) {
+        try {
+          result = await autoSubmitMatch(matchPayload);
+          break;
+        } catch (err) {
+          retries += 1;
+          logError(`Submit attempt ${retries} failed:`, err);
+
+          // Przy 401/403 spróbuj wymusić odświeżenie tokenu i ponowić
+          const errText = String(err || "");
+          if (/401|403/.test(errText)) {
+            await getAutodartsTokenState(true);
+          }
+
+          if (retries < 3) await wait(2000 * retries);
+          else throw err;
+        }
+      }
+
+      handleSubmitResult(result, matchPayload, checkData);
+      saveToMatchHistory(matchPayload, result);
+      return result;
+    } catch (err) {
+      Notifications.submissionError(p1, p2, String(err));
+      storeManualFallback(matchPayload, p1, p2);
+      throw err;
+    } finally {
+      SubmissionLock.unlock(matchId);
+    }
+  }
+
+  function handleSubmitResult(result, matchPayload, checkData) {
+    const p1 = matchPayload.player1_name || "Gracz 1";
+    const p2 = matchPayload.player2_name || "Gracz 2";
+
+    if (result?.already_submitted) {
+      Notifications.matchAlreadySubmitted(p1, p2, result.score, result.league_name || checkData?.league_name);
+      storeLeagueMatch(matchPayload, result, true);
+      return;
     }
 
-    return await response.json();
-  } catch (err) {
-    console.error("[eDART] auto-submit fetch error:", err);
-    return { is_league_match: false, submitted: false, error: String(err) };
-  }
-}
-
-function handleAutoSubmitResult(result, matchPayload) {
-  const p1 = matchPayload.player1_name || "Gracz 1";
-  const p2 = matchPayload.player2_name || "Gracz 2";
-
-  if (result.already_submitted) {
-    const statusText = result.status_text || "Wynik wysłany — oczekuje na zatwierdzenie admina.";
-    browserAPI.notifications.create(`league-already-${Date.now()}`, {
-      type: "basic",
-      iconUrl: "icon128.png",
-      title: "🎯 Mecz ligowy zgłoszony!",
-      message: `${p1} vs ${p2} (${result.score || "?"})\n${result.league_name || "Liga"}\n${statusText}`,
-      priority: 2,
-      requireInteraction: true,
-    });
-    return;
+    if (result?.is_league_match && result?.submitted) {
+      Notifications.matchSubmitted(p1, p2, result.score, result.league_name, result.status);
+      storeLeagueMatch(matchPayload, result, true);
+      PlayerConfig.getSetting("openEdartAfterSubmit").then((open) => {
+        if (open && result.match_id) {
+          bAPI.tabs.create({
+            url: `${CONFIG.EDART_URL}/submit-match?match_id=${result.match_id}`,
+            active: false,
+          });
+        }
+      });
+    } else if (result?.is_league_match && !result?.submitted) {
+      Notifications.manualSubmissionRequired(p1, p2, result.league_name, result.reason || "Nie wysłano automatycznie.");
+      storeLeagueMatch(matchPayload, result, false);
+      storeManualFallback(matchPayload, p1, p2, result.match_id);
+    }
   }
 
-  if (result.is_league_match && result.submitted) {
-    const statusText = result.status === "completed"
-      ? "Wynik zatwierdzony automatycznie!"
-      : "Wynik wysłany — oczekuje na zatwierdzenie admina.";
-
-    browserAPI.notifications.create(`league-submitted-${Date.now()}`, {
-      type: "basic",
-      iconUrl: "icon128.png",
-      title: "🎯 Mecz ligowy zgłoszony!",
-      message: `${p1} vs ${p2} (${result.score})\n${result.league_name}\n${statusText}`,
-      priority: 2,
-      requireInteraction: true,
-    });
-
-    browserAPI.storage.local.set({
+  // ─── Storage helpers ───
+  function storeLeagueMatch(payload, result, auto) {
+    bAPI.storage.local.set({
       autodarts_league_match: {
-        ...matchPayload,
+        ...payload,
         edart_match_id: result.match_id,
         league_name: result.league_name,
-        auto_submitted: true,
+        auto_submitted: auto,
         status: result.status,
       },
       autodarts_league_match_timestamp: Date.now(),
     });
+  }
 
-  } else if (result.is_league_match && !result.submitted) {
-    const reason = result.reason || "Wynik nie został wysłany automatycznie.";
-
-    browserAPI.notifications.create(`league-detected-${Date.now()}`, {
-      type: "basic",
-      iconUrl: "icon128.png",
-      title: "⚠️ Mecz ligowy — wymagane ręczne zgłoszenie",
-      message: `${p1} vs ${p2}\n${result.league_name || "Liga"}\n${reason}\nKliknij aby wprowadzić wynik ręcznie.`,
-      priority: 2,
-      requireInteraction: true,
-    });
-
-    browserAPI.storage.local.set({
-      autodarts_league_match: {
-        ...matchPayload,
-        edart_match_id: result.match_id,
-        league_name: result.league_name,
-        auto_submitted: false,
-        submit_error: reason,
-      },
-      autodarts_league_match_timestamp: Date.now(),
+  function storeManualFallback(payload, p1, p2, edartMatchId) {
+    bAPI.storage.local.set({
       edart_manual_fallback: {
-        autodarts_link: `https://play.autodarts.io/history/matches/${matchPayload.match_id}`,
-        match_id: result.match_id,
+        autodarts_link: `https://play.autodarts.io/history/matches/${payload.match_id}`,
+        match_id: edartMatchId || null,
         player1_name: p1,
         player2_name: p2,
-      }
+      },
     });
-  } else if (!result.is_league_match) {
-    console.log("[eDART] Match is not a league match, skipping notification");
   }
-}
 
-browserAPI.notifications.onClicked.addListener((notificationId) => {
-  if (notificationId.startsWith("league-submitted-") || notificationId.startsWith("league-already-")) {
-    browserAPI.storage.local.get(["autodarts_league_match"], (result) => {
-      const data = result.autodarts_league_match;
-      if (data?.edart_match_id) {
-        browserAPI.tabs.create({
-          url: `${EDART_URL}/submit-match?match_id=${data.edart_match_id}`,
-          active: true,
-        });
-      } else {
-        browserAPI.tabs.create({ url: `${EDART_URL}/matches`, active: true });
-      }
+  function saveToMatchHistory(payload, result) {
+    bAPI.storage.local.get(["match_history"], (stored) => {
+      const history = stored.match_history || [];
+      history.unshift({
+        matchId: payload.match_id,
+        player1: payload.player1_name,
+        player2: payload.player2_name,
+        score: result?.score || `${payload.score1}:${payload.score2}`,
+        league: result?.league_name || null,
+        submitted: result?.submitted || false,
+        alreadySubmitted: result?.already_submitted || false,
+        status: result?.submitted
+          ? "submitted"
+          : result?.already_submitted
+            ? "already_submitted"
+            : "failed",
+        timestamp: Date.now(),
+      });
+      bAPI.storage.local.set({ match_history: history.slice(0, 30) });
     });
-    browserAPI.notifications.clear(notificationId);
-  } else if (notificationId.startsWith("league-error-") || notificationId.startsWith("league-detected-")) {
-    browserAPI.storage.local.get(["edart_manual_fallback"], (result) => {
-      const fallback = result.edart_manual_fallback;
-      if (fallback?.autodarts_link) {
-        const encoded = encodeURIComponent(fallback.autodarts_link);
-        browserAPI.tabs.create({
-          url: `${EDART_URL}/submit-match?autodarts_link=${encoded}`,
-          active: true,
-        });
-      } else {
-        browserAPI.tabs.create({ url: `${EDART_URL}/submit-match`, active: true });
-      }
-    });
-    browserAPI.notifications.clear(notificationId);
-  } else if (notificationId.startsWith("league-live-")) {
-    browserAPI.tabs.create({ url: `${EDART_URL}/live`, active: true });
-    browserAPI.notifications.clear(notificationId);
   }
-});
 
-browserAPI.runtime.onInstalled?.addListener(() => {
-  requestTokenRefreshFromAutodartsTabs("runtime-installed");
-});
+  // ─── Message handlers ───
+  const messageHandlers = {
+    async GET_AUTODARTS_TOKEN(message, sendResponse) {
+      const state = await getAutodartsTokenState(message?.forceRefresh === true);
+      sendResponse(state);
+    },
 
-browserAPI.runtime.onStartup?.addListener(() => {
-  requestTokenRefreshFromAutodartsTabs("runtime-startup");
-});
+    async CLEAR_TOKEN(_message, sendResponse) {
+      await storageRemoveLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
+      logAlways("Token cleared");
+      sendResponse({ success: true });
+    },
 
-browserAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
-  browserAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-updated" }, () => {
-    if (browserAPI.runtime.lastError) {
-      // ignore
+    async AUTO_SUBMIT_LEAGUE_MATCH(message, sendResponse) {
+      try {
+        const result = await handleAutoSubmit(message.payload);
+        sendResponse(result);
+      } catch (err) {
+        logError("Auto-submit failed:", err);
+        sendResponse({ is_league_match: false, submitted: false, error: String(err) });
+      }
+    },
+
+    async CHECK_LEAGUE_MATCH_LIVE(message, sendResponse) {
+      try {
+        const result = await handleLeagueCheck(message.payload);
+        sendResponse(result);
+      } catch (err) {
+        logError("League check failed:", err);
+        sendResponse({ is_league_match: false });
+      }
+    },
+
+    async AUTODARTS_USER_ID_DETECTED(message, sendResponse) {
+      try {
+        await saveAutodartsUserId(message.userId);
+        sendResponse({ ok: true });
+      } catch {
+        sendResponse({ ok: false });
+      }
+    },
+
+    GET_MATCH_HISTORY(_message, sendResponse) {
+      bAPI.storage.local.get(["match_history"], (result) => {
+        sendResponse({ history: result.match_history || [] });
+      });
+    },
+
+    async GET_LEAGUES(_message, sendResponse) {
+      try {
+        const leagues = await fetchLeagues();
+        await warmBootstrapData();
+        sendResponse({ leagues });
+      } catch (err) {
+        const bootstrap = await storageGetLocal(["extension_bootstrap"]);
+        sendResponse({
+          leagues: bootstrap.extension_bootstrap?.leagues || [],
+          error: String(err),
+        });
+      }
+    },
+
+    async GET_LEAGUE_MATCHES(message, sendResponse) {
+      try {
+        if (!isUuid(message.leagueId)) {
+          sendResponse({ matches: [], error: "Nieprawidłowy identyfikator ligi" });
+          return;
+        }
+
+        const matches = await fetchLeagueMatches(message.leagueId);
+        await storageSetLocal({ selected_league_id: message.leagueId });
+        sendResponse({ matches });
+      } catch (err) {
+        logError("Fetch matches failed:", err);
+        sendResponse({ matches: [], error: String(err) });
+      }
+    },
+
+    async GET_EXTENSION_BOOTSTRAP(_message, sendResponse) {
+      try {
+        const token = await getAutodartsTokenState(false);
+        const stored = await storageGetLocal(["extension_bootstrap"]);
+        const bootstrap = stored.extension_bootstrap;
+
+        const isStale = !bootstrap?.timestamp || Date.now() - bootstrap.timestamp > 2 * 60 * 1000;
+        if (isStale) {
+          await warmBootstrapData();
+        }
+
+        const refreshed = await storageGetLocal(["extension_bootstrap"]);
+        sendResponse({ token, bootstrap: refreshed.extension_bootstrap || null });
+      } catch (err) {
+        sendResponse({ token: null, bootstrap: null, error: String(err) });
+      }
+    },
+  };
+
+  bAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    const handler = messageHandlers[message?.type];
+    if (!handler) return false;
+
+    handler(message, sendResponse);
+    return true;
+  });
+
+  // ─── Notification click handlers ───
+  bAPI.notifications.onClicked.addListener((id) => {
+    if (id.startsWith("league-submitted-") || id.startsWith("league-already-")) {
+      bAPI.storage.local.get(["autodarts_league_match"], (r) => {
+        const d = r.autodarts_league_match;
+        const url = d?.edart_match_id
+          ? `${CONFIG.EDART_URL}/submit-match?match_id=${d.edart_match_id}`
+          : `${CONFIG.EDART_URL}/matches`;
+        bAPI.tabs.create({ url, active: true });
+      });
+      bAPI.notifications.clear(id);
+    } else if (id.startsWith("league-error-") || id.startsWith("league-detected-")) {
+      bAPI.storage.local.get(["edart_manual_fallback"], (r) => {
+        const fb = r.edart_manual_fallback;
+        const url = fb?.autodarts_link
+          ? `${CONFIG.EDART_URL}/submit-match?autodarts_link=${encodeURIComponent(fb.autodarts_link)}`
+          : `${CONFIG.EDART_URL}/submit-match`;
+        bAPI.tabs.create({ url, active: true });
+      });
+      bAPI.notifications.clear(id);
     }
   });
-});
 
-try {
-  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
-    (details) => {
-      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
-      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
-        const token = authHeader.value.replace('Bearer ', '');
-        browserAPI.storage.local.set({
-          autodarts_token: token,
-          token_timestamp: Date.now(),
-          autodarts_token_source: 'webRequest-extraHeaders'
-        });
-      }
-    },
-    { urls: ["https://api.autodarts.io/*"] },
-    ["requestHeaders", "extraHeaders"]
-  );
-} catch {
-  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
-    (details) => {
-      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
-      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
-        const token = authHeader.value.replace('Bearer ', '');
-        browserAPI.storage.local.set({
-          autodarts_token: token,
-          token_timestamp: Date.now(),
-          autodarts_token_source: 'webRequest'
-        });
-      }
-    },
-    { urls: ["https://api.autodarts.io/*"] },
-    ["requestHeaders"]
-  );
-}
+  // ─── Token capture via webRequest ───
+  try {
+    bAPI.webRequest?.onBeforeSendHeaders?.addListener(
+      (details) => {
+        const auth = details.requestHeaders?.find((h) => h.name.toLowerCase() === "authorization");
+        if (auth?.value?.startsWith("Bearer ")) {
+          const token = auth.value.substring(7);
+          if (token.length >= 30) {
+            bAPI.storage.local.set({
+              autodarts_token: token,
+              token_timestamp: Date.now(),
+              autodarts_token_source: "webRequest",
+            });
+            log("Token captured via webRequest");
+          }
+        }
+      },
+      { urls: ["https://api.autodarts.io/*"] },
+      ["requestHeaders", "extraHeaders"]
+    );
+  } catch {
+    // Fallback without extraHeaders
+    try {
+      bAPI.webRequest?.onBeforeSendHeaders?.addListener(
+        (details) => {
+          const auth = details.requestHeaders?.find((h) => h.name.toLowerCase() === "authorization");
+          if (auth?.value?.startsWith("Bearer ")) {
+            const token = auth.value.substring(7);
+            if (token.length >= 30) {
+              bAPI.storage.local.set({
+                autodarts_token: token,
+                token_timestamp: Date.now(),
+                autodarts_token_source: "webRequest-fallback",
+              });
+            }
+          }
+        },
+        { urls: ["https://api.autodarts.io/*"] },
+        ["requestHeaders"]
+      );
+    } catch (e) {
+      logError("webRequest listener failed:", e);
+    }
+  }
+
+  // ─── Alarms: periodic token refresh ───
+  bAPI.alarms?.create?.("edart-token-refresh", {
+    periodInMinutes: CONFIG.TOKEN_REFRESH_ALARM_MIN,
+  });
+
+  bAPI.alarms?.onAlarm?.addListener?.((alarm) => {
+    if (alarm.name === "edart-token-refresh") {
+      log("Alarm: token refresh");
+      requestTokenRefreshFromTabs("alarm");
+      warmBootstrapData();
+    }
+  });
+
+  // ─── Lifecycle events ───
+  bAPI.runtime.onInstalled?.addListener(() => {
+    logAlways("Extension installed/updated");
+    requestTokenRefreshFromTabs("installed");
+    warmBootstrapData();
+  });
+
+  bAPI.runtime.onStartup?.addListener(() => {
+    logAlways("Browser startup");
+    requestTokenRefreshFromTabs("startup");
+    warmBootstrapData();
+  });
+
+  bAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
+    bAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-loaded" }, () => {
+      if (bAPI.runtime.lastError) log("Tab refresh failed:", bAPI.runtime.lastError.message);
+    });
+  });
+
+  // Warm cache shortly after startup
+  wait(1200).then(() => warmBootstrapData());
+
+  logAlways(`Background loaded (v${CONFIG.VERSION})`);
+})();
