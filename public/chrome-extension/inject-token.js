@@ -124,7 +124,7 @@
     }
   };
 
-  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "1.5.0" }, "*");
+  window.postMessage({ type: "EDART_EXTENSION_INSTALLED", version: "2.0.0" }, "*");
   postToken();
   postLastMatch();
   postLeagueMatch();
