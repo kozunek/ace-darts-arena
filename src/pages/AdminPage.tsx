@@ -660,21 +660,57 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
         toast({ title: "🎯 Harmonogram wygenerowany!", description: `${pl.match(matchesToInsert.length)} w ${roundsToGenerate.length} kolejkach.` });
 
       } else if (lt === "bracket") {
-        // Single elimination bracket
+        // Single elimination bracket — generate ALL rounds including TBD placeholders
+        const TBD_ID = "00000000-0000-0000-0000-000000000000";
         const bracket = generateBracket(playerIds);
+        let insertedCount = 0;
+        
+        // First: insert first-round matches with real players
         for (const m of bracket) {
-          if (m.player1Id === "TBD" || !m.player2Id) continue;
+          const p1 = m.player1Id === "TBD" ? TBD_ID : m.player1Id;
+          const p2 = !m.player2Id || m.player2Id === "TBD" ? TBD_ID : m.player2Id;
+          // Skip if both are TBD (empty placeholder)
+          if (p1 === TBD_ID && p2 === TBD_ID && m.bracketRound === bracket[0]?.bracketRound) continue;
+          
+          const hasBothPlayers = p1 !== TBD_ID && p2 !== TBD_ID;
           await supabase.from("matches").insert({
             league_id: league.id,
-            player1_id: m.player1Id,
-            player2_id: m.player2Id,
+            player1_id: p1,
+            player2_id: p2,
             date: startDate,
-            status: "upcoming",
+            status: hasBothPlayers ? "upcoming" : "upcoming",
             bracket_round: m.bracketRound,
             bracket_position: m.bracketPosition,
           });
+          insertedCount++;
         }
-        toast({ title: "🏆 Drabinka wygenerowana!", description: `Turniej dla ${playerIds.length} graczy.` });
+        
+        // Auto-advance bye players (first-round matches where one player is TBD)
+        const firstRoundMatches = bracket.filter(m => m.bracketRound === bracket[0]?.bracketRound);
+        for (const m of firstRoundMatches) {
+          const p1 = m.player1Id === "TBD" ? TBD_ID : m.player1Id;
+          const p2 = !m.player2Id || m.player2Id === "TBD" ? TBD_ID : m.player2Id;
+          if ((p1 === TBD_ID) !== (p2 === TBD_ID)) {
+            // One real player, one TBD = bye, auto-advance
+            const realPlayerId = p1 !== TBD_ID ? p1 : p2;
+            const pos = m.bracketPosition;
+            const nextPos = Math.ceil(pos / 2);
+            const isP1Slot = pos % 2 !== 0;
+            
+            // Find next round match
+            const nextRoundName = bracket.find(b => b.bracketRound !== m.bracketRound)?.bracketRound;
+            if (nextRoundName) {
+              const updateData: any = isP1Slot ? { player1_id: realPlayerId } : { player2_id: realPlayerId };
+              await supabase.from("matches")
+                .update(updateData)
+                .eq("league_id", league.id)
+                .eq("bracket_round", nextRoundName)
+                .eq("bracket_position", nextPos);
+            }
+          }
+        }
+        
+        toast({ title: "🏆 Drabinka wygenerowana!", description: `Turniej dla ${playerIds.length} graczy (${insertedCount} meczów).` });
 
       } else if (lt === "group_bracket") {
         // Group stage + bracket
