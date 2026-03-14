@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 
 const UpcomingMatchesPreview = () => {
   const { activeLeagueId, getLeagueMatches } = useLeague();
-  const upcoming = getLeagueMatches(activeLeagueId).filter((m) => m.status === "upcoming").slice(0, 4);
+  const upcoming = getLeagueMatches(activeLeagueId)
+    .filter((m) => m.status === "upcoming" && m.player1Name !== "TBD" && m.player2Name !== "TBD")
+    .slice(0, 4);
 
   if (upcoming.length === 0) return null;
 
