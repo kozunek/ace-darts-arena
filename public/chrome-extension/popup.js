@@ -338,7 +338,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     addLog("Historia odświeżona", "info");
   });
 
-  // Leagues
+  // Leagues (ładowanie przy starcie + ręczne odświeżanie)
+  loadLeagues();
   document.getElementById("refreshLeagues").addEventListener("click", () => { loadLeagues(); addLog("Ligi odświeżone", "info"); });
   document.getElementById("backToLeagues").addEventListener("click", () => {
     document.getElementById("leagueMatchesSection").style.display = "none";
