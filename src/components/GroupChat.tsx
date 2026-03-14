@@ -14,7 +14,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface Channel {
   id: string;
@@ -409,34 +408,30 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
         <div
           className={`flex ${compact ? "h-full" : isMobile ? "h-[calc(100vh-260px)] min-h-[400px]" : "h-full"} gap-0 overflow-hidden ${isMobile ? "relative" : "h-full"}`}
         >
-          <ResizablePanelGroup direction="horizontal" className="min-h-[400px]">
+          <div className="flex min-h-[400px]">
             {/* Channel sidebar */}
-            <ResizablePanel defaultSize={isMobile ? 0 : 25} minSize={isMobile ? 0 : 15} maxSize={40} collapsible={isMobile}>
-              <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full ${isMobile ? `fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
-                <div className="p-2 border-b border-border">
-                  <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
-                </div>
-                <ScrollArea className="flex-1">
-                  {channels.map((ch) => (
-                    <button
-                      key={ch.id}
-                      onClick={() => setActiveChannel(ch.id)}
-                      className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body ${
-                        activeChannel === ch.id ? "bg-primary/10 text-primary border-l-2 border-primary" : "hover:bg-muted/30 text-foreground border-l-2 border-transparent"
-                      }`}
-                    >
-                      {getChannelIcon(ch)}
-                      <span className="truncate">{ch.name}</span>
-                    </button>
-                  ))}
-                </ScrollArea>
+            <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full ${isMobile ? `fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
+              <div className="p-2 border-b border-border">
+                <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
               </div>
-            </ResizablePanel>
-
-            <ResizableHandle withHandle />
+              <ScrollArea className="flex-1">
+                {channels.map((ch) => (
+                  <button
+                    key={ch.id}
+                    onClick={() => setActiveChannel(ch.id)}
+                    className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body ${
+                      activeChannel === ch.id ? "bg-primary/10 text-primary border-l-2 border-primary" : "hover:bg-muted/30 text-foreground border-l-2 border-transparent"
+                    }`}
+                  >
+                    {getChannelIcon(ch)}
+                    <span className="truncate">{ch.name}</span>
+                  </button>
+                ))}
+              </ScrollArea>
+            </div>
 
             {/* Messages area */}
-            <ResizablePanel defaultSize={75} minSize={50}>
+            <div className="flex-1 flex flex-col min-w-0 h-full">
               <div className="flex-1 flex flex-col min-w-0 h-full">
                 {activeChannelData && (
                   <div className="p-2 border-b border-border flex items-center gap-2">
@@ -547,9 +542,8 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                 )}
               </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+          </div>
+        </div>
 
       {/* Backdrop for mobile sidebar */}
       {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />}
