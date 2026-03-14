@@ -495,14 +495,119 @@
   };
   window.addEventListener("popstate", () => safeTimeout(checkForHistoryPage, 500));
 
-  // ─── Autodarts user ID detection ───
+  // ─── Token & user capture helpers ───
+  function normalizeToken(value) {
+    if (typeof value !== "string") return null;
+    const token = value.trim().replace(/^Bearer\s+/i, "");
+    if (!token || token.length < 32) return null;
+    return token;
+  }
+
+  function deepFindToken(value, depth = 0) {
+    if (value == null || depth > 6) return null;
+
+    if (typeof value === "string") {
+      const direct = normalizeToken(value);
+      if (direct && direct.includes(".")) return direct;
+
+      const parsed = safeJsonParse(value);
+      if (parsed) return deepFindToken(parsed, depth + 1);
+
+      const regexMatch = value.match(/"access_token"\s*:\s*"([^"]+)"/i);
+      if (regexMatch?.[1]) return normalizeToken(regexMatch[1]);
+      return null;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const nested = deepFindToken(item, depth + 1);
+        if (nested) return nested;
+      }
+      return null;
+    }
+
+    if (typeof value === "object") {
+      const preferredKeys = ["access_token", "accessToken", "token", "authToken", "jwt", "bearer"];
+      for (const key of preferredKeys) {
+        if (key in value) {
+          const nested = deepFindToken(value[key], depth + 1);
+          if (nested) return nested;
+        }
+      }
+
+      for (const nestedValue of Object.values(value)) {
+        const nested = deepFindToken(nestedValue, depth + 1);
+        if (nested) return nested;
+      }
+    }
+
+    return null;
+  }
+
+  function deepFindUserId(value, depth = 0) {
+    if (value == null || depth > 6) return null;
+
+    if (typeof value === "string") {
+      if (value.length >= 8 && !value.includes(" ") && !value.includes(".")) return value;
+      const parsed = safeJsonParse(value);
+      return parsed ? deepFindUserId(parsed, depth + 1) : null;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const nested = deepFindUserId(item, depth + 1);
+        if (nested) return nested;
+      }
+      return null;
+    }
+
+    if (typeof value === "object") {
+      const preferredKeys = ["sub", "userId", "user_id", "profileId", "id"];
+      for (const key of preferredKeys) {
+        if (key in value) {
+          const nested = deepFindUserId(value[key], depth + 1);
+          if (nested) return nested;
+        }
+      }
+      for (const nestedValue of Object.values(value)) {
+        const nested = deepFindUserId(nestedValue, depth + 1);
+        if (nested) return nested;
+      }
+    }
+
+    return null;
+  }
+
+  function captureAutodartsToken(token, source) {
+    const normalized = normalizeToken(token);
+    if (!normalized) return;
+
+    storageSet({
+      autodarts_token: normalized,
+      token_timestamp: Date.now(),
+      autodarts_token_source: source,
+    });
+    console.log(`[eDART] Token captured (${source})`);
+  }
+
+  function captureAutodartsUserId(userId, source) {
+    if (!userId) return;
+    storageSet({ autodarts_user_id: userId });
+    sendMsg({ type: "AUTODARTS_USER_ID_DETECTED", userId });
+    console.log(`[eDART] Detected Autodarts User ID (${source}):`, userId);
+  }
+
   function detectAutodartsUserId() {
     for (const storage of [localStorage, sessionStorage]) {
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
         if (!key) continue;
-        const parsed = safeJsonParse(storage.getItem(key));
-        if (parsed?.profile?.sub) return parsed.profile.sub;
+        const raw = storage.getItem(key);
+        if (!raw) continue;
+
+        const parsed = safeJsonParse(raw);
+        const userId = deepFindUserId(parsed ?? raw);
+        if (userId) return userId;
       }
     }
     return null;
@@ -513,18 +618,17 @@
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
         if (!key) continue;
+
         const raw = storage.getItem(key);
         if (!raw) continue;
 
         const parsed = safeJsonParse(raw);
-        if (parsed?.access_token) return parsed.access_token;
+        const tokenFromParsed = deepFindToken(parsed ?? raw);
+        if (tokenFromParsed) return tokenFromParsed;
 
-        if (key.startsWith("oidc.user:") || key.startsWith("kc-")) {
-          if (parsed?.id_token) return parsed.id_token;
-        }
-
-        if (key.includes("auth0")) {
-          if (parsed?.body?.access_token) return parsed.body.access_token;
+        if (/access|token|auth|oidc|keycloak|kc-/i.test(key)) {
+          const maybeRawToken = normalizeToken(raw);
+          if (maybeRawToken && maybeRawToken.includes(".")) return maybeRawToken;
         }
       }
     }
@@ -533,14 +637,258 @@
       const cookies = document.cookie.split(";");
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split("=");
-        if (name && (name.includes("access_token") || name.includes("ad_token")) && value) {
-          return decodeURIComponent(value);
+        if (!name || !value) continue;
+        if (/access|token|auth/i.test(name)) {
+          const decoded = decodeURIComponent(value);
+          const cookieToken = normalizeToken(decoded);
+          if (cookieToken) return cookieToken;
         }
       }
-    } catch (e) { /* ignore */ }
+    } catch {
+      // ignore
+    }
 
     return null;
   }
+
+  function setupPageBridge() {
+    try {
+      const bridge = function () {
+        if (window.__EDART_PAGE_BRIDGE_INSTALLED__) return;
+        window.__EDART_PAGE_BRIDGE_INSTALLED__ = true;
+
+        const SOURCE = "EDART_PAGE_BRIDGE";
+        const post = (payload) => window.postMessage({ source: SOURCE, ...payload }, "*");
+
+        const normalize = (value) => {
+          if (typeof value !== "string") return null;
+          const token = value.trim().replace(/^Bearer\s+/i, "");
+          return token && token.length >= 32 ? token : null;
+        };
+
+        const parse = (value) => {
+          try { return JSON.parse(value); } catch { return null; }
+        };
+
+        const findToken = (value, depth = 0) => {
+          if (value == null || depth > 6) return null;
+
+          if (typeof value === "string") {
+            const token = normalize(value);
+            if (token && token.includes(".")) return token;
+            const parsed = parse(value);
+            if (parsed) return findToken(parsed, depth + 1);
+            return null;
+          }
+
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              const nested = findToken(item, depth + 1);
+              if (nested) return nested;
+            }
+            return null;
+          }
+
+          if (typeof value === "object") {
+            const preferredKeys = ["access_token", "accessToken", "token", "authToken", "jwt", "bearer"];
+            for (const key of preferredKeys) {
+              if (key in value) {
+                const nested = findToken(value[key], depth + 1);
+                if (nested) return nested;
+              }
+            }
+
+            for (const nestedValue of Object.values(value)) {
+              const nested = findToken(nestedValue, depth + 1);
+              if (nested) return nested;
+            }
+          }
+
+          return null;
+        };
+
+        const findUserId = (value, depth = 0) => {
+          if (value == null || depth > 6) return null;
+
+          if (typeof value === "string") {
+            if (value.length >= 8 && !value.includes(" ") && !value.includes(".")) return value;
+            const parsed = parse(value);
+            return parsed ? findUserId(parsed, depth + 1) : null;
+          }
+
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              const nested = findUserId(item, depth + 1);
+              if (nested) return nested;
+            }
+            return null;
+          }
+
+          if (typeof value === "object") {
+            const preferredKeys = ["sub", "userId", "user_id", "profileId", "id"];
+            for (const key of preferredKeys) {
+              if (key in value) {
+                const nested = findUserId(value[key], depth + 1);
+                if (nested) return nested;
+              }
+            }
+            for (const nestedValue of Object.values(value)) {
+              const nested = findUserId(nestedValue, depth + 1);
+              if (nested) return nested;
+            }
+          }
+
+          return null;
+        };
+
+        const scanStorage = (reason) => {
+          for (const storage of [window.localStorage, window.sessionStorage]) {
+            for (let i = 0; i < storage.length; i++) {
+              const key = storage.key(i);
+              if (!key) continue;
+              const raw = storage.getItem(key);
+              if (!raw) continue;
+
+              const parsed = parse(raw);
+              const token = findToken(parsed ?? raw);
+              if (token) {
+                post({ type: "TOKEN_CAPTURED", token, reason: `${reason}:storage` });
+                return;
+              }
+            }
+          }
+        };
+
+        const scanUserId = (reason) => {
+          for (const storage of [window.localStorage, window.sessionStorage]) {
+            for (let i = 0; i < storage.length; i++) {
+              const key = storage.key(i);
+              if (!key) continue;
+              const raw = storage.getItem(key);
+              if (!raw) continue;
+
+              const parsed = parse(raw);
+              const userId = findUserId(parsed ?? raw);
+              if (userId) {
+                post({ type: "USER_ID_CAPTURED", userId, reason: `${reason}:storage` });
+                return;
+              }
+            }
+          }
+        };
+
+        const extractAuthHeader = (request, options = {}) => {
+          let authHeader = null;
+          if (options.headers) {
+            if (options.headers instanceof Headers) {
+              authHeader = options.headers.get("Authorization");
+            } else if (typeof options.headers === "object") {
+              authHeader = options.headers.Authorization || options.headers.authorization || null;
+            }
+          }
+
+          if (!authHeader && request instanceof Request) {
+            authHeader = request.headers?.get("Authorization") || null;
+          }
+
+          if (!authHeader) return null;
+          return normalize(authHeader);
+        };
+
+        const originalFetch = window.fetch;
+        window.fetch = function (...args) {
+          const request = args[0];
+          const options = args[1] || {};
+          const url = typeof request === "string" ? request : request?.url;
+
+          if (url && url.includes("api.autodarts.io")) {
+            const token = extractAuthHeader(request, options);
+            if (token) post({ type: "TOKEN_CAPTURED", token, reason: "bridge-fetch-header" });
+          }
+
+          const fetchPromise = originalFetch.apply(this, args);
+
+          if (url && /api\.autodarts\.io\/as\/v0\/matches\//i.test(url)) {
+            fetchPromise
+              .then(async (res) => {
+                if (!res.ok) return;
+                const match = await res.clone().json().catch(() => null);
+                if (match) post({ type: "MATCH_CAPTURED", match, url });
+              })
+              .catch(() => {});
+          }
+
+          return fetchPromise;
+        };
+
+        const originalOpen = XMLHttpRequest.prototype.open;
+        const originalSetHeader = XMLHttpRequest.prototype.setRequestHeader;
+        const originalSend = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.open = function (method, url) {
+          this.__edartUrl = url;
+          return originalOpen.apply(this, arguments);
+        };
+
+        XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+          if (this.__edartUrl?.includes("api.autodarts.io") && name?.toLowerCase() === "authorization") {
+            const token = normalize(value);
+            if (token) post({ type: "TOKEN_CAPTURED", token, reason: "bridge-xhr-header" });
+          }
+          return originalSetHeader.apply(this, arguments);
+        };
+
+        XMLHttpRequest.prototype.send = function () {
+          this.addEventListener("load", () => {
+            if (!this.__edartUrl || !/api\.autodarts\.io\/as\/v0\/matches\//i.test(this.__edartUrl)) return;
+            const match = parse(this.responseText);
+            if (match) post({ type: "MATCH_CAPTURED", match, url: this.__edartUrl });
+          });
+
+          return originalSend.apply(this, arguments);
+        };
+
+        window.addEventListener("storage", (event) => {
+          if (!event.newValue) return;
+          const parsed = parse(event.newValue);
+          const token = findToken(parsed ?? event.newValue);
+          if (token) post({ type: "TOKEN_CAPTURED", token, reason: "bridge-storage-event" });
+        });
+
+        scanStorage("bridge-init");
+        scanUserId("bridge-init");
+        setTimeout(() => scanStorage("bridge-retry-2s"), 2000);
+        setTimeout(() => scanStorage("bridge-retry-5s"), 5000);
+        setInterval(() => {
+          scanStorage("bridge-interval");
+          scanUserId("bridge-interval");
+        }, 10000);
+      };
+
+      const script = document.createElement("script");
+      script.textContent = `;(${bridge.toString()})();`;
+      (document.documentElement || document.head || document.body).appendChild(script);
+      script.remove();
+    } catch (err) {
+      console.warn("[eDART] Page bridge injection failed:", err);
+    }
+  }
+
+  window.addEventListener("message", (event) => {
+    if (event.source !== window || !event.data || event.data.source !== "EDART_PAGE_BRIDGE") return;
+
+    if (event.data.type === "TOKEN_CAPTURED" && event.data.token) {
+      captureAutodartsToken(event.data.token, event.data.reason || "page-bridge");
+    }
+
+    if (event.data.type === "USER_ID_CAPTURED" && event.data.userId) {
+      captureAutodartsUserId(event.data.userId, event.data.reason || "page-bridge");
+    }
+
+    if (event.data.type === "MATCH_CAPTURED" && event.data.match) {
+      handleMatchData(event.data.match, event.data.url || location.href);
+    }
+  });
 
   // ─── Intercept fetch ───
   const originalFetch = window.fetch;
@@ -561,8 +909,8 @@
       if (!authHeader && request instanceof Request) {
         authHeader = request.headers?.get("Authorization");
       }
-      if (authHeader?.startsWith("Bearer ")) {
-        storageSet({ autodarts_token: authHeader.replace("Bearer ", ""), token_timestamp: Date.now() });
+      if (authHeader) {
+        captureAutodartsToken(authHeader, "content-fetch-header");
       }
     }
 
@@ -591,49 +939,57 @@
   };
 
   XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
-    if (isAlive() && this._url?.includes("api.autodarts.io") &&
-        name.toLowerCase() === "authorization" && value.startsWith("Bearer ")) {
-      storageSet({ autodarts_token: value.replace("Bearer ", ""), token_timestamp: Date.now() });
+    if (isAlive() && this._url?.includes("api.autodarts.io") && name?.toLowerCase() === "authorization") {
+      captureAutodartsToken(value, "content-xhr-header");
     }
     return originalSetRequestHeader.apply(this, arguments);
   };
 
   // ─── Initial capture (with retry for late-loading SPAs) ───
-  function initialCapture() {
+  function initialCapture(reason = "manual") {
     const token = getAutodartsToken();
-    if (token) {
-      storageSet({ autodarts_token: token, token_timestamp: Date.now() });
-      console.log("[eDART] Token captured from storage on init");
-    }
+    if (token) captureAutodartsToken(token, `${reason}:storage-scan`);
 
     const userId = detectAutodartsUserId();
-    if (userId) {
-      storageSet({ autodarts_user_id: userId });
-      sendMsg({ type: "AUTODARTS_USER_ID_DETECTED", userId });
-      console.log("[eDART] Detected Autodarts User ID:", userId);
-    }
+    if (userId) captureAutodartsUserId(userId, `${reason}:storage-scan`);
   }
 
-  initialCapture();
-  safeTimeout(initialCapture, 2000);
-  safeTimeout(initialCapture, 5000);
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== "EDART_REFRESH_TOKEN") return false;
 
+    initialCapture(message.reason || "runtime-refresh");
+    sendResponse({ ok: true });
+    return true;
+  });
+
+  setupPageBridge();
+
+  // Run immediately + retry after short delays (SPA may load auth late)
+  initialCapture("startup");
+  safeTimeout(() => initialCapture("retry-2s"), 2000);
+  safeTimeout(() => initialCapture("retry-5s"), 5000);
+
+  // Periodic re-scan
   safeInterval(() => {
-    const t = getAutodartsToken();
-    if (t) storageSet({ autodarts_token: t, token_timestamp: Date.now() });
-    const uid = detectAutodartsUserId();
-    if (uid) storageSet({ autodarts_user_id: uid });
-  }, 5000);
+    const token = getAutodartsToken();
+    if (token) captureAutodartsToken(token, "interval");
 
+    const userId = detectAutodartsUserId();
+    if (userId) storageSet({ autodarts_user_id: userId });
+  }, 8000);
+
+  // Also watch for storage events (token refresh from another tab)
   window.addEventListener("storage", (event) => {
-    if (!isAlive()) return;
+    if (!isAlive() || !event.newValue) return;
+
     const parsed = safeJsonParse(event.newValue);
-    if (parsed?.access_token) {
-      storageSet({ autodarts_token: parsed.access_token, token_timestamp: Date.now() });
-      console.log("[eDART] Token captured from storage event");
-    }
+    const token = deepFindToken(parsed ?? event.newValue);
+    if (token) captureAutodartsToken(token, "storage-event");
+
+    const userId = deepFindUserId(parsed ?? event.newValue);
+    if (userId) captureAutodartsUserId(userId, "storage-event");
   });
 
   checkForHistoryPage();
-  console.log("[eDART] Content script loaded (v2.0.0)");
+  console.log("[eDART] Content script loaded (v2.1.0)");
 })();

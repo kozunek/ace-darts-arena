@@ -4,20 +4,81 @@ const EDART_URL = "https://edartpolska.pl";
 const SUPABASE_URL = "https://uiolhzctnbskdjteufkj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpb2xoemN0bmJza2RqdGV1ZmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTc4NjEsImV4cCI6MjA4ODQ5Mzg2MX0.SEGOONfttWCS7jbacT5NxlbiOGSxmrVRp4DFqQRDYkk";
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestTokenRefreshFromAutodartsTabs(reason = "manual") {
+  if (!browserAPI.tabs?.query) return false;
+
+  const tabs = await new Promise((resolve) => {
+    browserAPI.tabs.query({ url: ["https://play.autodarts.io/*"] }, (results) => {
+      if (browserAPI.runtime.lastError) {
+        resolve([]);
+        return;
+      }
+      resolve(results || []);
+    });
+  });
+
+  if (!tabs.length) return false;
+
+  tabs.forEach((tab) => {
+    if (!tab?.id) return;
+    browserAPI.tabs.sendMessage(tab.id, { type: "EDART_REFRESH_TOKEN", reason }, () => {
+      if (browserAPI.runtime.lastError) {
+        // ignore missing content script on non-ready tabs
+      }
+    });
+  });
+
+  return true;
+}
+
+async function getAutodartsTokenState(forceRefresh = false) {
+  let result = await new Promise((resolve) => {
+    browserAPI.storage.local.get(["autodarts_token", "token_timestamp", "autodarts_token_source"], (stored) => {
+      resolve(stored || {});
+    });
+  });
+
+  const age = Date.now() - (result.token_timestamp || 0);
+  const fresh = !!result.autodarts_token && age < 300000;
+
+  if (forceRefresh || !fresh) {
+    const refreshRequested = await requestTokenRefreshFromAutodartsTabs(
+      forceRefresh ? "forced-by-popup" : "missing-or-stale"
+    );
+
+    if (refreshRequested) {
+      await wait(1200);
+      result = await new Promise((resolve) => {
+        browserAPI.storage.local.get(["autodarts_token", "token_timestamp", "autodarts_token_source"], (stored) => {
+          resolve(stored || {});
+        });
+      });
+    }
+  }
+
+  const updatedAge = Date.now() - (result.token_timestamp || 0);
+  return {
+    token: result.autodarts_token || null,
+    timestamp: result.token_timestamp || null,
+    source: result.autodarts_token_source || null,
+    fresh: !!result.autodarts_token && updatedAge < 300000,
+  };
+}
+
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_AUTODARTS_TOKEN') {
-    browserAPI.storage.local.get(['autodarts_token', 'token_timestamp'], (result) => {
-      sendResponse({
-        token: result.autodarts_token || null,
-        timestamp: result.token_timestamp || null,
-        fresh: result.token_timestamp ? (Date.now() - result.token_timestamp < 300000) : false
-      });
-    });
+    getAutodartsTokenState(message?.forceRefresh === true)
+      .then((tokenState) => sendResponse(tokenState))
+      .catch(() => sendResponse({ token: null, timestamp: null, fresh: false }));
     return true;
   }
 
   if (message.type === 'CLEAR_TOKEN') {
-    browserAPI.storage.local.remove(['autodarts_token', 'token_timestamp']);
+    browserAPI.storage.local.remove(['autodarts_token', 'token_timestamp', 'autodarts_token_source']);
     sendResponse({ success: true });
     return true;
   }
@@ -474,14 +535,53 @@ browserAPI.notifications.onClicked.addListener((notificationId) => {
   }
 });
 
-browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
-  (details) => {
-    const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
-    if (authHeader && authHeader.value?.startsWith('Bearer ')) {
-      const token = authHeader.value.replace('Bearer ', '');
-      browserAPI.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+browserAPI.runtime.onInstalled?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-installed");
+});
+
+browserAPI.runtime.onStartup?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-startup");
+});
+
+browserAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
+  browserAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-updated" }, () => {
+    if (browserAPI.runtime.lastError) {
+      // ignore
     }
-  },
-  { urls: ["https://api.autodarts.io/*"] },
-  ["requestHeaders"]
-);
+  });
+});
+
+try {
+  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
+    (details) => {
+      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
+      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
+        const token = authHeader.value.replace('Bearer ', '');
+        browserAPI.storage.local.set({
+          autodarts_token: token,
+          token_timestamp: Date.now(),
+          autodarts_token_source: 'webRequest-extraHeaders'
+        });
+      }
+    },
+    { urls: ["https://api.autodarts.io/*"] },
+    ["requestHeaders", "extraHeaders"]
+  );
+} catch {
+  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
+    (details) => {
+      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
+      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
+        const token = authHeader.value.replace('Bearer ', '');
+        browserAPI.storage.local.set({
+          autodarts_token: token,
+          token_timestamp: Date.now(),
+          autodarts_token_source: 'webRequest'
+        });
+      }
+    },
+    { urls: ["https://api.autodarts.io/*"] },
+    ["requestHeaders"]
+  );
+}

@@ -6,6 +6,76 @@ importScripts("config.js", "cache.js", "playerConfig.js", "notifications.js", "a
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
+function storageGetLocal(keys) {
+  return new Promise((resolve) => {
+    browserAPI.storage.local.get(keys, (result) => resolve(result || {}));
+  });
+}
+
+function storageRemoveLocal(keys) {
+  return new Promise((resolve) => {
+    browserAPI.storage.local.remove(keys, resolve);
+  });
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestTokenRefreshFromAutodartsTabs(reason = "manual") {
+  if (!browserAPI.tabs?.query) return false;
+
+  const tabs = await new Promise((resolve) => {
+    browserAPI.tabs.query({ url: ["https://play.autodarts.io/*"] }, (results) => {
+      if (browserAPI.runtime.lastError) {
+        resolve([]);
+        return;
+      }
+      resolve(results || []);
+    });
+  });
+
+  if (!tabs.length) return false;
+
+  tabs.forEach((tab) => {
+    if (!tab?.id) return;
+    browserAPI.tabs.sendMessage(tab.id, { type: "EDART_REFRESH_TOKEN", reason }, () => {
+      if (browserAPI.runtime.lastError && CONFIG.DEBUG_MODE) {
+        log("Token refresh ping failed:", browserAPI.runtime.lastError.message);
+      }
+    });
+  });
+
+  return true;
+}
+
+async function getAutodartsTokenState(forceRefresh = false) {
+  let result = await storageGetLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
+
+  const age = Date.now() - (result.token_timestamp || 0);
+  const fresh = !!result.autodarts_token && age < CONFIG.TOKEN_FRESH_MS;
+  const shouldRefresh = forceRefresh || !fresh;
+
+  if (shouldRefresh) {
+    const refreshRequested = await requestTokenRefreshFromAutodartsTabs(
+      forceRefresh ? "forced-by-popup" : "missing-or-stale"
+    );
+
+    if (refreshRequested) {
+      await wait(1200);
+      result = await storageGetLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
+    }
+  }
+
+  const updatedAge = Date.now() - (result.token_timestamp || 0);
+  return {
+    token: result.autodarts_token || null,
+    timestamp: result.token_timestamp || null,
+    source: result.autodarts_token_source || null,
+    fresh: !!result.autodarts_token && updatedAge < CONFIG.TOKEN_FRESH_MS,
+  };
+}
+
 // ─── Message listeners ───
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = messageHandlers[message.type];
@@ -17,19 +87,13 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 const messageHandlers = {
-  GET_AUTODARTS_TOKEN(message, sendResponse) {
-    browserAPI.storage.local.get(["autodarts_token", "token_timestamp"], (result) => {
-      const age = Date.now() - (result.token_timestamp || 0);
-      sendResponse({
-        token: result.autodarts_token || null,
-        timestamp: result.token_timestamp || null,
-        fresh: age < CONFIG.TOKEN_FRESH_MS,
-      });
-    });
+  async GET_AUTODARTS_TOKEN(message, sendResponse) {
+    const tokenState = await getAutodartsTokenState(message?.forceRefresh === true);
+    sendResponse(tokenState);
   },
 
-  CLEAR_TOKEN(message, sendResponse) {
-    browserAPI.storage.local.remove(["autodarts_token", "token_timestamp"]);
+  async CLEAR_TOKEN(message, sendResponse) {
+    await storageRemoveLocal(["autodarts_token", "token_timestamp", "autodarts_token_source"]);
     sendResponse({ success: true });
   },
 
@@ -287,5 +351,23 @@ try {
     ["requestHeaders"]
   );
 }
+
+browserAPI.runtime.onInstalled?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-installed");
+});
+
+browserAPI.runtime.onStartup?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-startup");
+});
+
+browserAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
+
+  browserAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-updated" }, () => {
+    if (browserAPI.runtime.lastError && CONFIG.DEBUG_MODE) {
+      log("Tab refresh ping failed:", browserAPI.runtime.lastError.message);
+    }
+  });
+});
 
 logAlways(`Background loaded (v${CONFIG.VERSION})`);

@@ -25,10 +25,11 @@
       "matches": [
         "https://edartpolska.pl/*",
         "https://www.edartpolska.pl/*",
-        "https://*.lovable.app/*"
+        "https://*.lovable.app/*",
+        "https://*.lovableproject.com/*"
       ],
       "js": ["inject-token.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
   "options_page": "options.html",

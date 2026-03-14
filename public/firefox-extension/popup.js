@@ -1,5 +1,44 @@
-// ─── Popup dashboard logic v2.1 ───
+// ─── Popup dashboard logic v2.2 ───
 const bAPI = typeof browser !== "undefined" ? browser : chrome;
+
+function sendMessageAsync(message) {
+  return new Promise((resolve) => {
+    try {
+      bAPI.runtime.sendMessage(message, (response) => {
+        if (bAPI.runtime?.lastError) {
+          resolve(null);
+          return;
+        }
+        resolve(response || null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function renderTokenStatus(statusEl, copyBtn, tokenInfo) {
+  if (tokenInfo?.token) {
+    const age = Date.now() - (tokenInfo.timestamp || 0);
+    const fresh = age < 300000;
+
+    statusEl.className = "status connected";
+    statusEl.innerHTML = `<span>✅</span> Token ${fresh ? "aktywny" : "odświeżony"}${tokenInfo.source ? ` (${tokenInfo.source})` : ""}`;
+
+    copyBtn.style.display = "flex";
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(tokenInfo.token).then(() => {
+        copyBtn.textContent = "✅ Skopiowano!";
+        setTimeout(() => (copyBtn.textContent = "📋 Kopiuj token"), 2000);
+      });
+    };
+    return;
+  }
+
+  copyBtn.style.display = "none";
+  statusEl.className = "status disconnected";
+  statusEl.innerHTML = '<span>❌</span> Brak tokena — otwórz Autodarts i odśwież stronę';
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const statusEl = document.getElementById("status");
@@ -18,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const config = await PlayerConfig.get();
     const theme = config.theme || "dark";
     document.body.className = `theme-${theme}`;
-  } catch (e) {
+  } catch {
     document.body.className = "theme-dark";
   }
 
@@ -30,34 +69,42 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ─── Token status ───
-  bAPI.storage.local.get(
-    ["autodarts_token", "token_timestamp", "autodarts_user_id"],
-    (result) => {
-      if (result.autodarts_token) {
-        const age = Date.now() - (result.token_timestamp || 0);
-        const fresh = age < 300000;
+  statusEl.className = "status";
+  statusEl.innerHTML = "<span>⏳</span> Sprawdzanie tokenu...";
 
-        statusEl.className = "status connected";
-        statusEl.innerHTML = `<span>✅</span> Token ${fresh ? "aktywny" : "może być nieaktualny"}`;
+  const tokenStorage = await new Promise((resolve) => {
+    bAPI.storage.local.get(
+      ["autodarts_token", "token_timestamp", "autodarts_user_id", "autodarts_token_source"],
+      (result) => resolve(result || {})
+    );
+  });
 
-        copyBtn.style.display = "flex";
-        copyBtn.onclick = () => {
-          navigator.clipboard.writeText(result.autodarts_token).then(() => {
-            copyBtn.textContent = "✅ Skopiowano!";
-            setTimeout(() => (copyBtn.textContent = "📋 Kopiuj token"), 2000);
-          });
-        };
-      } else {
-        statusEl.className = "status disconnected";
-        statusEl.innerHTML = '<span>❌</span> Brak tokena — zaloguj się do Autodarts';
-      }
+  let tokenInfo = {
+    token: tokenStorage.autodarts_token || null,
+    timestamp: tokenStorage.token_timestamp || null,
+    source: tokenStorage.autodarts_token_source || null,
+  };
 
-      if (result.autodarts_user_id) {
-        autodartsIdEl.style.display = "block";
-        autodartsIdEl.textContent = `Autodarts ID: ${result.autodarts_user_id.substring(0, 12)}...`;
-      }
+  if (!tokenInfo.token) {
+    statusEl.className = "status disconnected";
+    statusEl.innerHTML = "<span>⏳</span> Brak tokenu — próbuję odświeżyć...";
+
+    const refreshed = await sendMessageAsync({ type: "GET_AUTODARTS_TOKEN", forceRefresh: true });
+    if (refreshed?.token) {
+      tokenInfo = {
+        token: refreshed.token,
+        timestamp: refreshed.timestamp,
+        source: refreshed.source || "runtime-refresh",
+      };
     }
-  );
+  }
+
+  renderTokenStatus(statusEl, copyBtn, tokenInfo);
+
+  if (tokenStorage.autodarts_user_id) {
+    autodartsIdEl.style.display = "block";
+    autodartsIdEl.textContent = `Autodarts ID: ${tokenStorage.autodarts_user_id.substring(0, 12)}...`;
+  }
 
   // ─── Match history ───
   bAPI.storage.local.get(["match_history"], (result) => {
@@ -84,13 +131,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
         <div class="meta">
           <span>${last.league || "Liga"}</span>
-          <span class="badge ${last.status === 'submitted' ? 'badge-success' : last.status === 'already_submitted' ? 'badge-info' : 'badge-error'}">
-            ${last.status === 'submitted' ? '✓ Wysłany' : last.status === 'already_submitted' ? '↻ Już zgłoszony' : '✗ Błąd'}
+          <span class="badge ${last.status === "submitted" ? "badge-success" : last.status === "already_submitted" ? "badge-info" : "badge-error"}">
+            ${last.status === "submitted" ? "✓ Wysłany" : last.status === "already_submitted" ? "↻ Już zgłoszony" : "✗ Błąd"}
           </span>
         </div>
       `;
 
-      // Timeline
       timelineSection.style.display = "block";
       updateTimeline(last.status);
     }
@@ -101,8 +147,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const timeStr = `${date.getDate()}.${date.getMonth() + 1} ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
         const statusBadge =
           m.status === "submitted" ? '<span class="badge badge-success">✓ Wysłany</span>'
-          : m.status === "already_submitted" ? '<span class="badge badge-info">↻ Już zgłoszony</span>'
-          : '<span class="badge badge-error">✗ Błąd</span>';
+            : m.status === "already_submitted" ? '<span class="badge badge-info">↻ Już zgłoszony</span>'
+              : '<span class="badge badge-error">✗ Błąd</span>';
 
         return `
           <div class="match-card">
@@ -117,7 +163,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       .join("");
   });
 
-  // ─── Buttons ───
   openBtn.onclick = () => bAPI.tabs.create({ url: "https://play.autodarts.io" });
 });
 
