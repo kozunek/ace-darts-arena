@@ -46,7 +46,7 @@ const FloatingChat = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
   const [chatPosition, setChatPosition] = useState({ x: 0, y: 0 });
-  const [chatSize, setChatSize] = useState({ width: 384, height: 500 }); // w-96 = 384px
+  const [chatSize, setChatSize] = useState({ width: 420, height: 600 });
   const [isMaximized, setIsMaximized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -195,6 +195,14 @@ const FloatingChat = () => {
     saveChatSettings(undefined, undefined, !isMaximized);
   };
 
+  const handleToggle = () => {
+    if (isMobile && !isOpen) {
+      navigate("/chat");
+      return;
+    }
+    setIsOpen(!isOpen);
+  };
+
   if (!user) return null;
 
   const activeName = contacts.find((c) => c.user_id === activeChat)?.name || allPlayers.find((p) => p.user_id === activeChat)?.name || "Czat";
@@ -206,10 +214,9 @@ const FloatingChat = () => {
     <>
       <button
         onClick={handleToggle}
-        className={`fixed bottom-5 right-5 z-50 ${isMobile ? 'w-16 h-16 text-lg' : 'w-14 h-14'} rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105`}
-        style={isMobile ? { fontSize: 24 } : {}}
+        className={`fixed bottom-5 right-5 z-50 ${isMobile ? 'w-14 h-14' : 'w-14 h-14'} rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105`}
       >
-        <MessageCircle className={isMobile ? 'h-8 w-8' : 'h-6 w-6'} />
+        <MessageCircle className="h-6 w-6" />
         {totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
             {totalUnread > 9 ? "9+" : totalUnread}
@@ -218,34 +225,32 @@ const FloatingChat = () => {
       </button>
 
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isMobile && (
           <motion.div
-            drag={!isMobile}
+            drag
             dragMomentum={false}
-            dragConstraints={isMobile ? undefined : { left: 0, top: 0, right: window.innerWidth - (isMaximized ? window.innerWidth : chatSize.width), bottom: window.innerHeight - (isMaximized ? window.innerHeight : chatSize.height) }}
-            onDragEnd={isMobile ? undefined : handleDragEnd}
+            dragConstraints={{ left: 0, top: 0, right: window.innerWidth - (isMaximized ? window.innerWidth : chatSize.width), bottom: window.innerHeight - (isMaximized ? window.innerHeight : chatSize.height) }}
+            onDragEnd={handleDragEnd}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{
               opacity: 1,
               scale: 1,
-              x: isMobile ? 0 : (isMaximized ? 0 : chatPosition.x),
-              y: isMobile ? 0 : (isMaximized ? 0 : chatPosition.y),
-              width: isMobile ? '100vw' : (isMaximized ? '100vw' : chatSize.width),
-              height: isMobile ? '100vh' : (isMaximized ? '100vh' : chatSize.height)
+              x: isMaximized ? 0 : chatPosition.x,
+              y: isMaximized ? 0 : chatPosition.y,
+              width: isMaximized ? '100vw' : chatSize.width,
+              height: isMaximized ? '100vh' : chatSize.height
             }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed z-50 ${isMobile ? 'rounded-none top-0 left-0' : 'rounded-xl'} border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMobile ? '' : (isMaximized ? 'top-0 left-0' : 'bottom-24 right-5')}`}
+            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMaximized ? 'top-0 left-0' : 'bottom-24 right-5'}`}
             style={{
-              width: isMobile ? '100vw' : (isMaximized ? '100vw' : chatSize.width),
-              height: isMobile ? '100vh' : (isMaximized ? '100vh' : chatSize.height),
-              cursor: isMobile ? 'default' : 'move',
-              maxWidth: '100vw',
-              maxHeight: '100vh',
+              width: isMaximized ? '100vw' : chatSize.width,
+              height: isMaximized ? '100vh' : chatSize.height,
+              cursor: 'move',
             }}
           >
             {/* Header with controls */}
-            <div className={`flex items-center justify-between border-b border-border bg-muted/30 ${isMobile ? 'px-4 py-3' : 'px-3 py-2'}`}>
+            <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2">
               <div className="flex border-b border-border bg-muted/30">
                 <button
                   onClick={() => { setChatMode("private"); setActiveChat(null); }}
@@ -261,42 +266,38 @@ const FloatingChat = () => {
                 </button>
               </div>
               <div className="flex items-center gap-1">
-                {!isMobile && (
-                  <button onClick={toggleMaximize} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
-                    {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </button>
-                )}
-                <button onClick={() => setIsOpen(false)} className={`p-1 text-muted-foreground hover:text-foreground transition-colors ${isMobile ? 'text-xl' : ''}`}
-                  style={isMobile ? { fontSize: 24 } : {}}>
-                  <X className={isMobile ? 'h-6 w-6' : 'h-4 w-4'} />
+                <button onClick={toggleMaximize} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+                <button onClick={() => setIsOpen(false)} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
             {chatMode === "group" ? (
-              <GroupChat compact={isMobile} />
+              <GroupChat compact />
             ) : (
               <>
                 {/* Header for private chat */}
                 {activeChat && (
-                  <div className={`border-b border-border flex items-center gap-2 bg-muted/20 ${isMobile ? 'p-4' : 'p-2'}`}>
-                    <Button variant="ghost" size={isMobile ? "lg" : "sm"} className={isMobile ? "h-10 w-10 p-0" : "h-6 w-6 p-0"} onClick={() => setActiveChat(null)}>
-                      <ArrowLeft className={isMobile ? "h-6 w-6" : "h-3.5 w-3.5"} />
+                  <div className="border-b border-border flex items-center gap-2 bg-muted/20 p-2">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setActiveChat(null)}>
+                      <ArrowLeft className="h-3.5 w-3.5" />
                     </Button>
-                    <span className={`font-display font-bold text-foreground flex-1 ${isMobile ? 'text-base' : 'text-xs'}`}>{activeName}</span>
+                    <span className="font-display font-bold text-foreground flex-1 text-sm">{activeName}</span>
                   </div>
                 )}
 
                 {activeChat ? (
                   <>
-                    <ScrollArea className={`flex-1 ${isMobile ? 'p-4' : 'p-3'}`} style={isMobile ? { minHeight: 0 } : {}}>
+                    <ScrollArea className="flex-1 p-3">
                       <div className="space-y-2">
                         {messages.map((m) => {
                           const isMine = m.sender_id === user.id;
                           return (
                             <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                              <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}
-                                style={isMobile ? { fontSize: 16 } : {}}>
+                              <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
                                 <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
                                 <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                                   {(() => {
@@ -313,24 +314,24 @@ const FloatingChat = () => {
                         <div ref={messagesEndRef} />
                       </div>
                     </ScrollArea>
-                    <div className={`border-t border-border ${isMobile ? 'p-4' : 'p-2'}`}>
-                      <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className={`flex gap-1.5 ${isMobile ? 'flex-col' : ''}`}>
-                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Napisz..." className={`bg-muted/30 border-border ${isMobile ? 'text-base h-12' : 'text-sm h-8'}`} maxLength={1000} />
-                        <Button type="submit" variant="hero" size={isMobile ? "lg" : "icon"} className={`${isMobile ? 'h-12 w-full mt-2' : 'h-8 w-8 shrink-0'}`} disabled={sending || !newMessage.trim()}>
-                          <Send className={isMobile ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
+                    <div className="border-t border-border p-2">
+                      <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-1.5">
+                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Napisz..." className="bg-muted/30 border-border text-sm h-9 flex-1" maxLength={1000} />
+                        <Button type="submit" variant="hero" size="icon" className="h-9 w-9 shrink-0" disabled={sending || !newMessage.trim()}>
+                          <Send className="h-3.5 w-3.5" />
                         </Button>
                       </form>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className={`border-b border-border flex items-center gap-1 ${isMobile ? 'p-4' : 'p-2'}`}>
+                    <div className="border-b border-border flex items-center gap-1 p-2">
                       <div className="relative flex-1">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj..." className={`pl-7 ${isMobile ? 'h-10 text-base' : 'h-7 text-xs'} bg-muted/30 border-border`} />
+                        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj..." className="pl-7 h-7 text-xs bg-muted/30 border-border" />
                       </div>
-                      <Button variant="ghost" size={isMobile ? "lg" : "sm"} className={isMobile ? "h-10 w-10 p-0" : "h-7 w-7 p-0"} onClick={() => setShowNewChat(!showNewChat)}>
-                        <Users className={isMobile ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowNewChat(!showNewChat)}>
+                        <Users className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                     <ScrollArea className="flex-1">
@@ -338,16 +339,16 @@ const FloatingChat = () => {
                         <div className="p-2 border-b border-border bg-muted/20">
                           <p className="text-[10px] font-display uppercase text-muted-foreground mb-1 px-1">Nowa rozmowa</p>
                           {filteredNewPlayers.map((p) => (
-                            <button key={p.user_id} onClick={() => loadMessages(p.user_id!)} className={`w-full flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 transition-colors text-left ${isMobile ? 'text-base h-12' : 'text-xs'}`}>
-                              <div className={`rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-display font-bold text-primary ${isMobile ? 'w-10 h-10 text-base' : 'w-7 h-7 text-[10px]'}`}>{p.avatar}</div>
+                            <button key={p.user_id} onClick={() => loadMessages(p.user_id!)} className="w-full flex items-center gap-2 p-1.5 rounded hover:bg-muted/40 transition-colors text-left text-xs">
+                              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[10px] font-display font-bold text-primary">{p.avatar}</div>
                               <span className="font-body text-foreground">{p.name}</span>
                             </button>
                           ))}
                         </div>
                       )}
                       {filteredContacts.map((c) => (
-                        <button key={c.user_id} onClick={() => loadMessages(c.user_id)} className={`w-full flex items-center gap-2.5 border-b border-border/50 hover:bg-muted/30 transition-colors text-left ${isMobile ? 'p-4 text-base h-16' : 'p-2.5 text-xs'}`}>
-                          <div className={`rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-display font-bold text-primary shrink-0 ${isMobile ? 'w-12 h-12 text-base' : 'w-8 h-8 text-xs'}`}>{c.avatar}</div>
+                        <button key={c.user_id} onClick={() => loadMessages(c.user_id)} className="w-full flex items-center gap-2.5 p-2.5 border-b border-border/50 hover:bg-muted/30 transition-colors text-left text-xs">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-display font-bold text-primary shrink-0">{c.avatar}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                               <span className="font-body font-semibold text-foreground">{c.name}</span>
