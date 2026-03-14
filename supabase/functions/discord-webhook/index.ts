@@ -7,9 +7,7 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -21,53 +19,47 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     // Internal actions (no user auth required)
-    if (action === "send_match_result") {
-      return await handleSendMatchResult(supabaseUrl, serviceRoleKey, body.match_data);
-    }
-    if (action === "send_new_player") {
-      return await handleNewPlayer(supabaseUrl, serviceRoleKey, body);
-    }
-    if (action === "send_announcement") {
-      return await handleAnnouncement(supabaseUrl, serviceRoleKey, body);
-    }
-    if (action === "send_league_registration") {
-      return await handleLeagueRegistration(supabaseUrl, serviceRoleKey, body);
-    }
-    if (action === "send_match_proposal") {
-      return await handleMatchProposal(supabaseUrl, serviceRoleKey, body);
-    }
+    const internalHandlers: Record<string, () => Promise<Response>> = {
+      send_match_result: () => handleSendMatchResult(supabaseUrl, serviceRoleKey, body.match_data),
+      send_new_player: () => handleNewPlayer(supabaseUrl, serviceRoleKey, body),
+      send_announcement: () => handleAnnouncement(supabaseUrl, serviceRoleKey, body),
+      send_league_registration: () => handleLeagueRegistration(supabaseUrl, serviceRoleKey, body),
+      send_league_unregistration: () => handleLeagueUnregistration(supabaseUrl, serviceRoleKey, body),
+      send_match_proposal: () => handleMatchProposal(supabaseUrl, serviceRoleKey, body),
+      send_match_proposal_accepted: () => handleMatchProposalAccepted(supabaseUrl, serviceRoleKey, body),
+      send_match_pending: () => handleMatchPending(supabaseUrl, serviceRoleKey, body),
+      send_league_started: () => handleLeagueStarted(supabaseUrl, serviceRoleKey, body),
+      send_league_ended: () => handleLeagueEnded(supabaseUrl, serviceRoleKey, body),
+      send_disqualification: () => handleDisqualification(supabaseUrl, serviceRoleKey, body),
+      send_weekly_challenge: () => handleWeeklyChallenge(supabaseUrl, serviceRoleKey, body),
+      send_high_score_alert: () => handleHighScoreAlert(supabaseUrl, serviceRoleKey, body),
+    };
+
+    if (internalHandlers[action]) return await internalHandlers[action]();
 
     // All other actions require admin auth
-    if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
-    }
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) return jsonResponse({ error: "Invalid token" }, 401);
+    if (userError || !user) return json({ error: "Invalid token" }, 401);
 
     const { data: isAdmin } = await supabase.rpc("is_moderator_or_admin", { _user_id: user.id });
-    if (!isAdmin) return jsonResponse({ error: "Forbidden" }, 403);
+    if (!isAdmin) return json({ error: "Forbidden" }, 403);
 
     const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
 
     if (action === "save_webhook") {
       const { id, league_id, webhook_url, enabled, label, event_types } = body;
-      
       if (webhook_url && !webhook_url.startsWith("https://discord.com/api/webhooks/")) {
-        return jsonResponse({ error: "Invalid Discord webhook URL" }, 400);
+        return json({ error: "Invalid Discord webhook URL" }, 400);
       }
-
       const payload: Record<string, any> = {
         webhook_url, enabled, label,
         league_id: league_id || null,
         event_types: event_types || ["match_result"],
         updated_at: new Date().toISOString(),
       };
-
       if (id) {
         const { error } = await adminSupabase.from("discord_webhooks").update(payload).eq("id", id);
         if (error) throw error;
@@ -75,20 +67,18 @@ Deno.serve(async (req) => {
         const { error } = await adminSupabase.from("discord_webhooks").insert(payload);
         if (error) throw error;
       }
-
-      return jsonResponse({ success: true });
+      return json({ success: true });
     }
 
     if (action === "delete_webhook") {
       const { error } = await adminSupabase.from("discord_webhooks").delete().eq("id", body.id);
       if (error) throw error;
-      return jsonResponse({ success: true });
+      return json({ success: true });
     }
 
     if (action === "test") {
       const { webhook_url } = body;
-      if (!webhook_url) return jsonResponse({ error: "Podaj webhook URL" }, 400);
-
+      if (!webhook_url) return json({ error: "Podaj webhook URL" }, 400);
       const embed = {
         title: "🎯 eDART Polska — Test",
         description: "Połączenie z Discordem działa poprawnie! ✅",
@@ -96,128 +86,156 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
         footer: { text: "eDART Polska" },
       };
-
-      const discordRes = await fetch(webhook_url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch(webhook_url, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ embeds: [embed] }),
       });
-
-      if (!discordRes.ok) {
-        const errText = await discordRes.text();
-        return jsonResponse({ error: `Discord error: ${errText}` }, 500);
-      }
-
-      return jsonResponse({ success: true });
+      if (!res.ok) return json({ error: `Discord error: ${await res.text()}` }, 500);
+      return json({ success: true });
     }
 
-    return jsonResponse({ error: "Unknown action" }, 400);
+    return json({ error: "Unknown action" }, 400);
   } catch (err) {
     console.error("Discord webhook error:", err);
-    return jsonResponse({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });
 
 // --- Helpers ---
 
-async function getWebhooksForEvent(supabaseUrl: string, serviceRoleKey: string, eventType: string, leagueId?: string) {
-  const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
-  let query = adminSupabase
-    .from("discord_webhooks")
-    .select("*")
-    .eq("enabled", true)
-    .contains("event_types", [eventType]);
+function json(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
-  if (leagueId) {
-    query = query.or(`league_id.eq.${leagueId},league_id.is.null`);
-  }
-
+async function getWebhooks(supabaseUrl: string, serviceRoleKey: string, eventType: string, leagueId?: string) {
+  const db = createClient(supabaseUrl, serviceRoleKey);
+  let query = db.from("discord_webhooks").select("*").eq("enabled", true).contains("event_types", [eventType]);
+  if (leagueId) query = query.or(`league_id.eq.${leagueId},league_id.is.null`);
   const { data } = await query;
   return data || [];
 }
 
-async function sendToWebhooks(webhooks: any[], embed: any) {
-  if (webhooks.length === 0) return { success: false, reason: "No active webhooks" };
-
-  const results = await Promise.allSettled(
-    webhooks.map(async (wh) => {
-      const res = await fetch(wh.webhook_url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ embeds: [embed] }),
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error(`Webhook ${wh.id} error:`, errText);
-        return { id: wh.id, success: false, error: errText };
-      }
-      return { id: wh.id, success: true };
-    })
-  );
-
+async function sendEmbeds(webhooks: any[], embed: any) {
+  if (!webhooks.length) return { success: false, reason: "No active webhooks" };
+  const results = await Promise.allSettled(webhooks.map(async (wh) => {
+    const res = await fetch(wh.webhook_url, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+    if (!res.ok) console.error(`Webhook ${wh.id} error:`, await res.text());
+    return { id: wh.id, success: res.ok };
+  }));
   return { success: true, results };
+}
+
+function coPct(hits: number, attempts: number): string {
+  if (attempts <= 0) return "0.00% (0/0)";
+  return `${((hits / attempts) * 100).toFixed(2)}% (${hits}/${attempts})`;
+}
+
+function playerName(info: any[] | null, fallback: string) {
+  return info?.[0]?.name || fallback;
 }
 
 // --- Event Handlers ---
 
-async function handleSendMatchResult(supabaseUrl: string, serviceRoleKey: string, matchData: any) {
-  const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
+async function handleSendMatchResult(url: string, key: string, matchData: any) {
+  const db = createClient(url, key);
   const { match_id } = matchData || {};
-  if (!match_id) return jsonResponse({ error: "match_id required" }, 400);
+  if (!match_id) return json({ error: "match_id required" }, 400);
 
-  const { data: match } = await adminSupabase.from("matches").select("*").eq("id", match_id).single();
-  if (!match) return jsonResponse({ error: "Match not found" }, 404);
+  const { data: m } = await db.from("matches").select("*").eq("id", match_id).single();
+  if (!m) return json({ error: "Match not found" }, 404);
 
-  const eventType = match.is_walkover ? "walkover" : "match_result";
-  const webhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, eventType, match.league_id);
-  
-  // Also get walkover webhooks if it's a walkover (they might also want match_result)
-  let allWebhooks = webhooks;
-  if (match.is_walkover) {
-    const matchResultWebhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, "match_result", match.league_id);
-    const existingIds = new Set(allWebhooks.map((w: any) => w.id));
-    for (const wh of matchResultWebhooks) {
-      if (!existingIds.has(wh.id)) allWebhooks.push(wh);
-    }
+  const eventType = m.is_walkover ? "walkover" : "match_result";
+  let webhooks = await getWebhooks(url, key, eventType, m.league_id);
+  if (m.is_walkover) {
+    const extra = await getWebhooks(url, key, "match_result", m.league_id);
+    const ids = new Set(webhooks.map((w: any) => w.id));
+    for (const w of extra) if (!ids.has(w.id)) webhooks.push(w);
   }
+  if (!webhooks.length) return json({ success: false, reason: "No active webhooks" });
 
-  if (allWebhooks.length === 0) return jsonResponse({ success: false, reason: "No active webhooks" });
+  const { data: p1 } = await db.rpc("get_player_public_info", { p_id: m.player1_id });
+  const { data: p2 } = await db.rpc("get_player_public_info", { p_id: m.player2_id });
+  const { data: league } = await db.from("leagues").select("name, season, format").eq("id", m.league_id).single();
 
-  const { data: p1 } = await adminSupabase.rpc("get_player_public_info", { p_id: match.player1_id });
-  const { data: p2 } = await adminSupabase.rpc("get_player_public_info", { p_id: match.player2_id });
-  const { data: league } = await adminSupabase.from("leagues").select("name, season, format").eq("id", match.league_id).single();
+  const n1 = playerName(p1, "Gracz 1"), n2 = playerName(p2, "Gracz 2");
+  const ln = league ? `${league.name} — ${league.season}` : "Liga";
+  const winner = (m.score1 ?? 0) > (m.score2 ?? 0) ? n1 : n2;
 
-  const p1Name = p1?.[0]?.name || "Gracz 1";
-  const p2Name = p2?.[0]?.name || "Gracz 2";
-  const leagueName = league ? `${league.name} — ${league.season}` : "Liga";
-  const winner = (match.score1 ?? 0) > (match.score2 ?? 0) ? p1Name : p2Name;
+  const stats: string[] = [];
+  if (m.avg1 != null || m.avg2 != null)
+    stats.push(`📊 Średnia: ${Number(m.avg1 ?? 0).toFixed(2)} / ${Number(m.avg2 ?? 0).toFixed(2)}`);
+  if (m.first_9_avg1 != null || m.first_9_avg2 != null)
+    stats.push(`📊 First 9: ${Number(m.first_9_avg1 ?? 0).toFixed(2)} / ${Number(m.first_9_avg2 ?? 0).toFixed(2)}`);
+  if ((m.one_eighties1 ?? 0) > 0 || (m.one_eighties2 ?? 0) > 0)
+    stats.push(`🎯 180s: ${m.one_eighties1 ?? 0} / ${m.one_eighties2 ?? 0}`);
+  if ((m.nine_darters1 ?? 0) > 0 || (m.nine_darters2 ?? 0) > 0)
+    stats.push(`⭐ 9-darters: ${m.nine_darters1 ?? 0} / ${m.nine_darters2 ?? 0}`);
+  if ((m.high_checkout1 ?? 0) > 0 || (m.high_checkout2 ?? 0) > 0)
+    stats.push(`✅ High CO: ${m.high_checkout1 ?? 0} / ${m.high_checkout2 ?? 0}`);
 
-  const statsLines: string[] = [];
-  if (match.avg1 != null || match.avg2 != null) statsLines.push(`📊 Średnia: ${Number(match.avg1 ?? 0).toFixed(1)} / ${Number(match.avg2 ?? 0).toFixed(1)}`);
-  if ((match.one_eighties1 ?? 0) > 0 || (match.one_eighties2 ?? 0) > 0) statsLines.push(`🎯 180s: ${match.one_eighties1 ?? 0} / ${match.one_eighties2 ?? 0}`);
-  if ((match.high_checkout1 ?? 0) > 0 || (match.high_checkout2 ?? 0) > 0) statsLines.push(`✅ High CO: ${match.high_checkout1 ?? 0} / ${match.high_checkout2 ?? 0}`);
-  if (match.darts_thrown1 || match.darts_thrown2) statsLines.push(`🎯 Lotki: ${match.darts_thrown1 ?? 0} / ${match.darts_thrown2 ?? 0}`);
+  const tonLines: string[] = [];
+  if ((m.ton60_1 ?? 0) + (m.ton60_2 ?? 0) > 0) tonLines.push(`60+: ${m.ton60_1 ?? 0}/${m.ton60_2 ?? 0}`);
+  if ((m.ton80_1 ?? 0) + (m.ton80_2 ?? 0) > 0) tonLines.push(`100+: ${m.ton80_1 ?? 0}/${m.ton80_2 ?? 0}`);
+  if ((m.ton_plus1 ?? 0) + (m.ton_plus2 ?? 0) > 0) tonLines.push(`140+: ${m.ton_plus1 ?? 0}/${m.ton_plus2 ?? 0}`);
+  if ((m.ton40_1 ?? 0) + (m.ton40_2 ?? 0) > 0) tonLines.push(`170+: ${m.ton40_1 ?? 0}/${m.ton40_2 ?? 0}`);
+  if (tonLines.length) stats.push(`🎲 ${tonLines.join(" · ")}`);
+
+  if ((m.darts_thrown1 ?? 0) > 0 || (m.darts_thrown2 ?? 0) > 0)
+    stats.push(`🎯 Lotki: ${m.darts_thrown1 ?? 0} / ${m.darts_thrown2 ?? 0}`);
+
+  if ((m.checkout_attempts1 ?? 0) > 0 || (m.checkout_attempts2 ?? 0) > 0)
+    stats.push(`✅ CO%: ${coPct(m.checkout_hits1, m.checkout_attempts1)} / ${coPct(m.checkout_hits2, m.checkout_attempts2)}`);
+
+  const fields = stats.length > 0 ? [{ name: "📈 Statystyki", value: stats.join("\n"), inline: false }] : [];
 
   const embed = {
-    title: `🏆 Wynik meczu — ${leagueName}`,
-    description: match.is_walkover
-      ? `**${p1Name}** ${match.score1 ?? 0} : ${match.score2 ?? 0} **${p2Name}**\n\n⚠️ **Walkower** — wygrywa ${winner}`
-      : `**${p1Name}** ${match.score1 ?? 0} : ${match.score2 ?? 0} **${p2Name}**`,
-    color: match.is_walkover ? 0xED4245 : 0x57F287,
-    fields: statsLines.length > 0 ? [{ name: "Statystyki", value: statsLines.join("\n"), inline: false }] : [],
+    title: m.is_walkover ? `⚠️ Walkower — ${ln}` : `🏆 Wynik meczu — ${ln}`,
+    description: m.is_walkover
+      ? `**${n1}** ${m.score1 ?? 0} : ${m.score2 ?? 0} **${n2}**\n\n⚠️ **Walkower** — wygrywa ${winner}`
+      : `**${n1}** ${m.score1 ?? 0} : ${m.score2 ?? 0} **${n2}**\n\n🏅 Wygrywa: **${winner}**`,
+    color: m.is_walkover ? 0xED4245 : 0x57F287,
+    fields,
     timestamp: new Date().toISOString(),
     footer: { text: `eDART Polska${league?.format ? ` • ${league.format}` : ""}` },
   };
 
-  return jsonResponse(await sendToWebhooks(allWebhooks, embed));
+  // Also send high score alert if applicable
+  const has180 = (m.one_eighties1 ?? 0) > 0 || (m.one_eighties2 ?? 0) > 0;
+  const has9d = (m.nine_darters1 ?? 0) > 0 || (m.nine_darters2 ?? 0) > 0;
+  const hasHighCO = (m.high_checkout1 ?? 0) >= 150 || (m.high_checkout2 ?? 0) >= 150;
+  if (has180 || has9d || hasHighCO) {
+    const alertWebhooks = await getWebhooks(url, key, "high_score_alert", m.league_id);
+    if (alertWebhooks.length) {
+      const highlights: string[] = [];
+      if ((m.nine_darters1 ?? 0) > 0) highlights.push(`⭐ **${n1}** — ${m.nine_darters1}x 9-darter!`);
+      if ((m.nine_darters2 ?? 0) > 0) highlights.push(`⭐ **${n2}** — ${m.nine_darters2}x 9-darter!`);
+      if ((m.one_eighties1 ?? 0) > 0) highlights.push(`🎯 **${n1}** — ${m.one_eighties1}x 180`);
+      if ((m.one_eighties2 ?? 0) > 0) highlights.push(`🎯 **${n2}** — ${m.one_eighties2}x 180`);
+      if ((m.high_checkout1 ?? 0) >= 150) highlights.push(`✅ **${n1}** — checkout ${m.high_checkout1}`);
+      if ((m.high_checkout2 ?? 0) >= 150) highlights.push(`✅ **${n2}** — checkout ${m.high_checkout2}`);
+      const alertEmbed = {
+        title: `🔥 Wybitny wynik! — ${ln}`,
+        description: highlights.join("\n"),
+        color: 0xFFA500,
+        timestamp: new Date().toISOString(),
+        footer: { text: "eDART Polska" },
+      };
+      await sendEmbeds(alertWebhooks, alertEmbed);
+    }
+  }
+
+  return json(await sendEmbeds(webhooks, embed));
 }
 
-async function handleNewPlayer(supabaseUrl: string, serviceRoleKey: string, body: any) {
+async function handleNewPlayer(url: string, key: string, body: any) {
   const { player_name } = body;
-  if (!player_name) return jsonResponse({ error: "player_name required" }, 400);
-
-  const webhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, "new_player");
-
+  if (!player_name) return json({ error: "player_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "new_player");
   const embed = {
     title: "👤 Nowy gracz dołączył!",
     description: `Witamy **${player_name}** w eDART Polska! 🎯`,
@@ -225,16 +243,13 @@ async function handleNewPlayer(supabaseUrl: string, serviceRoleKey: string, body
     timestamp: new Date().toISOString(),
     footer: { text: "eDART Polska" },
   };
-
-  return jsonResponse(await sendToWebhooks(webhooks, embed));
+  return json(await sendEmbeds(webhooks, embed));
 }
 
-async function handleAnnouncement(supabaseUrl: string, serviceRoleKey: string, body: any) {
+async function handleAnnouncement(url: string, key: string, body: any) {
   const { title, content } = body;
-  if (!title) return jsonResponse({ error: "title required" }, 400);
-
-  const webhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, "announcement");
-
+  if (!title) return json({ error: "title required" }, 400);
+  const webhooks = await getWebhooks(url, key, "announcement");
   const embed = {
     title: `📢 ${title}`,
     description: content ? (content.length > 500 ? content.slice(0, 500) + "..." : content) : "",
@@ -242,16 +257,13 @@ async function handleAnnouncement(supabaseUrl: string, serviceRoleKey: string, b
     timestamp: new Date().toISOString(),
     footer: { text: "eDART Polska" },
   };
-
-  return jsonResponse(await sendToWebhooks(webhooks, embed));
+  return json(await sendEmbeds(webhooks, embed));
 }
 
-async function handleLeagueRegistration(supabaseUrl: string, serviceRoleKey: string, body: any) {
+async function handleLeagueRegistration(url: string, key: string, body: any) {
   const { player_name, league_name, league_id } = body;
-  if (!player_name || !league_name) return jsonResponse({ error: "player_name and league_name required" }, 400);
-
-  const webhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, "league_registration", league_id);
-
+  if (!player_name || !league_name) return json({ error: "player_name and league_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "league_registration", league_id);
   const embed = {
     title: "📋 Nowy zapis do ligi",
     description: `**${player_name}** zapisał(a) się do ligi **${league_name}** 🎯`,
@@ -259,19 +271,29 @@ async function handleLeagueRegistration(supabaseUrl: string, serviceRoleKey: str
     timestamp: new Date().toISOString(),
     footer: { text: "eDART Polska" },
   };
-
-  return jsonResponse(await sendToWebhooks(webhooks, embed));
+  return json(await sendEmbeds(webhooks, embed));
 }
 
-async function handleMatchProposal(supabaseUrl: string, serviceRoleKey: string, body: any) {
+async function handleLeagueUnregistration(url: string, key: string, body: any) {
+  const { player_name, league_name, league_id } = body;
+  if (!player_name || !league_name) return json({ error: "player_name and league_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "league_unregistration", league_id);
+  const embed = {
+    title: "📤 Gracz opuścił ligę",
+    description: `**${player_name}** wypisał(a) się z ligi **${league_name}**`,
+    color: 0x95a5a6,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleMatchProposal(url: string, key: string, body: any) {
   const { proposer_name, opponent_name, proposed_date, proposed_time } = body;
-  if (!proposer_name) return jsonResponse({ error: "proposer_name required" }, 400);
-
-  const webhooks = await getWebhooksForEvent(supabaseUrl, serviceRoleKey, "match_proposal");
-
+  if (!proposer_name) return json({ error: "proposer_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "match_proposal");
   const dateStr = proposed_date || "?";
   const timeStr = proposed_time ? ` o ${proposed_time}` : "";
-
   const embed = {
     title: "📅 Nowa propozycja terminu",
     description: `**${proposer_name}** proponuje termin meczu z **${opponent_name || "?"}**: **${dateStr}${timeStr}**`,
@@ -279,13 +301,104 @@ async function handleMatchProposal(supabaseUrl: string, serviceRoleKey: string, 
     timestamp: new Date().toISOString(),
     footer: { text: "eDART Polska" },
   };
-
-  return jsonResponse(await sendToWebhooks(webhooks, embed));
+  return json(await sendEmbeds(webhooks, embed));
 }
 
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+async function handleMatchProposalAccepted(url: string, key: string, body: any) {
+  const { accepter_name, proposer_name, proposed_date, proposed_time } = body;
+  if (!accepter_name) return json({ error: "accepter_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "match_proposal_accepted");
+  const dateStr = proposed_date || "?";
+  const timeStr = proposed_time ? ` o ${proposed_time}` : "";
+  const embed = {
+    title: "✅ Termin zaakceptowany!",
+    description: `**${accepter_name}** zaakceptował termin meczu z **${proposer_name || "?"}**: **${dateStr}${timeStr}**`,
+    color: 0x2ECC71,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleMatchPending(url: string, key: string, body: any) {
+  const { player1_name, player2_name, score1, score2, league_name } = body;
+  const webhooks = await getWebhooks(url, key, "match_pending");
+  const embed = {
+    title: "⏳ Wynik do zatwierdzenia",
+    description: `**${player1_name || "?"}** ${score1 ?? 0} : ${score2 ?? 0} **${player2_name || "?"}**\n\nLiga: **${league_name || "?"}**\nCzeka na akceptację admina.`,
+    color: 0xF1C40F,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleLeagueStarted(url: string, key: string, body: any) {
+  const { league_name, league_id, player_count } = body;
+  if (!league_name) return json({ error: "league_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "league_started", league_id);
+  const embed = {
+    title: "🚀 Liga wystartowała!",
+    description: `**${league_name}** oficjalnie wystartowała!${player_count ? `\n\n👥 Liczba graczy: **${player_count}**` : ""}`,
+    color: 0x2ECC71,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleLeagueEnded(url: string, key: string, body: any) {
+  const { league_name, league_id, winner_name } = body;
+  if (!league_name) return json({ error: "league_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "league_ended", league_id);
+  const embed = {
+    title: "🏁 Liga zakończona!",
+    description: `**${league_name}** dobiegła końca!${winner_name ? `\n\n🏆 Zwycięzca: **${winner_name}**` : ""}`,
+    color: 0x9B59B6,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleDisqualification(url: string, key: string, body: any) {
+  const { player_name, league_name, league_id, reason } = body;
+  if (!player_name) return json({ error: "player_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "disqualification", league_id);
+  const embed = {
+    title: "🚫 Dyskwalifikacja",
+    description: `**${player_name}** został zdyskwalifikowany z ligi **${league_name || "?"}**${reason ? `\n\n📝 Powód: ${reason}` : ""}`,
+    color: 0xE74C3C,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleWeeklyChallenge(url: string, key: string, body: any) {
+  const { title, description, icon } = body;
+  if (!title) return json({ error: "title required" }, 400);
+  const webhooks = await getWebhooks(url, key, "weekly_challenge");
+  const embed = {
+    title: `${icon || "🎖️"} Nowe wyzwanie: ${title}`,
+    description: description || "",
+    color: 0xE67E22,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
+}
+
+async function handleHighScoreAlert(url: string, key: string, body: any) {
+  const { player_name, achievement, league_name, league_id } = body;
+  if (!player_name) return json({ error: "player_name required" }, 400);
+  const webhooks = await getWebhooks(url, key, "high_score_alert", league_id);
+  const embed = {
+    title: "🔥 Wybitny wynik!",
+    description: `**${player_name}** — ${achievement || "niesamowity wynik!"}${league_name ? `\n\nLiga: **${league_name}**` : ""}`,
+    color: 0xFFA500,
+    timestamp: new Date().toISOString(),
+    footer: { text: "eDART Polska" },
+  };
+  return json(await sendEmbeds(webhooks, embed));
 }
