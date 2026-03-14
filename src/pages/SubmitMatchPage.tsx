@@ -286,6 +286,8 @@ const SubmitMatchPage = () => {
       first9Avg2: payload.first_9_avg2 != null ? String(payload.first_9_avg2) : "",
       oneEighties1: String(asNumber(payload.one_eighties1)),
       oneEighties2: String(asNumber(payload.one_eighties2)),
+      nineDarters1: String(asNumber(payload.nine_darters1)),
+      nineDarters2: String(asNumber(payload.nine_darters2)),
       hc1: String(asNumber(payload.high_checkout1)),
       hc2: String(asNumber(payload.high_checkout2)),
       ton60_1: String(asNumber(payload.ton60_1)),
