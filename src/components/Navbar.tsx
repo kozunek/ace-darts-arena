@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, LogIn, LogOut, Shield, BarChart3, Settings, Handshake, Swords, Calendar, Trophy, Zap, MessageCircle, Megaphone, MoreHorizontal, ClipboardEdit, Target, Bug, Download, Gamepad2, Flame, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import NotificationBell from "@/components/NotificationBell";
@@ -53,49 +53,64 @@ const Navbar = () => {
   const isMoreActive = moreNavItems.some(i => location.pathname === i.href);
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40">
       <div className="container mx-auto px-4">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-[3.75rem] items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <img src="/pwa-192x192.png" alt="eDART" className="h-7 w-7 rounded-full transition-transform group-hover:rotate-12" />
+            <img src="/favicon.png" alt="eDART" className="h-8 w-8 transition-transform group-hover:scale-110" />
           </Link>
 
-          {/* Desktop nav — centered, icon on top + label below */}
-          <div className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+          {/* Desktop nav — horizontal text links */}
+          <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
             {primaryNavItems.map((item) => {
               const active = location.pathname === item.href;
               return (
                 <Link key={item.href} to={item.href}>
                   <button
-                    className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-md transition-colors relative ${
+                    className={`px-4 py-2 rounded-md transition-colors font-display uppercase tracking-wider text-[11px] relative ${
                       active
                         ? "text-primary"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {item.icon}
-                    <span className="text-[10px] font-display uppercase tracking-wider">{item.label}</span>
+                    {item.label}
                     {active && (
-                      <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
                     )}
                   </button>
                 </Link>
               );
             })}
 
+            {user && (
+              <Link to="/my-matches">
+                <button
+                  className={`px-4 py-2 rounded-md transition-colors font-display uppercase tracking-wider text-[11px] relative ${
+                    location.pathname === "/my-matches"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Moje Mecze
+                  {location.pathname === "/my-matches" && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
+                  )}
+                </button>
+              </Link>
+            )}
+
             {/* More dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-md transition-colors relative ${
+                  className={`px-4 py-2 rounded-md transition-colors font-display uppercase tracking-wider text-[11px] relative ${
                     isMoreActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="text-[10px] font-display uppercase tracking-wider">Więcej</span>
+                  Więcej
                   {isMoreActive && (
-                    <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
                   )}
                 </button>
               </DropdownMenuTrigger>
@@ -113,19 +128,7 @@ const Navbar = () => {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-1">
-            {user && (
-              <Link to="/my-matches">
-                <Button 
-                  variant={location.pathname === "/my-matches" ? "default" : "outline"} 
-                  size="sm" 
-                  className="hidden lg:flex items-center gap-1.5 h-8 px-3 font-display uppercase tracking-wider text-[10px]"
-                >
-                  <Handshake className="h-3.5 w-3.5" />
-                  Moje Mecze
-                </Button>
-              </Link>
-            )}
+          <div className="flex items-center gap-1.5">
             <ThemeToggle />
             {user && <NotificationBell />}
 
@@ -134,8 +137,8 @@ const Navbar = () => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-2.5">
-                      <Settings className="h-3.5 w-3.5 mr-1" />
+                    <Button variant="ghost" size="sm" className="font-display uppercase tracking-wider text-[11px] h-9 px-3">
+                      <Settings className="h-3.5 w-3.5 mr-1.5" />
                       {profile?.name || "Profil"}
                     </Button>
                   </DropdownMenuTrigger>
@@ -163,8 +166,8 @@ const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <Link to="/login">
-                  <Button variant="default" size="sm" className="font-display uppercase tracking-wider text-[11px] h-8 px-4">
-                    Zaloguj
+                  <Button variant="default" size="sm" className="font-display uppercase tracking-wider text-[11px] h-9 px-5 rounded-md">
+                    Zaloguj się
                   </Button>
                 </Link>
               )}
@@ -180,7 +183,7 @@ const Navbar = () => {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="lg:hidden pb-4 animate-fade-in max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain">
-            {/* User section first - always visible */}
+            {/* User section first */}
             {user ? (
               <div className="mb-2 pb-2 border-b border-border">
                 <Link to="/settings" onClick={() => setMobileOpen(false)}>
@@ -203,7 +206,7 @@ const Navbar = () => {
               <div className="mb-2 pb-2 border-b border-border">
                 <Link to="/login" onClick={() => setMobileOpen(false)}>
                   <Button variant="default" className="w-full justify-start font-display uppercase tracking-wider text-sm">
-                    <LogIn className="h-4 w-4 mr-1" /> Zaloguj
+                    <LogIn className="h-4 w-4 mr-1" /> Zaloguj się
                   </Button>
                 </Link>
               </div>

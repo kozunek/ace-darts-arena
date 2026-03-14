@@ -1,72 +1,75 @@
-import { Users, Target, Flame, Crosshair, Trophy, UserCheck, Swords } from "lucide-react";
+import { Users, Target, Crosshair, Trophy } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Gamepad2 } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   const { leagues, players, matches } = useLeague();
   const totalRegistered = players.length;
-  const leagueParticipants = players.filter(p => p.leagueIds && p.leagueIds.length > 0).length;
   const activeLeagues = leagues.filter(l => l.is_active);
   const totalCompleted = matches.filter(m => m.status === "completed").length;
 
-  let total180s = 0;
-  let bestCheckout = 0;
   let totalDartsThrown = 0;
   matches.forEach(m => {
     if (m.status === "completed") {
-      total180s += (m.oneEighties1 ?? 0) + (m.oneEighties2 ?? 0);
       totalDartsThrown += (m.dartsThrown1 ?? 0) + (m.dartsThrown2 ?? 0);
-      if (m.highCheckout1 != null && m.highCheckout1 > bestCheckout) bestCheckout = m.highCheckout1;
-      if (m.highCheckout2 != null && m.highCheckout2 > bestCheckout) bestCheckout = m.highCheckout2;
     }
   });
 
   const stats = [
-    { icon: <UserCheck className="h-5 w-5" />, label: "Zarejestrowani", value: totalRegistered.toString(), desc: "Kont założonych na platformie" },
-    { icon: <Swords className="h-5 w-5" />, label: "Gracze w ligach", value: leagueParticipants.toString(), desc: "Aktywnych uczestników rozgrywek" },
-    { icon: <Trophy className="h-5 w-5" />, label: "Aktywne ligi", value: activeLeagues.length.toString(), desc: "Trwających rozgrywek w sezonie" },
-    { icon: <Target className="h-5 w-5" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Zakończonych spotkań w sezonie" },
-    { icon: <Crosshair className="h-5 w-5" />, label: "Rzutów lotką", value: totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "0", desc: "Łączna liczba rzutów w sezonie" },
-    { icon: <Flame className="h-5 w-5" />, label: "Maksów 180", value: total180s.toString(), desc: "Perfekcyjnych wizyt przy tablicy" },
-    { icon: <Crosshair className="h-5 w-5" />, label: "Najwyższy checkout", value: bestCheckout > 0 ? bestCheckout.toString() : "—", desc: "Rekordowe zamknięcie w sezonie" },
-    { icon: <Users className="h-5 w-5" />, label: "Społeczność", value: totalRegistered > 50 ? "Duża" : totalRegistered > 20 ? "Średnia" : "Rosnąca", desc: "Wielkość naszej społeczności" },
+    { icon: <Users className="h-6 w-6 text-primary" />, label: "Zawodnicy", value: totalRegistered.toString(), desc: "Zarejestrowanych graczy w lidze" },
+    { icon: <Target className="h-6 w-6 text-primary" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Meczów zakończonych w tym sezonie" },
+    { icon: <Crosshair className="h-6 w-6 text-primary" />, label: "Rzutów lotką", value: totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "0", desc: "Łączna liczba rzutów w sezonie" },
+    { icon: <Trophy className="h-6 w-6 text-primary" />, label: "Aktywne ligi", value: activeLeagues.length.toString(), desc: "Trwających rozgrywek w sezonie" },
   ];
 
   return (
     <>
       {/* ─── FULLSCREEN HERO ─── */}
-      <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden">
-        <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+      <section className="relative flex items-center" style={{ height: "calc(100vh - 5rem)" }}>
+        <div className="absolute inset-0 overflow-hidden">
+          <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-2xl">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} className="mb-6">
-              <div className="w-10 h-1 bg-primary mb-4" />
-              <span className="text-xs font-display uppercase tracking-[0.3em] text-white/50">
-                Sezon 2026 · eDART Polska
-              </span>
+          <div className="max-w-3xl">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+              <div className="w-12 h-px bg-primary mb-4" />
+              <div className="mb-8">
+                <span className="font-display font-light text-[11px] uppercase tracking-[0.45em] text-white/40">
+                  Sezon 2026 · eDART Polska
+                </span>
+              </div>
             </motion.div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-[0.95] mb-6 text-white uppercase"
-            >
-              Polska Liga<br />Darta
-            </motion.h1>
+            <div className="mb-6 overflow-hidden">
+              <motion.span
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="block font-display font-semibold text-[3.5rem] md:text-[5rem] lg:text-[6.25rem] leading-[0.92] tracking-tight text-white uppercase"
+              >
+                Polska Liga
+              </motion.span>
+              <motion.span
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.25 }}
+                className="block font-display font-semibold text-[3.5rem] md:text-[5rem] lg:text-[6.25rem] leading-[0.92] tracking-tight text-white uppercase"
+              >
+                Darta
+              </motion.span>
+            </div>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-base md:text-lg text-white/60 font-body max-w-md mb-10"
+              className="text-sm md:text-base text-white/55 font-body max-w-sm mb-6 leading-relaxed"
             >
               Polska liga darta rozgrywana online. Wyniki, statystyki i ranking graczy w jednym miejscu.
             </motion.p>
@@ -78,16 +81,15 @@ const HeroSection = () => {
               className="flex flex-wrap gap-3"
             >
               <Link to="/login">
-                <Button variant="hero" size="lg" className="text-sm">
-                  <UserPlus className="h-4 w-4 mr-2" /> Dołącz do ligi
+                <Button variant="hero" className="h-11 rounded-md px-8 font-display uppercase tracking-wider text-sm">
+                  Dołącz do ligi
                 </Button>
               </Link>
               <Link to="/how-to-play">
                 <Button
-                  size="lg"
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 font-display uppercase tracking-wider text-sm"
+                  className="h-11 rounded-md px-8 font-display uppercase tracking-wider text-sm border border-white/25 text-white bg-white/5 hover:bg-white/10 hover:border-white/40 hover:text-white transition-colors"
                 >
-                  <Gamepad2 className="h-4 w-4 mr-2" /> Jak to działa
+                  Jak to działa
                 </Button>
               </Link>
             </motion.div>
@@ -95,27 +97,30 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* ─── STATS GRID ─── */}
-      <section className="border-b border-border bg-card">
+      {/* ─── STATS SECTION ─── */}
+      <section className="bg-card border-y border-border/40">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {stats.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="py-6 md:py-8 px-4 md:px-6 border-b border-r border-border last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r [&:nth-child(4)]:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 md:[&:nth-last-child(-n+4)]:border-b-0 md:[&:nth-last-child(-n+2)]:border-b"
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className={`flex items-start gap-5 px-6 py-10
+                  ${i < 3 ? "lg:border-r border-border/40" : ""}
+                  ${i < 2 ? "md:border-b lg:border-b-0 border-border/40" : ""}
+                `}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    {s.icon}
-                  </div>
-                  <span className="text-[10px] font-display uppercase tracking-widest text-muted-foreground leading-tight">{s.label}</span>
+                <div className="shrink-0 w-16 h-20 rounded-[36px] bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  {s.icon}
                 </div>
-                <div className="text-2xl md:text-3xl font-display font-bold text-foreground">{s.value}</div>
-                <p className="text-[11px] text-muted-foreground font-body mt-1">{s.desc}</p>
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <span className="font-display uppercase tracking-widest text-[10px] text-muted-foreground">{s.label}</span>
+                  <span className="font-display font-bold text-3xl text-foreground leading-none">{s.value}</span>
+                  <p className="font-body text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>
