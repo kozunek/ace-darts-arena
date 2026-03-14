@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PagePermissions {
   guestPages: Set<string>;
@@ -65,7 +66,7 @@ export const ProtectedRoute = ({ children, path }: { children: ReactNode; path: 
   if (ALWAYS_ALLOWED.includes(path)) return <>{children}</>;
 
   // Wait for data to load
-  if (!loaded || authLoading) return null;
+  if (!loaded || authLoading) return <Skeleton className="h-screen w-full" />;
 
   // Logged-in users can access everything (their access is controlled by existing auth checks in each page)
   if (user) return <>{children}</>;

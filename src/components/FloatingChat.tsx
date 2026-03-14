@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, ArrowLeft, Users, Search, X, Hash } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Users, Search, X, Hash, Maximize2, Minimize2 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -45,12 +45,34 @@ const FloatingChat = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
+  const [chatPosition, setChatPosition] = useState({ x: 0, y: 0 });
+  const [chatSize, setChatSize] = useState({ width: 384, height: 500 }); // w-96 = 384px
+  const [isMaximized, setIsMaximized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
     loadContacts();
     loadAllPlayers();
+
+    // Load chat position and size from localStorage
+    const savedPosition = localStorage.getItem(`chat-position-${user.id}`);
+    const savedSize = localStorage.getItem(`chat-size-${user.id}`);
+    const savedMaximized = localStorage.getItem(`chat-maximized-${user.id}`);
+
+    if (savedPosition) {
+      try {
+        setChatPosition(JSON.parse(savedPosition));
+      } catch (e) {}
+    }
+    if (savedSize) {
+      try {
+        setChatSize(JSON.parse(savedSize));
+      } catch (e) {}
+    }
+    if (savedMaximized) {
+      setIsMaximized(savedMaximized === 'true');
+    }
   }, [user]);
 
   useEffect(() => {
@@ -140,9 +162,37 @@ const FloatingChat = () => {
     setSending(false);
   };
 
-  const handleToggle = () => {
-    if (isMobile) { navigate("/chat"); return; }
-    setIsOpen(!isOpen);
+  const saveChatSettings = (position?: { x: number; y: number }, size?: { width: number; height: number }, maximized?: boolean) => {
+    if (!user) return;
+    if (position) {
+      localStorage.setItem(`chat-position-${user.id}`, JSON.stringify(position));
+    }
+    if (size) {
+      localStorage.setItem(`chat-size-${user.id}`, JSON.stringify(size));
+    }
+    if (maximized !== undefined) {
+      localStorage.setItem(`chat-maximized-${user.id}`, maximized.toString());
+    }
+  };
+
+  const handleDragEnd = (event: any, info: any) => {
+    const newPosition = { x: info.point.x, y: info.point.y };
+    setChatPosition(newPosition);
+    saveChatSettings(newPosition);
+  };
+
+  const handleResize = (delta: { width: number; height: number }) => {
+    const newSize = {
+      width: Math.max(300, chatSize.width + delta.width),
+      height: Math.max(400, chatSize.height + delta.height)
+    };
+    setChatSize(newSize);
+    saveChatSettings(undefined, newSize);
+  };
+
+  const toggleMaximize = () => {
+    setIsMaximized(!isMaximized);
+    saveChatSettings(undefined, undefined, !isMaximized);
   };
 
   if (!user) return null;
@@ -169,29 +219,53 @@ const FloatingChat = () => {
       <AnimatePresence>
         {isOpen && !isMobile && (
           <motion.div
+            drag
+            dragMomentum={false}
+            dragConstraints={{ left: 0, top: 0, right: window.innerWidth - (isMaximized ? window.innerWidth : chatSize.width), bottom: window.innerHeight - (isMaximized ? window.innerHeight : chatSize.height) }}
+            onDragEnd={handleDragEnd}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              x: isMaximized ? 0 : chatPosition.x,
+              y: isMaximized ? 0 : chatPosition.y,
+              width: isMaximized ? '100vw' : chatSize.width,
+              height: isMaximized ? '100vh' : chatSize.height
+            }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-5 z-50 w-96 h-[500px] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
+            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMaximized ? 'top-0 left-0' : 'bottom-24 right-5'}`}
+            style={{
+              width: isMaximized ? '100vw' : chatSize.width,
+              height: isMaximized ? '100vh' : chatSize.height,
+              cursor: 'move'
+            }}
           >
-            {/* Mode tabs */}
-            <div className="flex border-b border-border bg-muted/30">
-              <button
-                onClick={() => { setChatMode("private"); setActiveChat(null); }}
-                className={`flex-1 py-2 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "private" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <MessageCircle className="h-3 w-3" /> Prywatne
-              </button>
-              <button
-                onClick={() => { setChatMode("group"); setActiveChat(null); }}
-                className={`flex-1 py-2 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "group" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <Hash className="h-3 w-3" /> Grupowe
-              </button>
-              <button onClick={() => setIsOpen(false)} className="px-2 text-muted-foreground hover:text-foreground transition-colors">
-                <X className="h-4 w-4" />
-              </button>
+            {/* Header with controls */}
+            <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2">
+              <div className="flex border-b border-border bg-muted/30">
+                <button
+                  onClick={() => { setChatMode("private"); setActiveChat(null); }}
+                  className={`px-3 py-1 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "private" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <MessageCircle className="h-3 w-3" /> Prywatne
+                </button>
+                <button
+                  onClick={() => { setChatMode("group"); setActiveChat(null); }}
+                  className={`px-3 py-1 text-xs font-display uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${chatMode === "group" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Hash className="h-3 w-3" /> Grupowe
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={toggleMaximize} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+                <button onClick={() => setIsOpen(false)} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {chatMode === "group" ? (

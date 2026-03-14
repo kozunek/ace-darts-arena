@@ -14,6 +14,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface Channel {
   id: string;
@@ -62,6 +63,12 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
   const [banDuration, setBanDuration] = useState("1h");
   const [banReason, setBanReason] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 24, y: 120 });
+  const [size, setSize] = useState({ width: 540, height: 520 });
+  const [dragging, setDragging] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
+  const resizeRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const canModerate = isAdmin || isModerator;
@@ -131,6 +138,42 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
       setIsSidebarOpen(false);
     }
   }, [isMobile]);
+
+  // Drag / resize handlers (desktop only)
+  useEffect(() => {
+    if (isMobile) return;
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (dragging && dragRef.current) {
+        const dx = event.clientX - dragRef.current.startX;
+        const dy = event.clientY - dragRef.current.startY;
+        setPosition({ x: Math.max(16, dragRef.current.startLeft + dx), y: Math.max(16, dragRef.current.startTop + dy) });
+      }
+      if (resizing && resizeRef.current) {
+        const dx = event.clientX - resizeRef.current.startX;
+        const dy = event.clientY - resizeRef.current.startY;
+        setSize({
+          width: Math.max(320, resizeRef.current.startWidth + dx),
+          height: Math.max(320, resizeRef.current.startHeight + dy),
+        });
+      }
+    };
+
+    const onPointerUp = () => {
+      setDragging(false);
+      setResizing(false);
+      dragRef.current = null;
+      resizeRef.current = null;
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [dragging, resizing, isMobile]);
 
   // Load sender info (name + nick) for a set of user IDs
   const loadSenderInfos = useCallback(async (senderIds: string[]) => {
@@ -273,7 +316,43 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     return <Hash className="h-3 w-3 text-muted-foreground" />;
   };
 
+  const onDragStart = (event: PointerEvent) => {
+    if (isMobile) return;
+    dragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: position.x,
+      startTop: position.y,
+    };
+    setDragging(true);
+    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+  };
+
+  const onResizeStart = (event: PointerEvent) => {
+    if (isMobile) return;
+    resizeRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: size.width,
+      startHeight: size.height,
+    };
+    setResizing(true);
+    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+  };
+
+
   const activeChannelData = channels.find((c) => c.id === activeChannel);
+
+  const containerStyle: React.CSSProperties = isMobile
+    ? {}
+    : {
+        position: "fixed",
+        top: position.y,
+        left: position.x,
+        width: size.width,
+        height: size.height,
+        zIndex: 50,
+      };
 
   if (channels.length === 0) {
     return (
@@ -296,135 +375,184 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
 
   return (
     <>
-      <div className={`flex ${compact ? "h-full" : "h-[calc(100vh-260px)] min-h-[400px]"} gap-0 rounded-lg border border-border bg-card overflow-hidden`}>
-        {/* Channel sidebar */}
-        <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0`}>
-          <div className="p-2 border-b border-border">
-            <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
-          </div>
-          <ScrollArea className="flex-1">
-            {channels.map((ch) => (
+      <div
+        style={containerStyle}
+        className={`rounded-lg border border-border bg-card shadow-lg overflow-hidden ${isMobile ? "relative" : ""}`}
+      >
+        {!isMobile && (
+          <div className="relative flex items-center justify-between gap-2 px-3 py-2 bg-background/70 border-b border-border">
+            <div
+              className="flex items-center gap-2 cursor-move"
+              onPointerDown={onDragStart}
+            >
+              <span className="text-xs font-display font-semibold">Czat</span>
+              <span className="text-[10px] text-muted-foreground">(przeciągnij)</span>
+            </div>
+            <div className="flex items-center gap-2">
               <button
-                key={ch.id}
-                onClick={() => setActiveChannel(ch.id)}
-                className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body ${
-                  activeChannel === ch.id ? "bg-primary/10 text-primary border-l-2 border-primary" : "hover:bg-muted/30 text-foreground border-l-2 border-transparent"
-                }`}
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setSize({ width: 540, height: 520 })}
               >
-                {getChannelIcon(ch)}
-                <span className="truncate">{ch.name}</span>
+                Reset
               </button>
-            ))}
-          </ScrollArea>
-        </div>
-
-        {/* Messages area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {activeChannelData && (
-            <div className="p-2 border-b border-border flex items-center gap-2">
-              {getChannelIcon(activeChannelData)}
-              <span className="font-display font-bold text-foreground text-sm">{activeChannelData.name}</span>
-              {activeChannelData.description && (
-                <span className="text-[10px] text-muted-foreground font-body ml-auto hidden sm:block truncate max-w-[200px]">{activeChannelData.description}</span>
-              )}
-            </div>
-          )}
-
-          <ScrollArea className="flex-1 p-3">
-            <div className="space-y-2">
-              {messages.map((m) => {
-                const isMine = m.sender_id === user?.id;
-                const info = senderInfos[m.sender_id] || { name: "..." };
-                return (
-                  <div key={m.id} className="flex flex-col">
-                    <span className={`text-[10px] font-display font-bold mb-0.5 ${isMine ? "text-right mr-8 text-primary/70" : "ml-8 text-primary"}`}>
-                      {renderSenderLabel(info)}
-                    </span>
-                    <div className={`group flex items-end gap-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
-                      {!isMine && (
-                        <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
-                          {info.avatar_url ? (
-                            <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            info.avatar || "??"
-                          )}
-                        </div>
-                      )}
-                      {canModerate && isMine && (
-                        <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                      <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
-                        <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
-                        <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {(() => {
-                            const d = new Date(m.created_at);
-                            if (isToday(d)) return format(d, "HH:mm", { locale: pl });
-                            if (isYesterday(d)) return `wczoraj ${format(d, "HH:mm", { locale: pl })}`;
-                            return format(d, "dd.MM HH:mm", { locale: pl });
-                          })()}
-                        </p>
-                      </div>
-                      {isMine && (
-                        <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
-                          {info.avatar_url ? (
-                            <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            info.avatar || "??"
-                          )}
-                        </div>
-                      )}
-                      {canModerate && !isMine && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                          <button onClick={() => deleteMessage(m.id)} className="p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => setBanDialog({ open: true, userId: m.sender_id, userName: info.name })}
-                            className="p-0.5 text-orange-500 hover:text-orange-400"
-                            title="Zablokuj użytkownika"
-                          >
-                            <Ban className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {messages.length === 0 && (
-                <div className="text-center text-muted-foreground text-xs py-8 font-body">
-                  Brak wiadomości — napisz pierwszą!
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          <div className="p-2 border-t border-border">
-            {isBanned ? (
-              <div className="flex items-center gap-2 text-xs text-destructive font-body px-2 py-1">
-                <Clock className="h-3.5 w-3.5 shrink-0" />
-                <span>Blokada czatu do {bannedUntil ? format(new Date(bannedUntil), "dd.MM.yyyy HH:mm", { locale: pl }) : "?"}</span>
+              <div
+                className="h-4 w-4 cursor-se-resize text-muted-foreground hover:text-foreground"
+                onPointerDown={onResizeStart}
+              >
+                <span className="block w-full h-full" />
               </div>
-            ) : (
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-1.5">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Napisz wiadomość..."
-                  className={`bg-muted/30 border-border ${compact ? "text-xs h-7" : "text-sm h-8"}`}
-                  maxLength={1000}
-                />
-                <Button type="submit" variant="hero" size="icon" className={compact ? "h-7 w-7 shrink-0" : "h-8 w-8 shrink-0"} disabled={sending || !newMessage.trim()}>
-                  <Send className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
-                </Button>
-              </form>
-            )}
+            </div>
           </div>
-        </div>
+        )}
+
+        <div
+          className={`flex ${compact ? "h-full" : isMobile ? "h-[calc(100vh-260px)] min-h-[400px]" : "h-full"} gap-0 overflow-hidden ${isMobile ? "relative" : "h-full"}`}
+        >
+          <ResizablePanelGroup direction="horizontal" className="min-h-[400px]">
+            {/* Channel sidebar */}
+            <ResizablePanel defaultSize={isMobile ? 0 : 25} minSize={isMobile ? 0 : 15} maxSize={40} collapsible={isMobile}>
+              <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full ${isMobile ? `fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
+                <div className="p-2 border-b border-border">
+                  <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
+                </div>
+                <ScrollArea className="flex-1">
+                  {channels.map((ch) => (
+                    <button
+                      key={ch.id}
+                      onClick={() => setActiveChannel(ch.id)}
+                      className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body ${
+                        activeChannel === ch.id ? "bg-primary/10 text-primary border-l-2 border-primary" : "hover:bg-muted/30 text-foreground border-l-2 border-transparent"
+                      }`}
+                    >
+                      {getChannelIcon(ch)}
+                      <span className="truncate">{ch.name}</span>
+                    </button>
+                  ))}
+                </ScrollArea>
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            {/* Messages area */}
+            <ResizablePanel defaultSize={75} minSize={50}>
+              <div className="flex-1 flex flex-col min-w-0 h-full">
+                {activeChannelData && (
+                  <div className="p-2 border-b border-border flex items-center gap-2">
+                    {isMobile && (
+                      <Button onClick={() => setIsSidebarOpen(true)} variant="ghost" size="sm">
+                        <Menu className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {getChannelIcon(activeChannelData)}
+                    <span className="font-display font-bold text-foreground text-sm">{activeChannelData.name}</span>
+                    {activeChannelData.description && (
+                      <span className="text-[10px] text-muted-foreground font-body ml-auto hidden sm:block truncate max-w-[200px]">{activeChannelData.description}</span>
+                    )}
+                  </div>
+                )}
+
+              <ScrollArea className="flex-1 p-3">
+                <div className="space-y-2">
+                  {messages.map((m) => {
+                    const isMine = m.sender_id === user?.id;
+                    const info = senderInfos[m.sender_id] || { name: "..." };
+                    return (
+                      <div key={m.id} className="flex flex-col">
+                        <span className={`text-[10px] font-display font-bold mb-0.5 ${isMine ? "text-right mr-8 text-primary/70" : "ml-8 text-primary"}`}>
+                          {renderSenderLabel(info)}
+                        </span>
+                        <div className={`group flex items-end gap-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
+                          {!isMine && (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
+                              {info.avatar_url ? (
+                                <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                info.avatar || "??"
+                              )}
+                            </div>
+                          )}
+                          {canModerate && isMine && (
+                            <button onClick={() => deleteMessage(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                          <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
+                            <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
+                            <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                              {(() => {
+                                const d = new Date(m.created_at);
+                                if (isToday(d)) return format(d, "HH:mm", { locale: pl });
+                                if (isYesterday(d)) return `wczoraj ${format(d, "HH:mm", { locale: pl })}`;
+                                return format(d, "dd.MM HH:mm", { locale: pl });
+                              })()}
+                            </p>
+                          </div>
+                          {isMine && (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[8px] font-display font-bold text-primary overflow-hidden shrink-0">
+                              {info.avatar_url ? (
+                                <img src={info.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                info.avatar || "??"
+                              )}
+                            </div>
+                          )}
+                          {canModerate && !isMine && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                              <button onClick={() => deleteMessage(m.id)} className="p-0.5 text-destructive hover:text-destructive/80" title="Usuń wiadomość">
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => setBanDialog({ open: true, userId: m.sender_id, userName: info.name })}
+                                className="p-0.5 text-orange-500 hover:text-orange-400"
+                                title="Zablokuj użytkownika"
+                              >
+                                <Ban className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {messages.length === 0 && (
+                    <div className="text-center text-muted-foreground text-xs py-8 font-body">
+                      Brak wiadomości — napisz pierwszą!
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              <div className="p-2 border-t border-border">
+                {isBanned ? (
+                  <div className="flex items-center gap-2 text-xs text-destructive font-body px-2 py-1">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span>Blokada czatu do {bannedUntil ? format(new Date(bannedUntil), "dd.MM.yyyy HH:mm", { locale: pl }) : "?"}</span>
+                  </div>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-1.5">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Napisz wiadomość..."
+                      className={`bg-muted/30 border-border ${compact ? "text-xs h-7" : "text-sm h-8"}`}
+                      maxLength={1000}
+                    />
+                    <Button type="submit" variant="hero" size="icon" className={compact ? "h-7 w-7 shrink-0" : "h-8 w-8 shrink-0"} disabled={sending || !newMessage.trim()}>
+                      <Send className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
+
+      {/* Backdrop for mobile sidebar */}
+      {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />}
 
       {/* Ban dialog */}
       <Dialog open={banDialog.open} onOpenChange={(o) => !o && setBanDialog({ open: false, userId: "", userName: "" })}>

@@ -177,7 +177,7 @@ const MatchSelector = ({ matches, selectedMatchId, onSelect }: MatchSelectorProp
 
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
-  const { matches, submitMatchResult } = useLeague();
+  const { matches, submitMatchResult, loading: leagueLoading } = useLeague();
   const { toast } = useToast();
 
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
@@ -830,7 +830,7 @@ const SubmitMatchPage = () => {
     resetForm();
   };
 
-  if (loading || loadingPlayer) {
+  if (loading || loadingPlayer || leagueLoading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Skeleton className="h-8 w-64 mb-6" />
