@@ -1221,6 +1221,96 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   );
 };
 
+// ─── PLAYOFF GENERATOR SECTION ───
+const PlayoffGeneratorSection = ({ leagueId, qualifiersPerGroup, setQualifiersPerGroup, playoffDate, setPlayoffDate, generatingPlayoff, setGeneratingPlayoff, refreshData, toast }: {
+  leagueId: string;
+  qualifiersPerGroup: number;
+  setQualifiersPerGroup: (n: number) => void;
+  playoffDate: string;
+  setPlayoffDate: (d: string) => void;
+  generatingPlayoff: boolean;
+  setGeneratingPlayoff: (b: boolean) => void;
+  refreshData: () => void;
+  toast: any;
+}) => {
+  const [groupsCompleted, setGroupsCompleted] = useState<boolean | null>(null);
+  const [showPlayoffPanel, setShowPlayoffPanel] = useState(false);
+
+  useEffect(() => {
+    areAllGroupMatchesCompleted(leagueId).then(setGroupsCompleted);
+  }, [leagueId]);
+
+  const handleGeneratePlayoff = async () => {
+    setGeneratingPlayoff(true);
+    const result = await generatePlayoffBracket(leagueId, qualifiersPerGroup, playoffDate);
+    setGeneratingPlayoff(false);
+
+    if (result.success) {
+      toast({ title: "🏆 Drabinka pucharowa wygenerowana!", description: `${result.matchCount} meczów w fazie pucharowej.` });
+      refreshData();
+      setShowPlayoffPanel(false);
+    } else {
+      toast({ title: "Błąd", description: result.error, variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Button
+        variant="hero"
+        size="sm"
+        className="w-full"
+        onClick={() => setShowPlayoffPanel(!showPlayoffPanel)}
+      >
+        <Trophy className="h-4 w-4 mr-2" />
+        Generuj drabinkę pucharową
+      </Button>
+
+      <AnimatePresence>
+        {showPlayoffPanel && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-3 rounded-lg border border-accent/30 bg-accent/5 p-4">
+            {groupsCompleted === false && (
+              <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-xs text-destructive font-body">
+                ⚠️ Nie wszystkie mecze grupowe zostały zakończone. Możesz wygenerować drabinkę, ale wyniki mogą się jeszcze zmienić.
+              </div>
+            )}
+            {groupsCompleted === true && (
+              <div className="rounded-lg bg-secondary/10 border border-secondary/30 p-3 text-xs text-secondary font-body">
+                ✅ Wszystkie mecze grupowe zakończone. Możesz wygenerować drabinkę pucharową!
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Awansujących z grupy</Label>
+                <Select value={String(qualifiersPerGroup)} onValueChange={(v) => setQualifiersPerGroup(parseInt(v))}>
+                  <SelectTrigger className="bg-muted/30 border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4].map(n => (
+                      <SelectItem key={n} value={String(n)}>Top {n} z grupy</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Termin playoff</Label>
+                <Input type="date" value={playoffDate} onChange={e => setPlayoffDate(e.target.value)} className="bg-muted/30 border-border" />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="hero" size="sm" disabled={generatingPlayoff} onClick={handleGeneratePlayoff} className="flex-1">
+                {generatingPlayoff ? "Generowanie..." : "⚡ Generuj drabinkę"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowPlayoffPanel(false)}>Anuluj</Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // ─── PLAYERS TAB ───
 const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePlayer, deletePlayer, assignPlayerToLeague, removePlayerFromLeague, addPlayer, toast }: any) => {
   const approved = players.filter((p: any) => p.approved);
