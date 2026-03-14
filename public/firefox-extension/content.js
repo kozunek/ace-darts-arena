@@ -513,10 +513,32 @@
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
         if (!key) continue;
-        const parsed = safeJsonParse(storage.getItem(key));
+        const raw = storage.getItem(key);
+        if (!raw) continue;
+
+        const parsed = safeJsonParse(raw);
         if (parsed?.access_token) return parsed.access_token;
+
+        if (key.startsWith("oidc.user:") || key.startsWith("kc-")) {
+          if (parsed?.id_token) return parsed.id_token;
+        }
+
+        if (key.includes("auth0")) {
+          if (parsed?.body?.access_token) return parsed.body.access_token;
+        }
       }
     }
+
+    try {
+      const cookies = document.cookie.split(";");
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split("=");
+        if (name && (name.includes("access_token") || name.includes("ad_token")) && value) {
+          return decodeURIComponent(value);
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     return null;
   }
 
