@@ -130,7 +130,7 @@ export function generateGroupStage(playerIds: string[], numGroups: number): {
   return { groups, matches: allMatches };
 }
 
-function getRoundNames(totalRounds: number): string[] {
+export function getRoundNames(totalRounds: number): string[] {
   const names: string[] = [];
   for (let i = 0; i < totalRounds; i++) {
     const remaining = totalRounds - i;

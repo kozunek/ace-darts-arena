@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { generateBracket, getRoundNames } from "@/lib/tournamentUtils";
+import { generateBracket } from "@/lib/tournamentUtils";
 
 /**
  * After a bracket match is approved/completed, advance the winner to the next round.
