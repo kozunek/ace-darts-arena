@@ -535,14 +535,53 @@ browserAPI.notifications.onClicked.addListener((notificationId) => {
   }
 });
 
-browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
-  (details) => {
-    const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
-    if (authHeader && authHeader.value?.startsWith('Bearer ')) {
-      const token = authHeader.value.replace('Bearer ', '');
-      browserAPI.storage.local.set({ autodarts_token: token, token_timestamp: Date.now() });
+browserAPI.runtime.onInstalled?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-installed");
+});
+
+browserAPI.runtime.onStartup?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-startup");
+});
+
+browserAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
+  browserAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-updated" }, () => {
+    if (browserAPI.runtime.lastError) {
+      // ignore
     }
-  },
-  { urls: ["https://api.autodarts.io/*"] },
-  ["requestHeaders"]
-);
+  });
+});
+
+try {
+  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
+    (details) => {
+      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
+      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
+        const token = authHeader.value.replace('Bearer ', '');
+        browserAPI.storage.local.set({
+          autodarts_token: token,
+          token_timestamp: Date.now(),
+          autodarts_token_source: 'webRequest-extraHeaders'
+        });
+      }
+    },
+    { urls: ["https://api.autodarts.io/*"] },
+    ["requestHeaders", "extraHeaders"]
+  );
+} catch {
+  browserAPI.webRequest?.onBeforeSendHeaders?.addListener(
+    (details) => {
+      const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization');
+      if (authHeader && authHeader.value?.startsWith('Bearer ')) {
+        const token = authHeader.value.replace('Bearer ', '');
+        browserAPI.storage.local.set({
+          autodarts_token: token,
+          token_timestamp: Date.now(),
+          autodarts_token_source: 'webRequest'
+        });
+      }
+    },
+    { urls: ["https://api.autodarts.io/*"] },
+    ["requestHeaders"]
+  );
+}
