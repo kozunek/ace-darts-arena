@@ -535,6 +535,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [showGenerate, setShowGenerate] = useState<string | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [numGroups, setNumGroups] = useState(2);
+  const [qualifiersPerGroup, setQualifiersPerGroup] = useState(2);
   const [generating, setGenerating] = useState(false);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [doShuffle, setDoShuffle] = useState(true);
@@ -544,6 +545,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [playerSearch, setPlayerSearch] = useState("");
   const [leaguePlayerSearch, setLeaguePlayerSearch] = useState("");
   const [managePlayersLeagueId, setManagePlayersLeagueId] = useState<string | null>(null);
+  const [generatingPlayoff, setGeneratingPlayoff] = useState(false);
+  const [playoffDate, setPlayoffDate] = useState(new Date().toISOString().split("T")[0]);
 
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
