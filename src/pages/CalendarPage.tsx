@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import LeagueSelector from "@/components/LeagueSelector";
 import { Link } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
+import { pl } from "@/lib/pluralize";
 
 const DAYS_PL = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 const MONTHS_PL = [
