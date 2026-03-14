@@ -79,7 +79,7 @@ const PlayerProfilePage = () => {
 
   return (
     <div>
-      <PageHeader title={player.name} subtitle={`Aktywny w ${allLeagueStats.length} ${allLeagueStats.length === 1 ? "lidze" : "ligach"}`}>
+      <PageHeader title={player.name} subtitle={`Aktywny w ${pl.league(allLeagueStats.length).replace(/^\d+ /, '')}: ${allLeagueStats.length}`}>
         <Link to="/players">
           <Button variant="outline" size="sm" className="font-display uppercase tracking-wider text-xs">
             <ArrowLeft className="h-4 w-4 mr-1" /> Wszyscy gracze
