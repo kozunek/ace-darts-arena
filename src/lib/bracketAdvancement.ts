@@ -14,11 +14,12 @@ export async function advanceBracketWinner(
   leagueId: string,
   winnerId: string,
   winnerName: string,
+  loserId?: string,
 ): Promise<{ advanced: boolean; nextMatchId?: string }> {
   // Get the completed match details
   const { data: completedMatch } = await supabase
     .from("matches")
-    .select("bracket_round, bracket_position, league_id")
+    .select("bracket_round, bracket_position, league_id, player1_id, player2_id, score1, score2")
     .eq("id", matchId)
     .single();
 
@@ -29,10 +30,20 @@ export async function advanceBracketWinner(
   const currentRound = completedMatch.bracket_round;
   const currentPosition = completedMatch.bracket_position;
 
-  // Finał — no next round
-  if (currentRound === "Finał") {
+  // Skip special rounds
+  if (currentRound === "Finał" || currentRound === "Mecz o 3. miejsce" || currentRound.startsWith("Lucky Loser")) {
     return { advanced: false };
   }
+
+  // Get league config for third_place_match and lucky_loser
+  const { data: leagueData } = await supabase
+    .from("leagues")
+    .select("third_place_match, lucky_loser")
+    .eq("id", leagueId)
+    .single();
+
+  const thirdPlaceEnabled = (leagueData as any)?.third_place_match ?? false;
+  const luckyLoserEnabled = (leagueData as any)?.lucky_loser ?? false;
 
   // Get all bracket matches for this league
   const { data: allBracketMatches } = await supabase
@@ -49,12 +60,9 @@ export async function advanceBracketWinner(
   const currentRoundIdx = roundOrder.indexOf(currentRound);
   if (currentRoundIdx === -1) return { advanced: false };
 
-  // Find the next round name
-  const nextRoundName = roundOrder[currentRoundIdx + 1];
-  if (!nextRoundName) return { advanced: false };
-
-  // However, not all rounds may exist — find the actual next round
+  // Find actual next round
   const allRoundNames = [...new Set(allBracketMatches.map(m => m.bracket_round!))]
+    .filter(r => roundOrder.includes(r))
     .sort((a, b) => roundOrder.indexOf(a) - roundOrder.indexOf(b));
   const actualNextRound = allRoundNames.find(r => {
     const idx = roundOrder.indexOf(r);
@@ -65,25 +73,27 @@ export async function advanceBracketWinner(
 
   // Calculate target position in next round
   const nextPosition = Math.ceil(currentPosition / 2);
-  const isPlayer1Slot = currentPosition % 2 !== 0; // odd = player1, even = player2
+  const isPlayer1Slot = currentPosition % 2 !== 0;
 
   // Find the next round match
   let nextMatch = allBracketMatches.find(
     m => m.bracket_round === actualNextRound && m.bracket_position === nextPosition
   );
 
+  const TBD_ID = "00000000-0000-0000-0000-000000000000";
+
   if (!nextMatch) {
-    // Create the next round match if it doesn't exist (placeholder)
     const { data: created } = await supabase.from("matches").insert({
       league_id: leagueId,
-      player1_id: isPlayer1Slot ? winnerId : "00000000-0000-0000-0000-000000000000",
-      player2_id: isPlayer1Slot ? "00000000-0000-0000-0000-000000000000" : winnerId,
+      player1_id: isPlayer1Slot ? winnerId : TBD_ID,
+      player2_id: isPlayer1Slot ? TBD_ID : winnerId,
       date: new Date().toISOString().split("T")[0],
       status: "upcoming",
       bracket_round: actualNextRound,
       bracket_position: nextPosition,
     }).select().single();
 
+    await handleSemifinalLoser(currentRound, leagueId, loserId, allBracketMatches, thirdPlaceEnabled, luckyLoserEnabled);
     return { advanced: true, nextMatchId: created?.id };
   }
 
@@ -95,22 +105,111 @@ export async function advanceBracketWinner(
     updateData.player2_id = winnerId;
   }
 
-  // Check if both players are now set (neither is TBD/placeholder)
   const otherPlayerId = isPlayer1Slot ? nextMatch.player2_id : nextMatch.player1_id;
-  const TBD_ID = "00000000-0000-0000-0000-000000000000";
   const otherIsSet = otherPlayerId && otherPlayerId !== TBD_ID;
-
-  // If both players are now known, make it upcoming
   if (otherIsSet) {
     updateData.status = "upcoming";
   }
 
-  await supabase
-    .from("matches")
-    .update(updateData)
-    .eq("id", nextMatch.id);
+  await supabase.from("matches").update(updateData).eq("id", nextMatch.id);
+
+  // Handle semifinal loser for third-place match / lucky loser
+  await handleSemifinalLoser(currentRound, leagueId, loserId, allBracketMatches, thirdPlaceEnabled, luckyLoserEnabled);
 
   return { advanced: true, nextMatchId: nextMatch.id };
+}
+
+/**
+ * When a semifinal match completes, create/update the third-place match
+ * and/or lucky loser bracket with the losers.
+ */
+async function handleSemifinalLoser(
+  currentRound: string,
+  leagueId: string,
+  loserId: string | undefined,
+  allBracketMatches: any[],
+  thirdPlaceEnabled: boolean,
+  luckyLoserEnabled: boolean,
+) {
+  if (currentRound !== "Półfinał" || !loserId) return;
+
+  const TBD_ID = "00000000-0000-0000-0000-000000000000";
+
+  // Third-place match: add loser to "Mecz o 3. miejsce"
+  if (thirdPlaceEnabled) {
+    const existing3rd = allBracketMatches.find(m => m.bracket_round === "Mecz o 3. miejsce");
+    if (existing3rd) {
+      // Fill empty slot
+      if (existing3rd.player1_id === TBD_ID) {
+        const update: any = { player1_id: loserId };
+        if (existing3rd.player2_id !== TBD_ID) update.status = "upcoming";
+        await supabase.from("matches").update(update).eq("id", existing3rd.id);
+      } else if (existing3rd.player2_id === TBD_ID) {
+        await supabase.from("matches").update({ player2_id: loserId, status: "upcoming" }).eq("id", existing3rd.id);
+      }
+    } else {
+      // Create the third-place match
+      await supabase.from("matches").insert({
+        league_id: leagueId,
+        player1_id: loserId,
+        player2_id: TBD_ID,
+        date: new Date().toISOString().split("T")[0],
+        status: "upcoming",
+        bracket_round: "Mecz o 3. miejsce",
+        bracket_position: 1,
+      });
+    }
+  }
+
+  // Lucky Loser: collect all non-semifinal losers for a mini bracket
+  if (luckyLoserEnabled) {
+    const existingLL = allBracketMatches.find(m => m.bracket_round?.startsWith("Lucky Loser"));
+    if (!existingLL) {
+      // Collect losers from completed matches (excluding semifinal — that goes to 3rd place)
+      const completedMainMatches = allBracketMatches.filter(
+        m => m.status === "completed" && m.bracket_round !== "Półfinał" && m.bracket_round !== "Finał"
+          && !m.bracket_round?.startsWith("Lucky Loser") && m.bracket_round !== "Mecz o 3. miejsce"
+      );
+
+      // Get losers
+      const losers: string[] = [];
+      for (const m of completedMainMatches) {
+        // We need scores to determine loser, but we only have player IDs here
+        // Fetch full match data
+        const { data: fullMatch } = await supabase.from("matches")
+          .select("player1_id, player2_id, score1, score2")
+          .eq("id", m.id).single();
+        if (fullMatch) {
+          const loser = (fullMatch.score1 ?? 0) > (fullMatch.score2 ?? 0) ? fullMatch.player2_id : fullMatch.player1_id;
+          if (loser !== TBD_ID) losers.push(loser);
+        }
+      }
+
+      // Add the current semifinal loser too
+      losers.push(loserId);
+
+      if (losers.length >= 2) {
+        // Create mini bracket for lucky losers
+        const { generateBracket: genBracket } = await import("@/lib/tournamentUtils");
+        const bracket = genBracket(losers);
+        for (const m of bracket) {
+          const p1 = m.player1Id === "TBD" ? TBD_ID : m.player1Id;
+          const p2 = !m.player2Id || m.player2Id === "TBD" ? TBD_ID : m.player2Id;
+          const hasBoth = p1 !== TBD_ID && p2 !== TBD_ID;
+          const roundName = m.bracketRound === "Finał" ? "Lucky Loser Finał" : `Lucky Loser ${m.bracketRound}`;
+          await supabase.from("matches").insert({
+            league_id: leagueId,
+            player1_id: p1,
+            player2_id: p2,
+            date: new Date().toISOString().split("T")[0],
+            status: hasBoth ? "upcoming" : "upcoming",
+            bracket_round: roundName,
+            bracket_position: m.bracketPosition,
+          });
+        }
+      }
+    }
+  }
 }
 
 /**

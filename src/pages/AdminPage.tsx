@@ -530,6 +530,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [leaguePlatform, setLeaguePlatform] = useState<LeaguePlatform>("autodarts");
   const [bonusRules, setBonusRules] = useState<BonusRules>({ ...DEFAULT_BONUS_RULES });
   const [meetingsPerPair, setMeetingsPerPair] = useState(1);
+  const [thirdPlaceEnabled, setThirdPlaceEnabled] = useState(false);
+  const [luckyLoserEnabled, setLuckyLoserEnabled] = useState(false);
   
   // Tournament generation state
   const [showGenerate, setShowGenerate] = useState<string | null>(null);
@@ -551,7 +553,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
     setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setLeaguePlatform("autodarts"); setBonusRules({ ...DEFAULT_BONUS_RULES });
-    setMeetingsPerPair(1);
+    setMeetingsPerPair(1); setThirdPlaceEnabled(false); setLuckyLoserEnabled(false);
     setShowForm(false); setEditId(null);
   };
 
@@ -564,6 +566,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setLeaguePlatform(l.platform || "autodarts");
     setBonusRules({ ...DEFAULT_BONUS_RULES, ...(l.bonus_rules || {}) });
     setMeetingsPerPair(l.meetings_per_pair ?? 1);
+    setThirdPlaceEnabled(l.third_place_match ?? false);
+    setLuckyLoserEnabled(l.lucky_loser ?? false);
     setShowForm(true);
   };
 
@@ -572,10 +576,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     if (!name || !season) { toast({ title: "Błąd", description: "Wypełnij wymagane pola.", variant: "destructive" }); return; }
     const maxLegs = BEST_OF_OPTIONS.find(o => o.value === format)?.maxLegs || 5;
     if (editId) {
-      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform });
+      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled });
       toast({ title: "Zaktualizowano!", description: `${name} została zmieniona.` });
     } else {
-      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform });
+      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled });
       if (result?.error) {
         toast({ title: "Błąd", description: "Nie udało się utworzyć. Sprawdź uprawnienia.", variant: "destructive" });
         return;
@@ -710,7 +714,21 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
           }
         }
         
-        toast({ title: "🏆 Drabinka wygenerowana!", description: `Turniej dla ${playerIds.length} graczy (${insertedCount} meczów).` });
+        // Pre-create third-place match placeholder if enabled
+        if (thirdPlaceEnabled) {
+          const TBD_ID_C = "00000000-0000-0000-0000-000000000000";
+          await supabase.from("matches").insert({
+            league_id: league.id,
+            player1_id: TBD_ID_C,
+            player2_id: TBD_ID_C,
+            date: startDate,
+            status: "upcoming",
+            bracket_round: "Mecz o 3. miejsce",
+            bracket_position: 1,
+          });
+        }
+        
+        toast({ title: "🏆 Drabinka wygenerowana!", description: `Turniej dla ${playerIds.length} graczy (${insertedCount} meczów).${thirdPlaceEnabled ? " + mecz o 3. miejsce" : ""}${luckyLoserEnabled ? " + Lucky Loser" : ""}` });
 
       } else if (lt === "group_bracket") {
         // Group stage + bracket
@@ -850,6 +868,27 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground font-body">
                 {leagueType === "bracket" && "🏆 Turniej z drabinką eliminacyjną. Przegrana = odpadnięcie. Możesz wylosować kolejność graczy."}
                 {leagueType === "group_bracket" && "🎪 Faza grupowa (round-robin w grupach), potem faza pucharowa (drabinka) z najlepszymi z każdej grupy."}
+              </div>
+            )}
+
+            {/* Third place match & Lucky Loser options for bracket types */}
+            {(leagueType === "bracket" || leagueType === "group_bracket") && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-4">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Opcje turniejowe</Label>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-body font-medium text-foreground">🥉 Mecz o 3. miejsce</Label>
+                    <p className="text-xs text-muted-foreground font-body mt-0.5">Przegrani z półfinałów grają o brązowy medal</p>
+                  </div>
+                  <Switch checked={thirdPlaceEnabled} onCheckedChange={setThirdPlaceEnabled} />
+                </div>
+                <div className="border-t border-border pt-3 flex items-center justify-between">
+                  <div>
+                    <Label className="font-body font-medium text-foreground">🍀 Lucky Loser</Label>
+                    <p className="text-xs text-muted-foreground font-body mt-0.5">Przegrani grają w mini-turnieju, zwycięzca gra w finale głównym</p>
+                  </div>
+                  <Switch checked={luckyLoserEnabled} onCheckedChange={setLuckyLoserEnabled} />
+                </div>
               </div>
             )}
 

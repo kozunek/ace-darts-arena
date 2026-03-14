@@ -1,6 +1,7 @@
 import { useLeague } from "@/contexts/LeagueContext";
 import { Trophy, Medal, Award, Users } from "lucide-react";
 import type { Match, PlayerLeagueStats } from "@/data/mockData";
+import { useRef, useEffect, useState } from "react";
 
 const FormBadge = ({ result }: { result: "W" | "L" }) => {
   const styles = {
@@ -180,25 +181,7 @@ const GroupBracketView = () => {
           <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-6 flex items-center gap-2">
             <Trophy className="h-6 w-6 text-accent" /> Faza Pucharowa
           </h2>
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-6 min-w-max">
-              {rounds.map(([roundName, roundMatches]) => {
-                const sorted = [...roundMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
-                return (
-                  <div key={roundName} className="flex flex-col items-center min-w-[220px]">
-                    <div className="text-xs font-display uppercase tracking-wider text-accent mb-4 px-3 py-1 rounded-full border border-accent/30 bg-accent/10">
-                      {roundName}
-                    </div>
-                    <div className="flex flex-col gap-4 justify-around flex-1">
-                      {sorted.map(match => (
-                        <BracketMatchCard key={match.id} match={match} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <BracketWithLines rounds={rounds} />
         </div>
       )}
 
@@ -211,6 +194,88 @@ const GroupBracketView = () => {
         </div>
       )}
     </section>
+  );
+};
+
+/** Bracket with SVG connector lines between rounds */
+const BracketWithLines = ({ rounds }: { rounds: [string, Match[]][] }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; midX: number }[]>([]);
+  const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const registerRef = (matchId: string, el: HTMLDivElement | null) => {
+    if (el) matchRefs.current.set(matchId, el);
+    else matchRefs.current.delete(matchId);
+  };
+
+  useEffect(() => {
+    const calculateLines = () => {
+      if (!containerRef.current || rounds.length < 2) { setLines([]); return; }
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newLines: typeof lines = [];
+
+      for (let rIdx = 0; rIdx < rounds.length - 1; rIdx++) {
+        const [, currentMatches] = rounds[rIdx];
+        const [, nextMatches] = rounds[rIdx + 1];
+        const sortedCurrent = [...currentMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
+        const sortedNext = [...nextMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
+
+        for (let i = 0; i < sortedCurrent.length; i++) {
+          const currentMatch = sortedCurrent[i];
+          const nextMatch = sortedNext[Math.floor(i / 2)];
+          if (!nextMatch) continue;
+          const currentEl = matchRefs.current.get(currentMatch.id);
+          const nextEl = matchRefs.current.get(nextMatch.id);
+          if (!currentEl || !nextEl) continue;
+          const cRect = currentEl.getBoundingClientRect();
+          const nRect = nextEl.getBoundingClientRect();
+          newLines.push({
+            x1: cRect.right - containerRect.left,
+            y1: cRect.top + cRect.height / 2 - containerRect.top,
+            x2: nRect.left - containerRect.left,
+            y2: nRect.top + nRect.height / 2 - containerRect.top,
+            midX: (cRect.right - containerRect.left + nRect.left - containerRect.left) / 2,
+          });
+        }
+      }
+      setLines(newLines);
+    };
+    const timer = setTimeout(calculateLines, 100);
+    window.addEventListener("resize", calculateLines);
+    return () => { clearTimeout(timer); window.removeEventListener("resize", calculateLines); };
+  }, [rounds]);
+
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div ref={containerRef} className="relative flex gap-8 min-w-max py-4 px-2">
+        {lines.length > 0 && (
+          <svg className="absolute inset-0 pointer-events-none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+            {lines.map((line, idx) => (
+              <g key={idx}>
+                <line x1={line.x1} y1={line.y1} x2={line.midX} y2={line.y1} stroke="hsl(var(--border))" strokeWidth={2} strokeOpacity={0.6} />
+                <line x1={line.midX} y1={line.y1} x2={line.midX} y2={line.y2} stroke="hsl(var(--border))" strokeWidth={2} strokeOpacity={0.6} />
+                <line x1={line.midX} y1={line.y2} x2={line.x2} y2={line.y2} stroke="hsl(var(--border))" strokeWidth={2} strokeOpacity={0.6} />
+              </g>
+            ))}
+          </svg>
+        )}
+        {rounds.map(([roundName, roundMatches]) => {
+          const sorted = [...roundMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
+          return (
+            <div key={roundName} className="flex flex-col items-center min-w-[220px] z-10">
+              <div className="text-xs font-display uppercase tracking-wider text-accent mb-4 px-3 py-1 rounded-full border border-accent/30 bg-accent/10">{roundName}</div>
+              <div className="flex flex-col gap-6 justify-around flex-1">
+                {sorted.map(match => (
+                  <div key={match.id} ref={(el) => registerRef(match.id, el)}>
+                    <BracketMatchCard match={match} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 

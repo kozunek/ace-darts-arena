@@ -262,7 +262,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     // Parallel fetches for speed
     const [leaguesRes, playersRes, plRes] = await Promise.all([
-      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform").order("created_at"),
+      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform,third_place_match,lucky_loser").order("created_at"),
       supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id").order("name"),
       supabase.from("player_leagues").select("player_id,league_id"),
     ]);
@@ -276,6 +276,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       meetings_per_pair: l.meetings_per_pair ?? 1,
       registration_deadline: l.registration_deadline ?? null,
       platform: (l as any).platform ?? "autodarts",
+      third_place_match: l.third_place_match ?? false,
+      lucky_loser: l.lucky_loser ?? false,
     }));
     setLeagueList(leagues);
     if (leagues.length > 0 && !activeLeagueId) {
@@ -486,11 +488,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     if (match?.bracketRound && match.score1 != null && match.score2 != null) {
       const winnerId = (match.score1 ?? 0) > (match.score2 ?? 0) ? match.player1Id : match.player2Id;
       const winnerName = (match.score1 ?? 0) > (match.score2 ?? 0) ? match.player1Name : match.player2Name;
+      const loserId = (match.score1 ?? 0) > (match.score2 ?? 0) ? match.player2Id : match.player1Id;
       try {
-        const result = await advanceBracketWinner(matchId, match.leagueId, winnerId, winnerName);
+        const result = await advanceBracketWinner(matchId, match.leagueId, winnerId, winnerName, loserId);
         if (result.advanced) {
           console.log(`[Bracket] Advanced ${winnerName} to next round`);
-          // Refresh data to show updated bracket
           setTimeout(() => fetchData(), 500);
         }
       } catch (e) {
@@ -629,6 +631,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       registration_open: league.registration_open ?? false,
       meetings_per_pair: league.meetings_per_pair ?? 1,
       platform: league.platform ?? "autodarts",
+      third_place_match: league.third_place_match ?? false,
+      lucky_loser: league.lucky_loser ?? false,
     } as any).select().single();
     if (data) {
       const newLeague: League = {
@@ -639,6 +643,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         registration_open: (data as any).registration_open ?? false,
         meetings_per_pair: (data as any).meetings_per_pair ?? 1,
         platform: (data as any).platform ?? "autodarts",
+        third_place_match: (data as any).third_place_match ?? false,
+        lucky_loser: (data as any).lucky_loser ?? false,
       };
       setLeagueList((prev) => [...prev, newLeague]);
       if (!activeLeagueId) setActiveLeagueId(data.id);

@@ -568,6 +568,7 @@ export type Database = {
           id: string
           is_active: boolean
           league_type: string
+          lucky_loser: boolean
           max_legs: number | null
           meetings_per_pair: number
           name: string
@@ -575,6 +576,7 @@ export type Database = {
           registration_deadline: string | null
           registration_open: boolean
           season: string
+          third_place_match: boolean
         }
         Insert: {
           bonus_rules?: Json | null
@@ -584,6 +586,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           league_type?: string
+          lucky_loser?: boolean
           max_legs?: number | null
           meetings_per_pair?: number
           name: string
@@ -591,6 +594,7 @@ export type Database = {
           registration_deadline?: string | null
           registration_open?: boolean
           season: string
+          third_place_match?: boolean
         }
         Update: {
           bonus_rules?: Json | null
@@ -600,6 +604,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           league_type?: string
+          lucky_loser?: boolean
           max_legs?: number | null
           meetings_per_pair?: number
           name?: string
@@ -607,6 +612,7 @@ export type Database = {
           registration_deadline?: string | null
           registration_open?: boolean
           season?: string
+          third_place_match?: boolean
         }
         Relationships: []
       }

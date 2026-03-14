@@ -32,6 +32,8 @@ export interface League {
   meetings_per_pair?: number;
   registration_deadline?: string | null;
   platform?: LeaguePlatform;
+  third_place_match?: boolean;
+  lucky_loser?: boolean;
 }
 
 export interface Player {
