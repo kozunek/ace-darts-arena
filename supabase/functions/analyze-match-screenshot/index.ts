@@ -10,11 +10,6 @@ const OPENAI_GATEWAY = "https://api.openai.com/v1/chat/completions";
 const GEMINI_GATEWAY = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-/**
- * Resolve AI config — priority:
- * 1. Custom key from app_config (user's own OpenAI/Gemini key)
- * 2. Lovable AI Gateway (free tier, uses LOVABLE_API_KEY secret)
- */
 async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKey: string; model: string }> {
   const { data } = await serviceClient
     .from("app_config")
@@ -28,14 +23,9 @@ async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKe
 
   const customKey = configMap["custom_ai_api_key"];
 
-  // If custom key is set, use it (priority)
   if (customKey) {
     if (configMap["custom_ai_endpoint"]) {
-      return {
-        url: configMap["custom_ai_endpoint"],
-        apiKey: customKey,
-        model: configMap["custom_ai_model"] || "gpt-4o",
-      };
+      return { url: configMap["custom_ai_endpoint"], apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
     }
     if (customKey.startsWith("sk-")) {
       return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
@@ -46,144 +36,107 @@ async function resolveAiConfig(serviceClient: any): Promise<{ url: string; apiKe
     return { url: OPENAI_GATEWAY, apiKey: customKey, model: configMap["custom_ai_model"] || "gpt-4o" };
   }
 
-  // Fallback: Lovable AI Gateway (free tier)
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (lovableKey) {
     return {
       url: LOVABLE_AI_GATEWAY,
       apiKey: lovableKey,
-      // Use flash for cost efficiency on free tier
-      model: configMap["custom_ai_model"] || "google/gemini-2.5-flash",
+      model: configMap["custom_ai_model"] || "google/gemini-2.5-flash-lite",
     };
   }
 
-  throw new Error("AI not configured. Set custom_ai_api_key in admin panel → Integrations, or enable Lovable AI.");
+  throw new Error("AI not configured.");
 }
 
-const buildSystemPrompt = (matchContext?: { player1_name: string; player2_name: string }) => {
-  let prompt = `Jesteś ekspertem od darta. Analizujesz zrzuty ekranu z aplikacji do darta (DartCounter, DartsMind, Autodarts lub inne).
-Twoim zadaniem jest wyodrębnić statystyki meczu ze zrzutów ekranu.
+// Compact, focused system prompt — optimized for speed
+const SYSTEM_PROMPT = `Ekspert OCR darta. Wyodrębnij statystyki ze screenshotów aplikacji dartowych.
 
-WAŻNE ZASADY:
-- Wyodrębnij TYLKO dane, które wyraźnie widzisz na zrzucie ekranu
-- Jeśli jakiejś statystyki nie widzisz, ustaw ją na null
-- Jeśli nie jesteś pewny wartości (niewyraźny tekst), ustaw confidence na "low"
-- Jeśli zrzut ekranu jest czytelny i dane jasne, ustaw confidence na "high"
-- Jeśli zrzut nie wygląda na podsumowanie meczu darta, ustaw confidence na "none"
-- Nazwy graczy: wyodrębnij dokładnie jak są napisane na screenie
-- Wynik: to liczba wygranych legów (np. 3:2 oznacza score1=3, score2=2)
-- Średnia (average): 3-dart average, zazwyczaj liczba z dwoma miejscami po przecinku
-- 180s: liczba rzutów 180
-- Checkout: najwyższe zamknięcie (highest checkout)
-- Checkout %: procent skuteczności na dubla - jeśli widzisz format "X/Y" to hits=X, attempts=Y
-- Ton ranges: 60+ (60-99), 100+ (100-139), 140+ (140-179), 180
-- Darts thrown: łączna liczba rzuconych lotek
-- First 9 average: średnia z pierwszych 9 lotek (3 wizyty)
+ZASADY:
+- Odczytaj TYLKO widoczne dane. Brak danych = null.
+- score = wygrane legi (np. 3:2 → score1=3, score2=2)
+- avg = 3-dart average
+- first_9_avg = średnia z pierwszych 9 lotek
+- checkout = najwyższy checkout; checkout_hits/attempts = skuteczność na dubla
+- 180s = rzuty 180; ton60=60-99, ton80=100-139, ton_plus=140-179
+- confidence: "high" jeśli dane czytelne, "low" jeśli niewyraźne, "none" jeśli to nie mecz darta
 
-Rozpoznaj platformę po wyglądzie interfejsu:
-- DartCounter: zwykle ciemny motyw, zielone/niebieskie akcenty
-- DartsMind: ciemny motyw ze złotymi/beżowymi akcentami. KRYTYCZNE ZASADY DLA DARTSMIND:
-  1. Duże liczby u góry (np. 141, 0) to POZOSTAŁE PUNKTY w bieżącym legu — to NIE jest wynik meczu!
-  2. WYNIK MECZU (score1/score2) = liczba kolorowych kropek na CZARNYM PASKU pomiędzy sekcją z nazwami graczy a statystykami.
-  3. Jeśli widzisz tekst "Player X wins this match" — ten gracz wygrał cały mecz.
-  4. "PPR" = Points Per Round = 3-dart average (avg). "FIRST 9 PPR" = first 9 darts average.
-  5. KRYTYCZNE — MAPOWANIE STATYSTYK DO GRACZY: Statystyki są w DWÓCH KOLUMNACH — lewa do lewego gracza, prawa do prawego.
-  6. NIE ZWRACAJ 0:0 domyślnie.
-- Autodarts: specyficzny interfejs webowy`;
+PLATFORMY:
+- DartCounter: ciemny motyw, zielone/niebieskie
+- DartsMind: ciemny+złoty. WYNIK = kolorowe kropki na czarnym pasku (NIE duże liczby u góry!). PPR = avg. Lewa kolumna = lewy gracz.
+- Autodarts: interfejs webowy`;
 
-  if (matchContext) {
-    prompt += `
+const MATCH_CONTEXT_ADDON = (p1: string, p2: string) =>
+  `\nMECZ LIGOWY: player1="${p1}", player2="${p2}". Dopasuj nicki ze screena do tych graczy. matched_to_context=true jeśli dopasowano.`;
 
-KONTEKST MECZU LIGOWEGO:
-- Gracz 1 (player1): "${matchContext.player1_name}"
-- Gracz 2 (player2): "${matchContext.player2_name}"
-
-KRYTYCZNE ZADANIE - MAPOWANIE GRACZY:
-1. Odczytaj nicki/nazwy graczy widoczne na screenie
-2. Dopasuj je do graczy z kontekstu meczu
-3. Ustaw statystyki player1_* i player2_* TAK, aby odpowiadały graczom z kontekstu
-4. Jeśli nie możesz jednoznacznie dopasować nicków, ustaw matched_to_context na false`;
-  }
-
-  return prompt;
-};
-
-const extractDartsMindScoreFallback = async (
-  aiConfig: { url: string; apiKey: string; model: string },
-  screenshotUrls: string[],
-  matchContext?: { player1_name: string; player2_name: string },
-) => {
-  try {
-    const imageContents = screenshotUrls.map((url: string) => ({
-      type: "image_url" as const,
-      image_url: { url },
-    }));
-
-    const contextText = matchContext
-      ? `Kontekst meczu: player1=${matchContext.player1_name}, player2=${matchContext.player2_name}.`
-      : "Brak kontekstu meczu.";
-
-    const response = await fetch(aiConfig.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${aiConfig.apiKey}`,
-        "Content-Type": "application/json",
+const TOOL_SCHEMA = {
+  type: "function",
+  function: {
+    name: "extract_match_stats",
+    description: "Extract darts match stats from screenshot",
+    parameters: {
+      type: "object",
+      properties: {
+        confidence: { type: "string", enum: ["high", "low", "none"] },
+        platform: { type: "string", enum: ["dartcounter", "dartsmind", "autodarts", "unknown"] },
+        matched_to_context: { type: "boolean" },
+        screenshot_player1_name: { type: "string" },
+        screenshot_player2_name: { type: "string" },
+        player1_name: { type: "string" },
+        player2_name: { type: "string" },
+        score1: { type: ["number", "null"] },
+        score2: { type: ["number", "null"] },
+        avg1: { type: "number" },
+        avg2: { type: "number" },
+        first_9_avg1: { type: "number" },
+        first_9_avg2: { type: "number" },
+        one_eighties1: { type: "number" },
+        one_eighties2: { type: "number" },
+        high_checkout1: { type: "number" },
+        high_checkout2: { type: "number" },
+        checkout_attempts1: { type: "number" },
+        checkout_attempts2: { type: "number" },
+        checkout_hits1: { type: "number" },
+        checkout_hits2: { type: "number" },
+        darts_thrown1: { type: "number" },
+        darts_thrown2: { type: "number" },
+        ton60_1: { type: "number" },
+        ton60_2: { type: "number" },
+        ton80_1: { type: "number" },
+        ton80_2: { type: "number" },
+        ton_plus1: { type: "number" },
+        ton_plus2: { type: "number" },
+        nine_darters1: { type: "number" },
+        nine_darters2: { type: "number" },
       },
-      body: JSON.stringify({
-        model: aiConfig.model,
-        temperature: 0,
-        messages: [
-          {
-            role: "system",
-            content: "Analizujesz WYŁĄCZNIE wynik meczu w aplikacji DartsMind. Wynik to liczba kolorowych kropek na czarnym pasku pod nazwami graczy.",
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: `Odczytaj wynik legów z kropek na czarnym pasku. ${contextText}` },
-              ...imageContents,
-            ],
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_dartsmind_score",
-              description: "Extract only final legs score from DartsMind black-dot score bar",
-              parameters: {
-                type: "object",
-                properties: {
-                  confidence: { type: "string", enum: ["high", "low", "none"] },
-                  matched_to_context: { type: "boolean" },
-                  score1: { type: ["number", "null"] },
-                  score2: { type: ["number", "null"] },
-                },
-                required: ["confidence"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "extract_dartsmind_score" } },
-      }),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("DartsMind score fallback failed:", response.status, text);
-      return null;
-    }
-
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) return null;
-    return JSON.parse(toolCall.function.arguments);
-  } catch (err) {
-    console.error("DartsMind score fallback error:", err);
-    return null;
-  }
+      required: ["confidence", "platform"],
+      additionalProperties: false,
+    },
+  },
 };
+
+// Swap stats if players are mapped in reverse order
+function swapIfNeeded(stats: any, matchContext?: { player1_name: string; player2_name: string }) {
+  if (!matchContext || stats.matched_to_context !== false) return;
+  if (!stats.screenshot_player1_name || !stats.screenshot_player2_name) return;
+
+  const sp1 = (stats.screenshot_player1_name || "").toLowerCase();
+  const sp2 = (stats.screenshot_player2_name || "").toLowerCase();
+  const cp1 = matchContext.player1_name.toLowerCase();
+  const cp2 = matchContext.player2_name.toLowerCase();
+
+  const needsSwap = (sp1.includes(cp2) || cp2.includes(sp1)) && (sp2.includes(cp1) || cp1.includes(sp2));
+  if (!needsSwap) return;
+
+  const keys = ["score", "avg", "first_9_avg", "one_eighties", "high_checkout",
+    "checkout_attempts", "checkout_hits", "darts_thrown", "ton60", "ton80", "ton_plus", "nine_darters"];
+  for (const key of keys) {
+    const k1 = `${key}1`, k2 = `${key}2`;
+    [stats[k1], stats[k2]] = [stats[k2], stats[k1]];
+  }
+  [stats.player1_name, stats.player2_name] = [stats.player2_name, stats.player1_name];
+  stats.matched_to_context = true;
+  stats.was_swapped = true;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -223,8 +176,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { screenshot_urls, match_context } = body;
+    const { screenshot_urls, match_context } = await req.json();
 
     if (!screenshot_urls || !Array.isArray(screenshot_urls) || screenshot_urls.length === 0) {
       return new Response(JSON.stringify({ error: "screenshot_urls array is required" }), {
@@ -232,34 +184,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Build compact prompt
+    let systemPrompt = SYSTEM_PROMPT;
+    if (match_context) {
+      systemPrompt += MATCH_CONTEXT_ADDON(match_context.player1_name, match_context.player2_name);
+    }
+
     const imageContents = screenshot_urls.map((url: string) => ({
       type: "image_url" as const,
       image_url: { url },
     }));
 
-    const systemPrompt = buildSystemPrompt(match_context);
-    const userText = match_context
-      ? `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta. Mecz ligowy: "${match_context.player1_name}" vs "${match_context.player2_name}".`
-      : `Przeanalizuj ${screenshot_urls.length > 1 ? "te zrzuty ekranu" : "ten zrzut ekranu"} z meczu darta i wyodrębnij statystyki.`;
-
-    // Helper: fetch with automatic retry on 429
-    const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const resp = await fetch(url, options);
-        if (resp.status === 429 && attempt < maxRetries) {
-          const retryAfter = resp.headers.get("retry-after");
-          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : (attempt + 1) * 5000;
-          console.log(`Rate limited (429), retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
-          await new Promise(r => setTimeout(r, waitMs));
-          continue;
-        }
-        return resp;
-      }
-      // Should not reach here, but just in case
-      return fetch(url, options);
-    };
-
-    const requestBody = JSON.stringify({
+    const response = await fetch(aiConfig.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${aiConfig.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         model: aiConfig.model,
         temperature: 0,
         messages: [
@@ -267,81 +209,29 @@ Deno.serve(async (req) => {
           {
             role: "user",
             content: [
-              { type: "text", text: userText },
+              { type: "text", text: "Wyodrębnij statystyki z tego screena." },
               ...imageContents,
             ],
           },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_match_stats",
-              description: "Extract match statistics from darts app screenshots",
-              parameters: {
-                type: "object",
-                properties: {
-                  confidence: { type: "string", enum: ["high", "low", "none"] },
-                  platform: { type: "string", enum: ["dartcounter", "dartsmind", "autodarts", "unknown"] },
-                  matched_to_context: { type: "boolean" },
-                  screenshot_player1_name: { type: "string" },
-                  screenshot_player2_name: { type: "string" },
-                  player1_name: { type: "string" },
-                  player2_name: { type: "string" },
-                  score1: { type: ["number", "null"] },
-                  score2: { type: ["number", "null"] },
-                  avg1: { type: "number" },
-                  avg2: { type: "number" },
-                  first_9_avg1: { type: "number" },
-                  first_9_avg2: { type: "number" },
-                  one_eighties1: { type: "number" },
-                  one_eighties2: { type: "number" },
-                  high_checkout1: { type: "number" },
-                  high_checkout2: { type: "number" },
-                  checkout_attempts1: { type: "number" },
-                  checkout_attempts2: { type: "number" },
-                  checkout_hits1: { type: "number" },
-                  checkout_hits2: { type: "number" },
-                  darts_thrown1: { type: "number" },
-                  darts_thrown2: { type: "number" },
-                  ton60_1: { type: "number" },
-                  ton60_2: { type: "number" },
-                  ton80_1: { type: "number" },
-                  ton80_2: { type: "number" },
-                  ton_plus1: { type: "number" },
-                  ton_plus2: { type: "number" },
-                },
-                required: ["confidence", "platform"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
+        tools: [TOOL_SCHEMA],
         tool_choice: { type: "function", function: { name: "extract_match_stats" } },
-    });
-
-    const response = await fetchWithRetry(aiConfig.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${aiConfig.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: requestBody,
+      }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Zbyt wiele żądań AI — spróbuj ponownie za 30 sekund" }), {
+        return new Response(JSON.stringify({ error: "Zbyt wiele żądań AI — spróbuj za 30s" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Wyczerpano limit AI — doładuj kredyty lub ustaw własny klucz API w panelu Integracje" }), {
+        return new Response(JSON.stringify({ error: "Wyczerpano limit AI — doładuj kredyty lub ustaw własny klucz API" }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI error:", response.status, t);
       return new Response(JSON.stringify({ error: "Błąd analizy AI" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -351,7 +241,7 @@ Deno.serve(async (req) => {
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
-      console.error("No tool call in response:", JSON.stringify(aiData));
+      console.error("No tool call:", JSON.stringify(aiData));
       return new Response(JSON.stringify({ error: "AI nie zwróciło danych" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -359,47 +249,8 @@ Deno.serve(async (req) => {
 
     const stats = JSON.parse(toolCall.function.arguments);
 
-    // DartsMind score fallback
-    const needsDartsMindScoreFallback =
-      stats?.platform === "dartsmind" &&
-      (stats?.score1 == null || stats?.score2 == null || (Number(stats?.score1) === 0 && Number(stats?.score2) === 0));
-
-    if (needsDartsMindScoreFallback) {
-      const fallbackScore = await extractDartsMindScoreFallback(aiConfig, screenshot_urls, match_context);
-      if (fallbackScore && fallbackScore.confidence !== "none" && fallbackScore.score1 != null && fallbackScore.score2 != null) {
-        if (!(Number(fallbackScore.score1) === 0 && Number(fallbackScore.score2) === 0)) {
-          stats.score1 = fallbackScore.score1;
-          stats.score2 = fallbackScore.score2;
-          if (fallbackScore.matched_to_context !== undefined) {
-            stats.matched_to_context = fallbackScore.matched_to_context;
-          }
-        }
-      }
-    }
-
-    // Swap check for context mapping
-    if (match_context && stats.matched_to_context === false && stats.screenshot_player1_name && stats.screenshot_player2_name) {
-      const sp1 = (stats.screenshot_player1_name || "").toLowerCase();
-      const sp2 = (stats.screenshot_player2_name || "").toLowerCase();
-      const cp1 = match_context.player1_name.toLowerCase();
-      const cp2 = match_context.player2_name.toLowerCase();
-
-      const needsSwap = (sp1.includes(cp2) || cp2.includes(sp1)) && (sp2.includes(cp1) || cp1.includes(sp2));
-
-      if (needsSwap) {
-        const swapKeys = [
-          "score", "avg", "first_9_avg", "one_eighties", "high_checkout",
-          "checkout_attempts", "checkout_hits", "darts_thrown", "ton60", "ton80", "ton_plus"
-        ];
-        for (const key of swapKeys) {
-          const k1 = `${key}1`, k2 = `${key}2`;
-          [stats[k1], stats[k2]] = [stats[k2], stats[k1]];
-        }
-        [stats.player1_name, stats.player2_name] = [stats.player2_name, stats.player1_name];
-        stats.matched_to_context = true;
-        stats.was_swapped = true;
-      }
-    }
+    // Swap check
+    swapIfNeeded(stats, match_context);
 
     return new Response(JSON.stringify({ success: true, data: stats }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
