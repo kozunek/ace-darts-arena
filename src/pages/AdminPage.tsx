@@ -931,13 +931,28 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
               </div>
             </div>
 
-            {/* Quick player management */}
+            {/* Quick player management + Playoff generation */}
             {l.is_active && showGenerate !== l.id && (
-              <div className="border-t border-border pt-3 mt-3">
+              <div className="border-t border-border pt-3 mt-3 space-y-3">
                 <Button variant="outline" size="sm" className="w-full" onClick={() => setManagePlayersLeagueId(l.id)}>
                   <Users className="h-4 w-4 mr-2" />
                   Zarządzaj graczami ({approvedPlayers.filter((p: any) => (p.leagueIds || []).includes(l.id)).length})
                 </Button>
+
+                {/* Generate playoff bracket for group_bracket leagues */}
+                {l.league_type === "group_bracket" && (
+                  <PlayoffGeneratorSection
+                    leagueId={l.id}
+                    qualifiersPerGroup={qualifiersPerGroup}
+                    setQualifiersPerGroup={setQualifiersPerGroup}
+                    playoffDate={playoffDate}
+                    setPlayoffDate={setPlayoffDate}
+                    generatingPlayoff={generatingPlayoff}
+                    setGeneratingPlayoff={setGeneratingPlayoff}
+                    refreshData={refreshData}
+                    toast={toast}
+                  />
+                )}
               </div>
             )}
 
