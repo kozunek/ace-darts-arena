@@ -998,6 +998,30 @@ export type Database = {
         }
         Relationships: []
       }
+      player_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          notified: boolean
+          player_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          notified?: boolean
+          player_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          notified?: boolean
+          player_id?: string
+        }
+        Relationships: []
+      }
       player_leagues: {
         Row: {
           disqualified: boolean
