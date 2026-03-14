@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { achievements } from "@/data/mockData";
 import { Trophy, Zap } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { pl } from "@/lib/pluralize";
+import { useLeague } from "@/contexts/LeagueContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const RARITY_ORDER: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
@@ -43,6 +46,27 @@ const CATEGORIES: { prefix: string; label: string; icon: string }[] = [
 ];
 
 const AchievementsPage = () => {
+  const { user } = useAuth();
+  const { players, getPlayerGlobalAchievements } = useLeague();
+  const [earnedIds, setEarnedIds] = useState<Set<string>>(new Set());
+
+  // Find current user's player and compute earned achievements
+  useEffect(() => {
+    if (!user) return;
+    const fetchEarned = async () => {
+      const { data: player } = await supabase
+        .from("players")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (player) {
+        const earned = getPlayerGlobalAchievements(player.id);
+        setEarnedIds(new Set(earned.map(a => a.id)));
+      }
+    };
+    fetchEarned();
+  }, [user, getPlayerGlobalAchievements]);
+
   const grouped = CATEGORIES.map((cat) => ({
     ...cat,
     items: achievements
@@ -50,9 +74,11 @@ const AchievementsPage = () => {
       .sort((a, b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]),
   })).filter((g) => g.items.length > 0);
 
+  const earnedCount = earnedIds.size;
+
   return (
     <div>
-      <PageHeader title="Katalog Osiągnięć" subtitle={`Wszystkie ${achievements.length} osiągnięć do zdobycia. Zdobywaj je grając w ligach!`} />
+      <PageHeader title="Katalog Osiągnięć" subtitle={`Wszystkie ${achievements.length} osiągnięć do zdobycia. ${user ? `Zdobyto: ${earnedCount}/${achievements.length}` : 'Zaloguj się aby zobaczyć postęp!'}`} />
       <div className="container mx-auto px-4 py-8 space-y-8">
 
       {/* Rarity legend */}
@@ -74,26 +100,30 @@ const AchievementsPage = () => {
         <div key={group.prefix}>
           <h2 className="text-lg font-display font-bold text-foreground mb-3 flex items-center gap-2">
             <span className="text-xl">{group.icon}</span> {group.label}
-            <span className="text-xs text-muted-foreground font-body font-normal ml-1">({group.items.length})</span>
+            <span className="text-xs text-muted-foreground font-body font-normal ml-1">({group.items.filter(a => earnedIds.has(a.id)).length}/{group.items.length})</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {group.items.map((a) => (
-              <div
-                key={a.id}
-                className={`rounded-xl border p-4 flex items-start gap-3 transition-all hover:scale-[1.01] ${RARITY_STYLES[a.rarity]}`}
-              >
-                <span className="text-3xl mt-0.5">{a.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-display font-bold text-foreground text-sm">{a.name}</span>
-                    <span className={`text-[9px] font-display uppercase tracking-widest px-1.5 py-0.5 rounded-full whitespace-nowrap ${RARITY_BADGE[a.rarity]}`}>
-                      {RARITY_LABELS[a.rarity]}
-                    </span>
+            {group.items.map((a) => {
+              const isEarned = earnedIds.has(a.id);
+              return (
+                <div
+                  key={a.id}
+                  className={`rounded-xl border p-4 flex items-start gap-3 transition-all hover:scale-[1.01] ${RARITY_STYLES[a.rarity]} ${!isEarned && user ? 'opacity-40 grayscale' : ''}`}
+                >
+                  <span className="text-3xl mt-0.5">{a.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-display font-bold text-foreground text-sm">{a.name}</span>
+                      <span className={`text-[9px] font-display uppercase tracking-widest px-1.5 py-0.5 rounded-full whitespace-nowrap ${RARITY_BADGE[a.rarity]}`}>
+                        {RARITY_LABELS[a.rarity]}
+                      </span>
+                      {isEarned && <span className="text-xs text-secondary">✓</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-body leading-relaxed">{a.description}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground font-body leading-relaxed">{a.description}</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

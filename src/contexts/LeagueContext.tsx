@@ -17,6 +17,7 @@ interface LeagueContextType {
   getPlayerLeagueStats: (playerId: string, leagueId: string) => PlayerLeagueStats;
   getPlayerAllLeagueStats: (playerId: string) => { league: League; stats: PlayerLeagueStats }[];
   getPlayerAchievements: (playerId: string, leagueId: string) => Achievement[];
+  getPlayerGlobalAchievements: (playerId: string) => Achievement[];
   getLeagueStandings: (leagueId: string) => (Player & { stats: PlayerLeagueStats })[];
   submitMatchResult: (matchId: string, data: MatchResultData) => void;
   updateMatchResult: (matchId: string, data: MatchResultData) => Promise<void>;
@@ -364,6 +365,64 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     return achievements.filter((a) => a.condition(stats));
   }, [matchList, getLeagueRules]);
 
+  // Global achievements - computed across ALL leagues
+  const calcGlobalStats = useCallback((playerId: string): PlayerLeagueStats => {
+    const completed = matchList.filter(
+      (m) => m.status === "completed" && (m.player1Id === playerId || m.player2Id === playerId)
+    );
+    let wins = 0, losses = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
+    let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
+    let ton60 = 0, ton80 = 0, tonPlus = 0, ton40 = 0;
+    let checkoutAttempts = 0, checkoutHits = 0;
+    let bestFirst9Avg = 0;
+    const avgValues: number[] = [];
+    const form: ("W" | "L")[] = [];
+
+    completed.forEach((m) => {
+      const isP1 = m.player1Id === playerId;
+      const myScore = isP1 ? (m.score1 ?? 0) : (m.score2 ?? 0);
+      const oppScore = isP1 ? (m.score2 ?? 0) : (m.score1 ?? 0);
+      const myLegs = isP1 ? (m.legsWon1 ?? m.score1 ?? 0) : (m.legsWon2 ?? m.score2 ?? 0);
+      const oppLegs = isP1 ? (m.legsWon2 ?? m.score2 ?? 0) : (m.legsWon1 ?? m.score1 ?? 0);
+      legsWon += myLegs; legsLost += oppLegs;
+      oneEighties += isP1 ? (m.oneEighties1 ?? 0) : (m.oneEighties2 ?? 0);
+      const hc = isP1 ? (m.highCheckout1 ?? 0) : (m.highCheckout2 ?? 0);
+      if (hc > highestCheckout) highestCheckout = hc;
+      const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
+      if (myAvg > 0) { avgValues.push(myAvg); if (myAvg > bestAvg) bestAvg = myAvg; }
+      totalDarts += isP1 ? (m.dartsThrown1 ?? 0) : (m.dartsThrown2 ?? 0);
+      ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
+      ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
+      tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+      ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
+      checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
+      checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
+      const myFirst9 = isP1 ? (m.first9Avg1 ?? 0) : (m.first9Avg2 ?? 0);
+      if (myFirst9 > bestFirst9Avg) bestFirst9Avg = myFirst9;
+      if (myScore > oppScore) { wins++; form.push("W"); } else { losses++; form.push("L"); }
+    });
+
+    const avg = avgValues.length > 0 ? Math.round((avgValues.reduce((a, b) => a + b, 0) / avgValues.length) * 10) / 10 : 0;
+    const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
+    const checkoutRate = checkoutAttempts > 0 ? Math.round((checkoutHits / checkoutAttempts) * 100) : 0;
+
+    return {
+      playerId, leagueId: "global",
+      wins, losses, points: 0, basePoints: 0, bonusPoints: 0,
+      legsWon, legsLost, avg, highestCheckout, oneEighties,
+      form, badges: [], matchesPlayed: completed.length,
+      bestAvg: Math.round(bestAvg * 10) / 10, totalDartsThrown: totalDarts,
+      ton60, ton80, tonPlus, ton40, winRate,
+      checkoutAttempts, checkoutHits, checkoutRate,
+      bestFirst9Avg: Math.round(bestFirst9Avg * 10) / 10,
+    };
+  }, [matchList]);
+
+  const getPlayerGlobalAchievements = useCallback((playerId: string) => {
+    const globalStats = calcGlobalStats(playerId);
+    return achievements.filter((a) => a.condition(globalStats));
+  }, [calcGlobalStats]);
+
   const getLeagueStandings = useCallback((leagueId: string) => {
     const rules = getLeagueRules(leagueId);
     const leaguePlayers = playerList.filter((p) => p.approved && matchList.some(
@@ -482,7 +541,100 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         console.error("Discord webhook error:", e);
       }
     }
-    setMatchList((prev) => prev.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m));
+    // Update local state first so calcGlobalStats works with new data
+    const updatedMatches = matchList.map((m) => m.id === matchId ? { ...m, status: "completed" as const } : m);
+    setMatchList(updatedMatches);
+
+    // Award global achievements for both players
+    if (match) {
+      const playerIds = [match.player1Id, match.player2Id].filter(id => id !== TBD_PLAYER_ID);
+      for (const pid of playerIds) {
+        try {
+          // Calc global stats with updated matches
+          const completed = updatedMatches.filter(
+            (m) => m.status === "completed" && (m.player1Id === pid || m.player2Id === pid)
+          );
+          let wins = 0, losses = 0, legsWon = 0, legsLost = 0, oneEighties = 0;
+          let highestCheckout = 0, bestAvg = 0, totalDarts = 0;
+          let ton60 = 0, ton80 = 0, tonPlus = 0, ton40 = 0;
+          let checkoutAttempts = 0, checkoutHits = 0, bestFirst9Avg = 0;
+          const avgValues: number[] = [];
+          completed.forEach((m) => {
+            const isP1 = m.player1Id === pid;
+            const myScore = isP1 ? (m.score1 ?? 0) : (m.score2 ?? 0);
+            const oppScore = isP1 ? (m.score2 ?? 0) : (m.score1 ?? 0);
+            legsWon += isP1 ? (m.legsWon1 ?? m.score1 ?? 0) : (m.legsWon2 ?? m.score2 ?? 0);
+            legsLost += isP1 ? (m.legsWon2 ?? m.score2 ?? 0) : (m.legsWon1 ?? m.score1 ?? 0);
+            oneEighties += isP1 ? (m.oneEighties1 ?? 0) : (m.oneEighties2 ?? 0);
+            const hc = isP1 ? (m.highCheckout1 ?? 0) : (m.highCheckout2 ?? 0);
+            if (hc > highestCheckout) highestCheckout = hc;
+            const myAvg = isP1 ? (m.avg1 ?? 0) : (m.avg2 ?? 0);
+            if (myAvg > 0) { avgValues.push(myAvg); if (myAvg > bestAvg) bestAvg = myAvg; }
+            totalDarts += isP1 ? (m.dartsThrown1 ?? 0) : (m.dartsThrown2 ?? 0);
+            ton60 += isP1 ? (m.ton60_1 ?? 0) : (m.ton60_2 ?? 0);
+            ton80 += isP1 ? (m.ton80_1 ?? 0) : (m.ton80_2 ?? 0);
+            tonPlus += isP1 ? (m.tonPlus1 ?? 0) : (m.tonPlus2 ?? 0);
+            ton40 += isP1 ? (m.ton40_1 ?? 0) : (m.ton40_2 ?? 0);
+            checkoutAttempts += isP1 ? (m.checkoutAttempts1 ?? 0) : (m.checkoutAttempts2 ?? 0);
+            checkoutHits += isP1 ? (m.checkoutHits1 ?? 0) : (m.checkoutHits2 ?? 0);
+            const f9 = isP1 ? (m.first9Avg1 ?? 0) : (m.first9Avg2 ?? 0);
+            if (f9 > bestFirst9Avg) bestFirst9Avg = f9;
+            if (myScore > oppScore) wins++; else losses++;
+          });
+          const avg = avgValues.length > 0 ? Math.round((avgValues.reduce((a, b) => a + b, 0) / avgValues.length) * 10) / 10 : 0;
+          const globalStats: PlayerLeagueStats = {
+            playerId: pid, leagueId: "global", wins, losses, points: 0, basePoints: 0, bonusPoints: 0,
+            legsWon, legsLost, avg, highestCheckout, oneEighties,
+            form: [], badges: [], matchesPlayed: completed.length,
+            bestAvg: Math.round(bestAvg * 10) / 10, totalDartsThrown: totalDarts,
+            ton60, ton80, tonPlus, ton40,
+            winRate: completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0,
+            checkoutAttempts, checkoutHits,
+            checkoutRate: checkoutAttempts > 0 ? Math.round((checkoutHits / checkoutAttempts) * 100) : 0,
+            bestFirst9Avg: Math.round(bestFirst9Avg * 10) / 10,
+          };
+
+          const earned = achievements.filter(a => a.condition(globalStats));
+          // Get already-stored achievements
+          const { data: existing } = await supabase
+            .from("player_achievements" as any)
+            .select("achievement_id")
+            .eq("player_id", pid);
+          const existingIds = new Set((existing || []).map((e: any) => e.achievement_id));
+          const newAchievements = earned.filter(a => !existingIds.has(a.id));
+
+          if (newAchievements.length > 0) {
+            // Insert new achievements
+            await supabase.from("player_achievements" as any).insert(
+              newAchievements.map(a => ({ player_id: pid, achievement_id: a.id }))
+            );
+            // Find player's user_id for notifications
+            const player = playerList.find(p => p.id === pid);
+            if (player) {
+              const { data: playerRow } = await supabase
+                .from("players")
+                .select("user_id")
+                .eq("id", pid)
+                .maybeSingle();
+              if (playerRow?.user_id) {
+                // Create notifications for each new achievement
+                await supabase.from("notifications").insert(
+                  newAchievements.map(a => ({
+                    user_id: playerRow.user_id,
+                    title: `${a.icon} Nowe osiągnięcie!`,
+                    message: `Zdobyto: ${a.name} — ${a.description}`,
+                    type: "achievement",
+                    link: "/achievements",
+                  }))
+                );
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Achievement awarding error:", e);
+        }
+      }
+    }
 
     // Auto-advance bracket winner to next round
     if (match?.bracketRound && match.score1 != null && match.score2 != null) {
@@ -499,7 +651,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         console.error("Bracket advancement error:", e);
       }
     }
-  }, [matchList, fetchData]);
+  }, [matchList, playerList, fetchData]);
 
   const rejectMatch = useCallback(async (matchId: string) => {
     const match = matchList.find(m => m.id === matchId);
@@ -850,7 +1002,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       players: playerList, matches: matchList, leagues: leagueList,
       activeLeagueId, setActiveLeagueId,
       getLeagueMatches, getPlayerLeagueStats, getPlayerAllLeagueStats,
-      getPlayerAchievements, getLeagueStandings,
+      getPlayerAchievements, getPlayerGlobalAchievements, getLeagueStandings,
       submitMatchResult, updateMatchResult, approveMatch, rejectMatch,
       addMatch, approvePlayer, pendingPlayers, addPendingPlayer, addPlayer,
       addLeague, updateLeague, deleteLeague,
