@@ -283,7 +283,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
 
   const bulkReject = () => {
     selectedIds.forEach(id => rejectMatch(id));
-    toast({ title: `❌ Odrzucono ${selectedIds.size} meczów!` });
+    toast({ title: `❌ Odrzucono ${pl.match(selectedIds.size)}!` });
     setSelectedIds(new Set());
   };
 
