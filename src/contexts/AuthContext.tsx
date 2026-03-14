@@ -166,10 +166,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <img src="/pwa-512x512.png" alt="eDART" className="h-16 w-16 rounded-full animate-pulse" />
         <div className="w-full max-w-lg space-y-4 p-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-10 w-48 mx-auto" />
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
         </div>

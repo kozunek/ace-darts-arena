@@ -174,9 +174,9 @@ const ChatPage = () => {
           </TabsList>
 
           <TabsContent value="private">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-320px)] min-h-[400px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-240px)] min-h-[500px]">
               {/* Contact list */}
-              <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
+              <div className={`rounded-lg border border-border bg-card overflow-hidden flex flex-col ${activeChat ? 'hidden md:flex' : ''}`}>
                 <div className="p-3 border-b border-border flex items-center justify-between">
                   <span className="font-display text-sm uppercase tracking-wider text-muted-foreground">Rozmowy</span>
                   <Button variant="ghost" size="sm" onClick={() => setShowNewChat(!showNewChat)}>
@@ -186,7 +186,7 @@ const ChatPage = () => {
                 <div className="p-2 border-b border-border">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj gracza..." className="pl-8 h-8 text-sm bg-muted/30 border-border" />
+                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj gracza..." className="pl-8 h-9 text-sm bg-muted/30 border-border" />
                   </div>
                 </div>
                 <ScrollArea className="flex-1">
@@ -222,11 +222,11 @@ const ChatPage = () => {
               </div>
 
               {/* Messages */}
-              <div className="md:col-span-2 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
+              <div className={`md:col-span-2 rounded-lg border border-border bg-card overflow-hidden flex flex-col ${!activeChat ? 'hidden md:flex' : ''}`}>
                 {activeChat ? (
                   <>
                     <div className="p-3 border-b border-border flex items-center gap-3">
-                      <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setActiveChat(null)}>
+                      <Button variant="ghost" size="sm" onClick={() => setActiveChat(null)}>
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
                       <span className="font-display font-bold text-foreground flex-1">{activeName}</span>
@@ -264,8 +264,8 @@ const ChatPage = () => {
                     </ScrollArea>
                     <div className="p-3 border-t border-border">
                       <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
-                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Napisz wiadomość..." className="bg-muted/30 border-border" maxLength={1000} />
-                        <Button type="submit" variant="hero" size="icon" disabled={sending || !newMessage.trim()}>
+                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Napisz wiadomość..." className="bg-muted/30 border-border h-11 text-base flex-1" maxLength={1000} />
+                        <Button type="submit" variant="hero" size="icon" className="h-11 w-11 shrink-0" disabled={sending || !newMessage.trim()}>
                           <Send className="h-4 w-4" />
                         </Button>
                       </form>
