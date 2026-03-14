@@ -78,7 +78,7 @@ const MatchProposalSection = ({ matchId, myPlayerId, opponentName, matchDeadline
         await supabase.functions.invoke("discord-webhook", {
           body: {
             action: "send_match_proposal",
-            proposer_name: proposerName || "Gracz",
+            proposer_name: "Gracz",
             opponent_name: opponentName || "Przeciwnik",
             proposed_date: format(proposedDate, "dd.MM.yyyy"),
             proposed_time: proposedTime || null,
