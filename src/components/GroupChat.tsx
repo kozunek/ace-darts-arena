@@ -547,7 +547,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
       {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />}
 
       {/* Ban dialog */}
-      <Dialog open={banDialog.open} onOpenChange={(o) => !o && setBanDialog({ open: false, userId: "", userName: "" })}>
+      <Dialog open={banDialog.open} onOpenChange={(open) => !open && setBanDialog({ open: false, userId: "", userName: "" })}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
