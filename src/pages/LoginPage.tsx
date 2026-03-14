@@ -93,9 +93,9 @@ const LoginPage = () => {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3 mb-6">
-            <img src="/favicon.png" alt="eDART Polska" className="h-10 w-10" />
-            <span className="font-display text-2xl tracking-wider text-foreground uppercase">
+          <Link to="/" className="inline-flex items-center gap-2 mb-6">
+            <img src="/pwa-192x192.png" alt="eDART Polska" className="h-10 w-10 rounded-full" />
+            <span className="font-display text-2xl tracking-wider text-foreground">
               e<span className="text-primary">DART</span> <span className="text-sm text-primary">Polska</span>
             </span>
           </Link>
