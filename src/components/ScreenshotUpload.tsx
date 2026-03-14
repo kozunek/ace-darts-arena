@@ -120,6 +120,21 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
   const analyzeScreenshots = async () => {
     if (uploadedUrls.length === 0) return;
 
+    const cacheKey = `screenshot-stats:${btoa(JSON.stringify(uploadedUrls))}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const cachedData = JSON.parse(cached);
+        if (cachedData?.data) {
+          toast({ title: "📥 Użyto ostatnich wyników", description: "Statystyki pobrane z pamięci podręcznej." });
+          onStatsExtracted({ ...cachedData.data, screenshot_urls: uploadedUrls });
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore cache errors
+    }
+
     setAnalyzing(true);
     try {
       const requestBody: Record<string, any> = { screenshot_urls: uploadedUrls };
@@ -180,6 +195,13 @@ const ScreenshotUpload = ({ onStatsExtracted, matchId, disabled, matchContext }:
       }
 
       onStatsExtracted({ ...stats, screenshot_urls: uploadedUrls });
+
+      try {
+        const cacheKey = `screenshot-stats:${btoa(JSON.stringify(uploadedUrls))}`;
+        localStorage.setItem(cacheKey, JSON.stringify({ data: stats, createdAt: Date.now() }));
+      } catch (e) {
+        // ignore localStorage errors
+      }
     } catch (err) {
       console.error("Analysis error:", err);
       toast({ title: "Błąd", description: "Nie udało się połączyć z AI.", variant: "destructive" });

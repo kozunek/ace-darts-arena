@@ -233,13 +233,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Limit to maximum 3 screenshots, in expected priority order
+    const screenshotUrls = screenshot_urls.slice(0, 3);
+
     // Build compact prompt
     let systemPrompt = SYSTEM_PROMPT;
     if (match_context) {
       systemPrompt += MATCH_CONTEXT_ADDON(match_context.player1_name, match_context.player2_name);
     }
 
-    const imageContents = screenshot_urls.map((url: string) => ({
+    const imageContents = screenshotUrls.map((url: string) => ({
       type: "image_url" as const,
       image_url: { url },
     }));

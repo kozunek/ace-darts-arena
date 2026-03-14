@@ -22,6 +22,34 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/, /\.apk$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "api-cache",
+              networkTimeoutSeconds: 10,
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: /supabase\.co/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-api",
+              networkTimeoutSeconds: 10,
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images",
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
       },
       manifest: {
         name: "eDART Polska - Polska Liga Darta",
@@ -38,10 +66,22 @@ export default defineConfig(({ mode }) => ({
         categories: ["sports", "games"],
         icons: [
           {
+            src: "/pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any maskable",
+          },
+          {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
+          },
+          {
+            src: "/favicon.ico",
+            sizes: "64x64 32x32 24x24 16x16",
+            type: "image/x-icon",
+            purpose: "any",
           },
         ],
       },

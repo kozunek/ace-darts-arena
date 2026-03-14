@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { supabase as defaultClient } from "@/integrations/supabase/client";
 import { useSelfHost } from "@/contexts/SelfHostContext";
 import type { User } from "@supabase/supabase-js";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AuthContextType {
   user: User | null;
@@ -146,6 +147,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.updateUser({ password });
     return { error: error?.message ?? null };
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-full max-w-lg space-y-4 p-4">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, profile, isAdmin, isModerator, loading, login, register, logout, resetPassword, updatePassword }}>
