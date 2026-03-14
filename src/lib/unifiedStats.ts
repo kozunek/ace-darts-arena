@@ -16,13 +16,13 @@ export interface StatRow {
  * All 3 platforms: Autodarts, DartCounter, DartsMind provide these stats.
  */
 export const UNIFIED_STATS: StatRow[] = [
-  { key1: "avg1", key2: "avg2", label: "Średnia (3-dart)", shortLabel: "Średnia", format: "decimal" },
+  { key1: "avg1", key2: "avg2", label: "Średnia (3 lotki)", shortLabel: "Średnia", format: "decimal" },
   { key1: "first9Avg1", key2: "first9Avg2", label: "Średnia z 9 lotek", shortLabel: "First 9", format: "decimal" },
-  { key1: "oneEighties1", key2: "oneEighties2", label: "180-tki", shortLabel: "180s", format: "integer" },
-  { key1: "highCheckout1", key2: "highCheckout2", label: "Najwyższy checkout", shortLabel: "High CO", format: "integer" },
-  { key1: "ton60_1", key2: "ton60_2", label: "60+ (60-99)", shortLabel: "60+", format: "integer" },
-  { key1: "ton80_1", key2: "ton80_2", label: "100+ (100-139)", shortLabel: "100+", format: "integer" },
-  { key1: "tonPlus1", key2: "tonPlus2", label: "140+ (140-179)", shortLabel: "140+", format: "integer" },
+  { key1: "oneEighties1", key2: "oneEighties2", label: "180-tki", shortLabel: "180", format: "integer" },
+  { key1: "highCheckout1", key2: "highCheckout2", label: "Najwyższy checkout", shortLabel: "Najw. CO", format: "integer" },
+  { key1: "ton60_1", key2: "ton60_2", label: "60+ (60–99 pkt)", shortLabel: "60+", format: "integer" },
+  { key1: "ton80_1", key2: "ton80_2", label: "100+ (100–139 pkt)", shortLabel: "100+", format: "integer" },
+  { key1: "tonPlus1", key2: "tonPlus2", label: "140+ (140–169 pkt)", shortLabel: "140+", format: "integer" },
   { key1: "dartsThrown1", key2: "dartsThrown2", label: "Rzucone lotki", shortLabel: "Lotki", format: "integer" },
 ];
 
@@ -57,8 +57,8 @@ export const formatStatValue = (value: number | undefined | null, format?: strin
  * Format checkout percentage
  */
 export const formatCheckoutPct = (hits: number, attempts: number): string => {
-  if (attempts <= 0) return "0.00% (0/0)";
-  return `${((hits / attempts) * 100).toFixed(2)}% (${hits}/${attempts})`;
+  if (attempts <= 0) return "0,00% (0/0)";
+  return `${((hits / attempts) * 100).toFixed(2).replace(".", ",")}% (${hits}/${attempts})`;
 };
 
 /**
