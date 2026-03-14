@@ -17,6 +17,7 @@ interface LeagueContextType {
   getPlayerLeagueStats: (playerId: string, leagueId: string) => PlayerLeagueStats;
   getPlayerAllLeagueStats: (playerId: string) => { league: League; stats: PlayerLeagueStats }[];
   getPlayerAchievements: (playerId: string, leagueId: string) => Achievement[];
+  getPlayerGlobalAchievements: (playerId: string) => Achievement[];
   getLeagueStandings: (leagueId: string) => (Player & { stats: PlayerLeagueStats })[];
   submitMatchResult: (matchId: string, data: MatchResultData) => void;
   updateMatchResult: (matchId: string, data: MatchResultData) => Promise<void>;
