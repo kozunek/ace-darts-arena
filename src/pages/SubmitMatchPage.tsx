@@ -794,6 +794,8 @@ const SubmitMatchPage = () => {
       avg2: optNum("avg2"),
       oneEighties1: optNum("oneEighties1"),
       oneEighties2: optNum("oneEighties2"),
+      nineDarters1: optNum("nineDarters1"),
+      nineDarters2: optNum("nineDarters2"),
       highCheckout1: optNum("hc1"),
       highCheckout2: optNum("hc2"),
       ton60_1: optNum("ton60_1"),
