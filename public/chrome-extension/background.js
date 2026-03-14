@@ -352,4 +352,22 @@ try {
   );
 }
 
+browserAPI.runtime.onInstalled?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-installed");
+});
+
+browserAPI.runtime.onStartup?.addListener(() => {
+  requestTokenRefreshFromAutodartsTabs("runtime-startup");
+});
+
+browserAPI.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab?.url?.startsWith("https://play.autodarts.io/")) return;
+
+  browserAPI.tabs.sendMessage(tabId, { type: "EDART_REFRESH_TOKEN", reason: "tab-updated" }, () => {
+    if (browserAPI.runtime.lastError && CONFIG.DEBUG_MODE) {
+      log("Tab refresh ping failed:", browserAPI.runtime.lastError.message);
+    }
+  });
+});
+
 logAlways(`Background loaded (v${CONFIG.VERSION})`);
