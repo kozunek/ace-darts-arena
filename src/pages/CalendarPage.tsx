@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import LeagueSelector from "@/components/LeagueSelector";
 import { Link } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
+import { pl } from "@/lib/pluralize";
 
 const DAYS_PL = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 const MONTHS_PL = [
@@ -134,7 +135,7 @@ const CalendarPage = () => {
       {selectedDay && (
         <div>
           <h3 className="text-sm font-display uppercase tracking-wider text-muted-foreground mb-3">
-            {selectedDay} {MONTHS_PL[month]} {year} — {selectedMatches.length} {selectedMatches.length === 1 ? "mecz" : "meczów"}
+            {selectedDay} {MONTHS_PL[month]} {year} — {pl.match(selectedMatches.length)}
           </h3>
           {selectedMatches.length === 0 ? (
             <p className="text-muted-foreground font-body text-sm">Brak meczów w tym dniu.</p>
