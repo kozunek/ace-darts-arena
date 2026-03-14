@@ -45,7 +45,6 @@ const FloatingChat = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
-  const [chatPosition, setChatPosition] = useState({ x: 0, y: 0 });
   const [chatSize, setChatSize] = useState({ width: 420, height: 600 });
   const [isMaximized, setIsMaximized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,16 +54,10 @@ const FloatingChat = () => {
     loadContacts();
     loadAllPlayers();
 
-    // Load chat position and size from localStorage
-    const savedPosition = localStorage.getItem(`chat-position-${user.id}`);
+    // Load chat size from localStorage
     const savedSize = localStorage.getItem(`chat-size-${user.id}`);
     const savedMaximized = localStorage.getItem(`chat-maximized-${user.id}`);
 
-    if (savedPosition) {
-      try {
-        setChatPosition(JSON.parse(savedPosition));
-      } catch (e) {}
-    }
     if (savedSize) {
       try {
         setChatSize(JSON.parse(savedSize));
@@ -162,11 +155,8 @@ const FloatingChat = () => {
     setSending(false);
   };
 
-  const saveChatSettings = (position?: { x: number; y: number }, size?: { width: number; height: number }, maximized?: boolean) => {
+  const saveChatSettings = (size?: { width: number; height: number }, maximized?: boolean) => {
     if (!user) return;
-    if (position) {
-      localStorage.setItem(`chat-position-${user.id}`, JSON.stringify(position));
-    }
     if (size) {
       localStorage.setItem(`chat-size-${user.id}`, JSON.stringify(size));
     }
@@ -175,24 +165,18 @@ const FloatingChat = () => {
     }
   };
 
-  const handleDragEnd = (event: any, info: any) => {
-    const newPosition = { x: info.point.x, y: info.point.y };
-    setChatPosition(newPosition);
-    saveChatSettings(newPosition);
-  };
-
   const handleResize = (delta: { width: number; height: number }) => {
     const newSize = {
       width: Math.max(300, chatSize.width + delta.width),
       height: Math.max(400, chatSize.height + delta.height)
     };
     setChatSize(newSize);
-    saveChatSettings(undefined, newSize);
+    saveChatSettings(newSize);
   };
 
   const toggleMaximize = () => {
     setIsMaximized(!isMaximized);
-    saveChatSettings(undefined, undefined, !isMaximized);
+    saveChatSettings(undefined, !isMaximized);
   };
 
   const handleToggle = () => {
@@ -227,18 +211,16 @@ const FloatingChat = () => {
       <AnimatePresence>
         {isOpen && !isMobile && (
           <motion.div
-            drag
+            drag={!isMaximized}
             dragMomentum={false}
-            dragConstraints={{ left: 0, top: 0, right: window.innerWidth - (isMaximized ? window.innerWidth : chatSize.width), bottom: window.innerHeight - (isMaximized ? window.innerHeight : chatSize.height) }}
-            onDragEnd={handleDragEnd}
+            dragConstraints={{ left: -(window.innerWidth - chatSize.width - 20), top: -(window.innerHeight - 96 - 20), right: 0, bottom: 0 }}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{
               opacity: 1,
               scale: 1,
-              x: isMaximized ? 0 : chatPosition.x,
-              y: isMaximized ? 0 : chatPosition.y,
               width: isMaximized ? '100vw' : chatSize.width,
-              height: isMaximized ? '100vh' : chatSize.height
+              height: isMaximized ? '100vh' : chatSize.height,
+              ...(isMaximized ? { x: 0, y: 0 } : {})
             }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
@@ -246,7 +228,7 @@ const FloatingChat = () => {
             style={{
               width: isMaximized ? '100vw' : chatSize.width,
               height: isMaximized ? '100vh' : chatSize.height,
-              cursor: 'move',
+              cursor: isMaximized ? 'default' : 'move',
             }}
           >
             {/* Header with controls */}

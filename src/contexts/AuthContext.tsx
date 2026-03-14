@@ -95,15 +95,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     });
 
-    initSession();
+    initSession().then(() => {
+      if (errorTimeout) clearTimeout(errorTimeout);
+    });
 
-    // Fallback: wymuś zakończenie loading po 10s
+    // Fallback: wymuś zakończenie loading po 15s
     errorTimeout = setTimeout(() => {
-      if (mounted && loading) {
-        setLoading(false);
-        setErrorMsg("Błąd ładowania. Spróbuj odświeżyć stronę.");
+      if (mounted) {
+        setLoading((prev) => {
+          if (prev) {
+            setErrorMsg("Błąd ładowania. Spróbuj odświeżyć stronę.");
+            return false;
+          }
+          return prev;
+        });
       }
-    }, 10000);
+    }, 15000);
 
     return () => {
       mounted = false;
