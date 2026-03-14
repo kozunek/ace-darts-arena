@@ -181,25 +181,7 @@ const GroupBracketView = () => {
           <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-6 flex items-center gap-2">
             <Trophy className="h-6 w-6 text-accent" /> Faza Pucharowa
           </h2>
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-6 min-w-max">
-              {rounds.map(([roundName, roundMatches]) => {
-                const sorted = [...roundMatches].sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0));
-                return (
-                  <div key={roundName} className="flex flex-col items-center min-w-[220px]">
-                    <div className="text-xs font-display uppercase tracking-wider text-accent mb-4 px-3 py-1 rounded-full border border-accent/30 bg-accent/10">
-                      {roundName}
-                    </div>
-                    <div className="flex flex-col gap-4 justify-around flex-1">
-                      {sorted.map(match => (
-                        <BracketMatchCard key={match.id} match={match} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <BracketWithLines rounds={rounds} />
         </div>
       )}
 
