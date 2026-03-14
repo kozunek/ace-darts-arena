@@ -318,6 +318,7 @@ const SubmitMatchPage = () => {
     first_9_avg1: p.first_9_avg2, first_9_avg2: p.first_9_avg1,
     
     one_eighties1: p.one_eighties2, one_eighties2: p.one_eighties1,
+    nine_darters1: p.nine_darters2, nine_darters2: p.nine_darters1,
     high_checkout1: p.high_checkout2, high_checkout2: p.high_checkout1,
     ton60_1: p.ton60_2, ton60_2: p.ton60_1,
     ton80_1: p.ton80_2, ton80_2: p.ton80_1,
