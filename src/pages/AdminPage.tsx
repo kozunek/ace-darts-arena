@@ -277,7 +277,7 @@ const ApprovalTab = ({ pendingApproval, approveMatch, rejectMatch, updateMatchRe
 
   const bulkApprove = () => {
     selectedIds.forEach(id => approveMatch(id));
-    toast({ title: `✅ Zatwierdzono ${selectedIds.size} meczów!` });
+    toast({ title: `✅ Zatwierdzono ${pl.match(selectedIds.size)}!` });
     setSelectedIds(new Set());
   };
 
