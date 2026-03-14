@@ -94,7 +94,7 @@ const PlayerProfilePage = () => {
           <PlayerAvatar avatarUrl={player.avatar_url} initials={player.avatar} size="lg" />
           <div className="flex-1">
             <p className="text-muted-foreground font-body">
-              Aktywny w {pl.league(allLeagueStats.length).replace(/^\d+ /, '')}: {allLeagueStats.length}
+              Aktywny w {allLeagueStats.length} {allLeagueStats.length === 1 ? "lidze" : "ligach"}
             </p>
           </div>
         </div>
