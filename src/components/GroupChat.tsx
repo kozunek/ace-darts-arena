@@ -406,11 +406,11 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
         )}
 
         <div
-          className={`flex ${compact ? "h-full" : isMobile ? "h-[calc(100vh-260px)] min-h-[400px]" : "h-full"} gap-0 overflow-hidden ${isMobile ? "relative" : "h-full"}`}
+          className={`flex${compact ? " h-full" : isMobile ? " h-[calc(100vh-260px)] min-h-[400px]" : " h-full"} gap-0 overflow-hidden${isMobile ? " relative" : " h-full"}`}
         >
           <div className="flex min-h-[400px]">
             {/* Channel sidebar */}
-            <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full ${isMobile ? `fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
+            <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full${isMobile ? ` fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
               <div className="p-2 border-b border-border">
                 <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
               </div>
@@ -419,9 +419,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                   <button
                     key={ch.id}
                     onClick={() => setActiveChannel(ch.id)}
-                    className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body ${
-                      activeChannel === ch.id ? "bg-primary/10 text-primary border-l-2 border-primary" : "hover:bg-muted/30 text-foreground border-l-2 border-transparent"
-                    }`}
+                    className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body${activeChannel === ch.id ? " bg-primary/10 text-primary border-l-2 border-primary" : " hover:bg-muted/30 text-foreground border-l-2 border-transparent"}`}
                   >
                     {getChannelIcon(ch)}
                     <span className="truncate">{ch.name}</span>
@@ -473,9 +471,9 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
                               <Trash2 className="h-3 w-3" />
                             </button>
                           )}
-                          <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground border border-border"}`}>
+                          <div className={`max-w-[80%] rounded-lg px-3 py-1.5${isMine ? " bg-primary text-primary-foreground" : " bg-muted/50 text-foreground border border-border"}`}>
                             <p className="text-sm font-body whitespace-pre-wrap break-words">{m.content}</p>
-                            <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                            <p className={`text-[10px] mt-0.5${isMine ? " text-primary-foreground/70" : " text-muted-foreground"}`}>
                               {(() => {
                                 const d = new Date(m.created_at);
                                 if (isToday(d)) return format(d, "HH:mm", { locale: pl });
