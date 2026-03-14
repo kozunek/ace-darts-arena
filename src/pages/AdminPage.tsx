@@ -853,6 +853,27 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
               </div>
             )}
 
+            {/* Third place match & Lucky Loser options for bracket types */}
+            {(leagueType === "bracket" || leagueType === "group_bracket") && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-4">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Opcje turniejowe</Label>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-body font-medium text-foreground">🥉 Mecz o 3. miejsce</Label>
+                    <p className="text-xs text-muted-foreground font-body mt-0.5">Przegrani z półfinałów grają o brązowy medal</p>
+                  </div>
+                  <Switch checked={thirdPlaceEnabled} onCheckedChange={setThirdPlaceEnabled} />
+                </div>
+                <div className="border-t border-border pt-3 flex items-center justify-between">
+                  <div>
+                    <Label className="font-body font-medium text-foreground">🍀 Lucky Loser</Label>
+                    <p className="text-xs text-muted-foreground font-body mt-0.5">Przegrani grają w mini-turnieju, zwycięzca gra w finale głównym</p>
+                  </div>
+                  <Switch checked={luckyLoserEnabled} onCheckedChange={setLuckyLoserEnabled} />
+                </div>
+              </div>
+            )}
+
             {/* Bonus points configuration */}
             <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-4">
               <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Punkty bonusowe — wybierz aktywne zasady</Label>
