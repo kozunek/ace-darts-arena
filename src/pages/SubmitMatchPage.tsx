@@ -18,12 +18,15 @@ import {
   CheckCircle2,
   XCircle,
   Camera,
+  ChevronsUpDown,
+  Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import MatchStatFields from "@/components/MatchStatFields";
 import ScreenshotUpload from "@/components/ScreenshotUpload";
 import PageHeader from "@/components/PageHeader";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type AutoPayload = Record<string, any>;
 type SourcePlatform = "autodarts" | "dartcounter" | "dartsmind";
@@ -68,6 +71,109 @@ const normalizeName = (name: string): string =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
+
+interface MatchSelectorProps {
+  matches: any[];
+  selectedMatchId: string;
+  onSelect: (id: string) => void;
+}
+
+const MatchSelector = ({ matches, selectedMatchId, onSelect }: MatchSelectorProps) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const selected = matches.find((m) => m.id === selectedMatchId);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return matches;
+    const q = search.toLowerCase();
+    return matches.filter(
+      (m) =>
+        m.player1Name.toLowerCase().includes(q) ||
+        m.player2Name.toLowerCase().includes(q)
+    );
+  }, [matches, search]);
+
+  return (
+    <div className="mb-6">
+      <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground mb-2 block">
+        Wybierz mecz
+      </Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between text-left h-auto py-3 bg-card border-border"
+          >
+            {selected ? (
+              <div>
+                <span className="font-body font-medium text-foreground">
+                  {selected.player1Name} vs {selected.player2Name}
+                </span>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(selected.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
+                  {selected.round && ` · Kolejka ${selected.round}`}
+                </div>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">Wybierz mecz...</span>
+            )}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-2 px-2">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Szukaj gracza..."
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto p-1">
+            {filtered.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-4">Nie znaleziono meczów</p>
+            ) : (
+              filtered.map((match) => {
+                const isSelected = selectedMatchId === match.id;
+                return (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(match.id);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className={`w-full rounded-md px-3 py-2.5 text-left text-sm transition-colors ${
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted/50 text-foreground"
+                    }`}
+                  >
+                    <div className="font-body font-medium">
+                      {match.player1Name} vs {match.player2Name}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
+                      {match.round && ` · Kolejka ${match.round}`}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
 
 const SubmitMatchPage = () => {
   const { user, profile, loading, isAdmin, isModerator } = useAuth();
@@ -840,43 +946,11 @@ const SubmitMatchPage = () => {
         </div>
       ) : (
         <>
-          <div className="space-y-2 mb-6">
-            <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">
-              Wybierz mecz
-            </Label>
-            <div className="space-y-2">
-              {upcomingMatches.map((match) => {
-                const isSelected = selectedMatchId === match.id;
-                return (
-                  <button
-                    key={match.id}
-                    type="button"
-                    onClick={() => setSelectedMatchId(match.id)}
-                    className={`w-full rounded-lg border p-4 text-left transition-all ${
-                      isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-body font-medium text-foreground">
-                          {match.player1Name} vs {match.player2Name}
-                        </span>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Termin:{" "}
-                          {new Date(match.date).toLocaleDateString("pl-PL", {
-                            day: "numeric",
-                            month: "long",
-                          })}
-                          {match.round && ` · Kolejka ${match.round}`}
-                        </div>
-                      </div>
-                      {isSelected && <span className="text-xs font-display text-primary uppercase">Wybrany</span>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+           <MatchSelector
+              matches={upcomingMatches}
+              selectedMatchId={selectedMatchId}
+              onSelect={setSelectedMatchId}
+            />
 
           {selectedMatch && (
             <form onSubmit={handleSubmit} className="space-y-6">
