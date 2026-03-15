@@ -1353,27 +1353,36 @@ export type Database = {
       players_public: {
         Row: {
           approved: boolean | null
+          autodarts_user_id: string | null
           avatar: string | null
           avatar_url: string | null
           created_at: string | null
+          dartcounter_id: string | null
+          dartsmind_id: string | null
           id: string | null
           name: string | null
           user_id: string | null
         }
         Insert: {
           approved?: boolean | null
+          autodarts_user_id?: string | null
           avatar?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          dartcounter_id?: string | null
+          dartsmind_id?: string | null
           id?: string | null
           name?: string | null
           user_id?: string | null
         }
         Update: {
           approved?: boolean | null
+          autodarts_user_id?: string | null
           avatar?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          dartcounter_id?: string | null
+          dartsmind_id?: string | null
           id?: string | null
           name?: string | null
           user_id?: string | null
