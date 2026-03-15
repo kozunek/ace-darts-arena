@@ -52,36 +52,36 @@ const MyNextMatchWidget = () => {
   );
 
   return (
-    <section className="rounded-lg border border-primary/30 bg-gradient-to-br from-card to-primary/5 p-6 card-glow">
+    <section className="rounded-lg border border-primary/30 bg-gradient-to-br from-card to-primary/5 p-4 sm:p-6 card-glow">
       <div className="flex items-center gap-2 mb-4">
-        <Swords className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-display font-bold text-foreground">
+        <Swords className="h-5 w-5 text-primary shrink-0" />
+        <h2 className="text-base sm:text-lg font-display font-bold text-foreground">
           Twój najbliższy mecz
         </h2>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <PlayerAvatar
             avatarUrl={opponent?.avatar_url}
             initials={opponent?.avatar || opponentName.slice(0, 2).toUpperCase()}
             size="lg"
           />
-          <div>
-            <div className="font-body font-semibold text-foreground text-lg">
+          <div className="min-w-0">
+            <div className="font-body font-semibold text-foreground text-base sm:text-lg truncate">
               vs {opponentName}
             </div>
             {league && (
-              <div className="text-xs text-muted-foreground font-body">
+              <div className="text-xs text-muted-foreground font-body truncate">
                 {league.name} · {league.season}
               </div>
             )}
           </div>
         </div>
 
-        <div className="text-right shrink-0">
+        <div className="text-left sm:text-right shrink-0">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-3.5 w-3.5 shrink-0" />
             <span className="font-body">{dateStr}</span>
           </div>
           {next.confirmedDate ? (

@@ -38,9 +38,9 @@ const moreNavItems: NavItem[] = [
 
 const allMobileItems: NavItem[] = [
   { label: "Strona główna", href: "/", icon: <Target className="h-4 w-4" /> },
+  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-4 w-4" />, authOnly: true },
   ...primaryNavItems,
   ...moreNavItems,
-  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-4 w-4" />, authOnly: true },
   { label: "Czat", href: "/chat", icon: <MessageCircle className="h-4 w-4" />, authOnly: true },
 ];
 

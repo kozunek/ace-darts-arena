@@ -79,14 +79,14 @@ export const ProtectedRoute = ({ children, path }: { children: ReactNode; path: 
 
   if (!isAllowed) {
     return (
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen overflow-hidden max-h-screen">
         {/* Render actual page content behind blur */}
-        <div className="pointer-events-none select-none blur-md brightness-50" aria-hidden="true">
+        <div className="pointer-events-none select-none blur-md brightness-50 max-h-screen overflow-hidden" aria-hidden="true">
           {children}
         </div>
 
         {/* Overlay */}
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm overflow-hidden">
           <div className="mx-4 max-w-sm w-full rounded-xl border border-border bg-card p-8 shadow-2xl text-center">
             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
               <Lock className="h-7 w-7 text-primary" />

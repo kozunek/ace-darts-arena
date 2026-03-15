@@ -94,12 +94,12 @@ const OpenLeagues = () => {
                     : "border-border bg-card hover:border-primary/20"
                 }`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-display font-bold text-foreground text-lg">{league.name}</h3>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="min-w-0">
+                    <h3 className="font-display font-bold text-foreground text-base sm:text-lg truncate">{league.name}</h3>
                     <p className="text-xs text-muted-foreground font-body">{league.season}</p>
                   </div>
-                  <span className="text-xs font-display uppercase tracking-wider px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-xs font-display uppercase tracking-wider px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0 whitespace-nowrap">
                     {LEAGUE_TYPE_LABELS[league.league_type] || league.league_type}
                   </span>
                 </div>
@@ -111,7 +111,7 @@ const OpenLeagues = () => {
                     <Trophy className="h-3.5 w-3.5" /> {league.format || "Best of 5"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" /> {count} zapisanych
+                    <Users className="h-3.5 w-3.5" /> {count}{(league as any).max_players ? `/${(league as any).max_players}` : ""} zapisanych
                   </span>
                   {(league as any).platform && (league as any).platform !== "autodarts" && (
                     <span className="text-xs">{PLATFORM_LABELS[(league as any).platform] || (league as any).platform}</span>
@@ -146,10 +146,12 @@ const OpenLeagues = () => {
                     size="sm"
                     className="w-full"
                     onClick={() => handleJoin(league.id)}
-                    disabled={joining === league.id}
+                    disabled={joining === league.id || ((league as any).max_players && count >= (league as any).max_players)}
                   >
                     <UserPlus className="h-4 w-4 mr-1" />
-                    {joining === league.id ? "Zapisywanie..." : "Zapisz się"}
+                    {(league as any).max_players && count >= (league as any).max_players
+                      ? "Liga pełna"
+                      : joining === league.id ? "Zapisywanie..." : "Zapisz się"}
                   </Button>
                 )}
               </motion.div>

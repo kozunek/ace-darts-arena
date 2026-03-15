@@ -532,6 +532,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const [meetingsPerPair, setMeetingsPerPair] = useState(1);
   const [thirdPlaceEnabled, setThirdPlaceEnabled] = useState(false);
   const [luckyLoserEnabled, setLuckyLoserEnabled] = useState(false);
+  const [maxPlayers, setMaxPlayers] = useState<number | null>(null);
+  const [exclusivePlatform, setExclusivePlatform] = useState(false);
   
   // Tournament generation state
   const [showGenerate, setShowGenerate] = useState<string | null>(null);
@@ -553,7 +555,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
   const resetForm = () => {
     setName(""); setSeason(""); setDescription(""); setFormat("Best of 5");
     setIsActive(true); setRegistrationOpen(false); setRegistrationDeadline(""); setLeagueType("league"); setLeaguePlatform("autodarts"); setBonusRules({ ...DEFAULT_BONUS_RULES });
-    setMeetingsPerPair(1); setThirdPlaceEnabled(false); setLuckyLoserEnabled(false);
+    setMeetingsPerPair(1); setThirdPlaceEnabled(false); setLuckyLoserEnabled(false); setMaxPlayers(null); setExclusivePlatform(false);
     setShowForm(false); setEditId(null);
   };
 
@@ -568,6 +570,8 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     setMeetingsPerPair(l.meetings_per_pair ?? 1);
     setThirdPlaceEnabled(l.third_place_match ?? false);
     setLuckyLoserEnabled(l.lucky_loser ?? false);
+    setMaxPlayers(l.max_players ?? null);
+    setExclusivePlatform(l.exclusive_platform ?? false);
     setShowForm(true);
   };
 
@@ -576,10 +580,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
     if (!name || !season) { toast({ title: "Błąd", description: "Wypełnij wymagane pola.", variant: "destructive" }); return; }
     const maxLegs = BEST_OF_OPTIONS.find(o => o.value === format)?.maxLegs || 5;
     if (editId) {
-      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled });
+      await updateLeague(editId, { name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled, max_players: maxPlayers, exclusive_platform: exclusivePlatform });
       toast({ title: "Zaktualizowano!", description: `${name} została zmieniona.` });
     } else {
-      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled });
+      const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled, max_players: maxPlayers, exclusive_platform: exclusivePlatform });
       if (result?.error) {
         toast({ title: "Błąd", description: "Nie udało się utworzyć. Sprawdź uprawnienia.", variant: "destructive" });
         return;
@@ -846,6 +850,10 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                   <Input type="date" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="bg-muted/30 border-border" placeholder="Opcjonalnie" />
                 </div>
               )}
+              <div className="space-y-2">
+                <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Limit graczy</Label>
+                <Input type="number" min={0} value={maxPlayers ?? ""} onChange={(e) => setMaxPlayers(e.target.value ? parseInt(e.target.value) : null)} placeholder="Bez limitu" className="bg-muted/30 border-border" />
+              </div>
               {leagueType === "league" && (
                 <div className="space-y-2">
                   <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Spotkania na parę</Label>
@@ -891,6 +899,18 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                 </div>
               </div>
             )}
+
+            {/* Platform exclusivity */}
+            <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-4">
+              <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Ograniczenia zapisów</Label>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="font-body font-medium text-foreground">🚫 Ekskluzywność platformy</Label>
+                  <p className="text-xs text-muted-foreground font-body mt-0.5">Gracz nie może grać w 2 ligach na tej samej platformie jednocześnie</p>
+                </div>
+                <Switch checked={exclusivePlatform} onCheckedChange={setExclusivePlatform} />
+              </div>
+            </div>
 
             {/* Bonus points configuration */}
             <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-4">

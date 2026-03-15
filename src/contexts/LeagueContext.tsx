@@ -263,7 +263,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     // Parallel fetches for speed
     const [leaguesRes, playersRes, plRes, nicksRes] = await Promise.all([
-      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform,third_place_match,lucky_loser").order("created_at"),
+      supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform,third_place_match,lucky_loser,max_players,exclusive_platform").order("created_at"),
       supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id").order("name"),
       supabase.from("player_leagues").select("player_id,league_id"),
       supabase.from("players").select("id,autodarts_user_id,dartcounter_id,dartsmind_id"),
@@ -280,6 +280,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       platform: (l as any).platform ?? "autodarts",
       third_place_match: l.third_place_match ?? false,
       lucky_loser: l.lucky_loser ?? false,
+      max_players: (l as any).max_players ?? null,
+      exclusive_platform: (l as any).exclusive_platform ?? false,
     }));
     setLeagueList(leagues);
     if (leagues.length > 0 && !activeLeagueId) {
@@ -793,6 +795,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       platform: league.platform ?? "autodarts",
       third_place_match: league.third_place_match ?? false,
       lucky_loser: league.lucky_loser ?? false,
+      max_players: league.max_players ?? null,
+      exclusive_platform: league.exclusive_platform ?? false,
     } as any).select().single();
     if (data) {
       const newLeague: League = {
@@ -805,6 +809,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         platform: (data as any).platform ?? "autodarts",
         third_place_match: (data as any).third_place_match ?? false,
         lucky_loser: (data as any).lucky_loser ?? false,
+        max_players: (data as any).max_players ?? null,
+        exclusive_platform: (data as any).exclusive_platform ?? false,
       };
       setLeagueList((prev) => [...prev, newLeague]);
       if (!activeLeagueId) setActiveLeagueId(data.id);
@@ -964,6 +970,38 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     if (existing) return { error: "Już jesteś zapisany do tej ligi." };
 
+    // Find the target league
+    const targetLeague = leagueList.find(l => l.id === leagueId);
+
+    // Check max_players limit
+    if (targetLeague?.max_players) {
+      const { count } = await supabase
+        .from("player_leagues")
+        .select("id", { count: "exact", head: true })
+        .eq("league_id", leagueId);
+      if (count !== null && count >= targetLeague.max_players) {
+        return { error: `Liga jest pełna (${targetLeague.max_players}/${targetLeague.max_players} graczy).` };
+      }
+    }
+
+    // Check exclusive_platform — player can't play in 2 leagues on the same platform
+    if (targetLeague?.exclusive_platform && targetLeague.platform) {
+      const { data: playerLeagues } = await supabase
+        .from("player_leagues")
+        .select("league_id")
+        .eq("player_id", player.id);
+      if (playerLeagues) {
+        const samePlatformLeague = playerLeagues.find(pl => {
+          const otherLeague = leagueList.find(l => l.id === pl.league_id);
+          return otherLeague && otherLeague.platform === targetLeague.platform && otherLeague.is_active && otherLeague.id !== leagueId;
+        });
+        if (samePlatformLeague) {
+          const otherLeague = leagueList.find(l => l.id === samePlatformLeague.league_id);
+          return { error: `Już grasz w lidze na platformie ${targetLeague.platform} (${otherLeague?.name}). Nie możesz grać w dwóch ligach na tej samej platformie.` };
+        }
+      }
+    }
+
     const { error } = await supabase
       .from("player_leagues")
       .insert({ player_id: player.id, league_id: leagueId });
@@ -978,7 +1016,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     ));
 
     return { error: null };
-  }, []);
+  }, [leagueList]);
 
   const leaveLeague = useCallback(async (leagueId: string) => {
     const { data: { user } } = await supabase.auth.getUser();

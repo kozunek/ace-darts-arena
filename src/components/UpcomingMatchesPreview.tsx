@@ -23,16 +23,16 @@ const UpcomingMatchesPreview = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {upcoming.map((match) => (
-          <div key={match.id} className="rounded-lg border border-border bg-card p-5 card-glow transition-all hover:border-primary/30">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-              <Calendar className="h-3.5 w-3.5" />
-              <span className="font-body">Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
-              {match.round && <span className="ml-auto text-[10px] font-display uppercase text-muted-foreground">Kolejka {match.round}</span>}
+          <div key={match.id} className="rounded-lg border border-border bg-card p-4 sm:p-5 card-glow transition-all hover:border-primary/30">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground mb-3">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-body break-words">Termin: {new Date(match.date).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" })}</span>
+              {match.round && <span className="ml-auto text-[10px] font-display uppercase text-muted-foreground shrink-0">Kolejka {match.round}</span>}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="font-body font-medium text-foreground text-sm">{match.player1Name}</span>
-              <span className="text-xs font-display text-muted-foreground px-3">VS</span>
-              <span className="font-body font-medium text-foreground text-sm text-right">{match.player2Name}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-body font-medium text-foreground text-sm truncate min-w-0">{match.player1Name}</span>
+              <span className="text-xs font-display text-muted-foreground px-2 shrink-0">VS</span>
+              <span className="font-body font-medium text-foreground text-sm text-right truncate min-w-0">{match.player2Name}</span>
             </div>
           </div>
         ))}

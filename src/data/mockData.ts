@@ -34,6 +34,8 @@ export interface League {
   platform?: LeaguePlatform;
   third_place_match?: boolean;
   lucky_loser?: boolean;
+  max_players?: number | null;
+  exclusive_platform?: boolean;
 }
 
 export interface Player {
