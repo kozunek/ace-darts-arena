@@ -9,7 +9,7 @@ const MatchesPage = () => {
   const { activeLeagueId, getLeagueMatches } = useLeague();
   const leagueMatches = getLeagueMatches(activeLeagueId);
   const completed = leagueMatches.filter((m) => m.status === "completed");
-  const upcoming = leagueMatches.filter((m) => m.status === "upcoming");
+  const upcoming = leagueMatches.filter((m) => m.status === "upcoming" && m.player1Name !== "TBD" && m.player2Name !== "TBD");
   const pendingApproval = leagueMatches.filter((m) => m.status === "pending_approval");
 
   return (

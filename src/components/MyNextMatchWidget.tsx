@@ -28,7 +28,8 @@ const MyNextMatchWidget = () => {
     .filter(
       (m) =>
         m.status === "upcoming" &&
-        (m.player1Id === myPlayerId || m.player2Id === myPlayerId)
+        (m.player1Id === myPlayerId || m.player2Id === myPlayerId) &&
+        m.player1Name !== "TBD" && m.player2Name !== "TBD"
     )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

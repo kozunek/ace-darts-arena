@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import LeagueSelector from "@/components/LeagueSelector";
 import MatchProposalSection from "@/components/MatchProposalSection";
 import PageHeader from "@/components/PageHeader";
 
@@ -16,9 +15,11 @@ interface PlayerContact {
   discord: string | null;
 }
 
+const TBD_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
+
 const MyMatchesPage = () => {
   const { user } = useAuth();
-  const { players, matches, activeLeagueId, getLeagueMatches } = useLeague();
+  const { players, matches, leagues } = useLeague();
   const [contacts, setContacts] = useState<Record<string, PlayerContact>>({});
   const [opponentUserIds, setOpponentUserIds] = useState<Record<string, string>>({});
 
@@ -36,9 +37,13 @@ const MyMatchesPage = () => {
       });
   }, [user]);
 
-  const leagueMatches = getLeagueMatches(activeLeagueId);
-  const myUpcoming = leagueMatches.filter(
-    (m) => m.status === "upcoming" && myPlayerId && (m.player1Id === myPlayerId || m.player2Id === myPlayerId)
+  const myUpcoming = matches.filter(
+    (m) =>
+      m.status === "upcoming" &&
+      myPlayerId &&
+      (m.player1Id === myPlayerId || m.player2Id === myPlayerId) &&
+      m.player1Id !== TBD_PLAYER_ID &&
+      m.player2Id !== TBD_PLAYER_ID
   );
 
   // Fetch contact info and user_ids for opponents
@@ -89,9 +94,7 @@ const MyMatchesPage = () => {
 
   return (
     <div>
-      <PageHeader title="Moje Mecze" subtitle="Twoje nadchodzące mecze — ustal termin z przeciwnikiem">
-        <LeagueSelector />
-      </PageHeader>
+      <PageHeader title="Moje Mecze" subtitle="Twoje nadchodzące mecze ze wszystkich lig — ustal termin z przeciwnikiem" />
       <div className="container mx-auto px-4 py-6 space-y-6">
 
       {!myPlayerId ? (
@@ -100,7 +103,7 @@ const MyMatchesPage = () => {
         </div>
       ) : myUpcoming.length === 0 ? (
         <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-          <p className="text-muted-foreground font-body">Brak nadchodzących meczów w tej lidze.</p>
+          <p className="text-muted-foreground font-body">Brak nadchodzących meczów.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -127,6 +130,9 @@ const MyMatchesPage = () => {
                   {match.round && (
                     <span className="text-[10px] font-display uppercase">Kolejka {match.round}</span>
                   )}
+                  {(() => { const league = leagues.find(l => l.id === match.leagueId); return league ? (
+                    <span className="text-[10px] font-display uppercase text-muted-foreground">{league.name}</span>
+                  ) : null; })()}
                   <Badge
                     variant="outline"
                     className="ml-auto text-accent border-accent/30 font-display text-[10px] uppercase"
