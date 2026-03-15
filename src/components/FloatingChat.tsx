@@ -322,7 +322,7 @@ const FloatingChat = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             ref={chatBoxRef}
-            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden relative ${isMaximized ? 'inset-0' : ''}`}
+            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMaximized ? 'inset-0' : ''}`}
             style={isMaximized ? {
               width: '100vw',
               height: '100vh',
