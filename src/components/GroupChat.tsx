@@ -327,7 +327,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     (event.target as HTMLElement).setPointerCapture(event.pointerId);
   };
 
-  const onResizeStart = (event: PointerEvent) => {
+  const onResizeStart = (event: React.PointerEvent) => {
     if (isMobile) return;
     resizeRef.current = {
       startX: event.clientX,
