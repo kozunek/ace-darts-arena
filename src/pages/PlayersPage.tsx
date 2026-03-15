@@ -16,7 +16,11 @@ const PlayersPage = () => {
   const approved = players.filter((p) => p.approved);
 
   const filtered = approved.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const s = search.toLowerCase();
+    const matchesSearch = p.name.toLowerCase().includes(s)
+      || (p.autodarts_user_id && p.autodarts_user_id.toLowerCase().includes(s))
+      || (p.dartcounter_id && p.dartcounter_id.toLowerCase().includes(s))
+      || (p.dartsmind_id && p.dartsmind_id.toLowerCase().includes(s));
     if (selectedLeague === "all") return matchesSearch;
     const inLeague = matches.some(
       (m) => m.leagueId === selectedLeague && (m.player1Id === p.id || m.player2Id === p.id)
@@ -43,7 +47,7 @@ const PlayersPage = () => {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Szukaj po nicku lub nazwie..."
+            placeholder="Szukaj po nazwie lub nicku z platformy..."
             className="pl-9 bg-muted/30 border-border"
           />
         </div>

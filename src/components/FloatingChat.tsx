@@ -41,7 +41,7 @@ const FloatingChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [allPlayers, setAllPlayers] = useState<{ user_id: string; name: string; avatar: string }[]>([]);
+  const [allPlayers, setAllPlayers] = useState<{ user_id: string; name: string; avatar: string; autodarts_user_id?: string; dartcounter_id?: string; dartsmind_id?: string }[]>([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
@@ -93,7 +93,7 @@ const FloatingChat = () => {
   }, [messages]);
 
   const loadAllPlayers = async () => {
-    const { data } = await supabase.from("players").select("user_id, name, avatar").not("user_id", "is", null);
+    const { data } = await supabase.from("players").select("user_id, name, avatar, autodarts_user_id, dartcounter_id, dartsmind_id").not("user_id", "is", null);
     if (data) setAllPlayers(data.filter((p) => p.user_id !== user?.id) as any);
   };
 
@@ -191,8 +191,13 @@ const FloatingChat = () => {
 
   const activeName = contacts.find((c) => c.user_id === activeChat)?.name || allPlayers.find((p) => p.user_id === activeChat)?.name || "Czat";
   const q = searchQuery.toLowerCase();
-  const filteredContacts = q ? contacts.filter((c) => c.name.toLowerCase().includes(q)) : contacts;
-  const filteredNewPlayers = allPlayers.filter((p) => !contacts.find((c) => c.user_id === p.user_id)).filter((p) => !q || p.name.toLowerCase().includes(q));
+  const matchesQ = (name: string, ad?: string, dc?: string, dm?: string) =>
+    name.toLowerCase().includes(q) || (ad && ad.toLowerCase().includes(q)) || (dc && dc.toLowerCase().includes(q)) || (dm && dm.toLowerCase().includes(q));
+  const filteredContacts = q ? contacts.filter((c) => {
+    const pl = allPlayers.find((p) => p.user_id === c.user_id);
+    return matchesQ(c.name, pl?.autodarts_user_id, pl?.dartcounter_id, pl?.dartsmind_id);
+  }) : contacts;
+  const filteredNewPlayers = allPlayers.filter((p) => !contacts.find((c) => c.user_id === p.user_id)).filter((p) => !q || matchesQ(p.name, p.autodarts_user_id, p.dartcounter_id, p.dartsmind_id));
 
   return (
     <>

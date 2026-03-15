@@ -1113,7 +1113,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                     </div>
                     <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                       {approvedPlayers
-                        .filter((p: any) => p.name.toLowerCase().includes(playerSearch.toLowerCase()))
+                        .filter((p: any) => { const s = playerSearch.toLowerCase(); return p.name.toLowerCase().includes(s) || (p.autodarts_user_id && p.autodarts_user_id.toLowerCase().includes(s)) || (p.dartcounter_id && p.dartcounter_id.toLowerCase().includes(s)) || (p.dartsmind_id && p.dartsmind_id.toLowerCase().includes(s)); })
                         .map((p: any) => {
                         const selected = selectedPlayers.includes(p.id);
                         return (
@@ -1261,7 +1261,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
           <ScrollArea className="max-h-[400px]">
             <div className="space-y-1">
               {approvedPlayers
-                .filter((p: any) => !leaguePlayerSearch || p.name.toLowerCase().includes(leaguePlayerSearch.toLowerCase()))
+                .filter((p: any) => { if (!leaguePlayerSearch) return true; const s = leaguePlayerSearch.toLowerCase(); return p.name.toLowerCase().includes(s) || (p.autodarts_user_id && p.autodarts_user_id.toLowerCase().includes(s)) || (p.dartcounter_id && p.dartcounter_id.toLowerCase().includes(s)) || (p.dartsmind_id && p.dartsmind_id.toLowerCase().includes(s)); })
                 .map((p: any) => {
                   const isIn = (p.leagueIds || []).includes(managePlayersLeagueId);
                   return (
@@ -1285,7 +1285,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
                     </button>
                   );
                 })}
-              {approvedPlayers.filter((p: any) => !leaguePlayerSearch || p.name.toLowerCase().includes(leaguePlayerSearch.toLowerCase())).length === 0 && (
+              {approvedPlayers.filter((p: any) => { if (!leaguePlayerSearch) return true; const s = leaguePlayerSearch.toLowerCase(); return p.name.toLowerCase().includes(s) || (p.autodarts_user_id && p.autodarts_user_id.toLowerCase().includes(s)) || (p.dartcounter_id && p.dartcounter_id.toLowerCase().includes(s)) || (p.dartsmind_id && p.dartsmind_id.toLowerCase().includes(s)); }).length === 0 && (
                 <p className="text-center text-muted-foreground text-sm py-4">Brak graczy pasujących do wyszukiwania</p>
               )}
             </div>
@@ -1396,7 +1396,7 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
   const [playerUserMap, setPlayerUserMap] = useState<Record<string, string | null>>({});
   const [playerExtIds, setPlayerExtIds] = useState<Record<string, { autodarts_user_id: string; dartcounter_id: string; dartsmind_id: string }>>({});
 
-  const filteredApproved = approved.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredApproved = approved.filter((p: any) => { const s = searchQuery.toLowerCase(); return p.name.toLowerCase().includes(s) || (playerExtIds[p.id]?.autodarts_user_id && playerExtIds[p.id].autodarts_user_id.toLowerCase().includes(s)) || (playerExtIds[p.id]?.dartcounter_id && playerExtIds[p.id].dartcounter_id.toLowerCase().includes(s)) || (playerExtIds[p.id]?.dartsmind_id && playerExtIds[p.id].dartsmind_id.toLowerCase().includes(s)); });
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -1471,7 +1471,7 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Szukaj gracza..."
+          placeholder="Szukaj po nazwie lub nicku z platformy..."
           className="bg-muted/30 border-border pl-9"
         />
       </div>

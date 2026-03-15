@@ -264,7 +264,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // Parallel fetches for speed
     const [leaguesRes, playersRes, plRes] = await Promise.all([
       supabase.from("leagues").select("id,name,season,description,is_active,format,max_legs,league_type,bonus_rules,registration_open,meetings_per_pair,registration_deadline,platform,third_place_match,lucky_loser").order("created_at"),
-      supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id").order("name"),
+      supabase.from("players_public" as any).select("id,name,avatar,approved,avatar_url,user_id,autodarts_user_id,dartcounter_id,dartsmind_id").order("name"),
       supabase.from("player_leagues").select("player_id,league_id"),
     ]);
     const leaguesData = leaguesRes.data;
@@ -291,6 +291,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
       phone: p.phone ?? null, discord: p.discord ?? null,
       avatar_url: p.avatar_url ?? null,
+      autodarts_user_id: p.autodarts_user_id ?? null,
+      dartcounter_id: p.dartcounter_id ?? null,
+      dartsmind_id: p.dartsmind_id ?? null,
       leagueIds: playerLeagues.filter((pl: any) => pl.player_id === p.id).map((pl: any) => pl.league_id),
     }));
     const approved = allPlayers.filter(p => p.approved);

@@ -45,6 +45,9 @@ export interface Player {
   leagueIds?: string[];
   phone?: string | null;
   discord?: string | null;
+  autodarts_user_id?: string | null;
+  dartcounter_id?: string | null;
+  dartsmind_id?: string | null;
 }
 
 export interface PlayerLeagueStats {
