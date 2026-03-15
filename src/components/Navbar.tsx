@@ -16,13 +16,13 @@ import {
 type NavItem = { label: string; href: string; icon: React.ReactElement; authOnly?: boolean; mobileOnly?: boolean };
 
 const primaryNavItems: NavItem[] = [
+  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-4 w-4" />, authOnly: true },
   { label: "Tabele", href: "/tables", icon: <Trophy className="h-4 w-4" /> },
   { label: "Mecze", href: "/matches", icon: <Target className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-4 w-4" /> },
 ];
 
 const moreNavItems: NavItem[] = [
-  { label: "Moje Mecze", href: "/my-matches", icon: <Handshake className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Gracze", href: "/players", icon: <Swords className="h-3.5 w-3.5" /> },
   { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
