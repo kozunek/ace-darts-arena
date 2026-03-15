@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLeague } from "@/contexts/LeagueContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { translateError } from "@/lib/translateError";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -169,7 +170,7 @@ const OverviewTab = ({ leagues, players, completedCount, upcomingCount, pendingP
     setSavingAuto(false);
     if (error) {
       setAutoSettings(autoSettings);
-      toast({ title: "Błąd zapisu", description: error.message, variant: "destructive" });
+      toast({ title: "Błąd zapisu", description: translateError(error.message), variant: "destructive" });
     } else {
       toast({ title: "Zapisano ✅" });
     }
@@ -586,7 +587,7 @@ const LeaguesTab = ({ leagues, players, addLeague, updateLeague, deleteLeague, a
       const result = await addLeague({ name, season, description, format, is_active: isActive, registration_open: registrationOpen, registration_deadline: registrationDeadline || null, max_legs: maxLegs, league_type: leagueType, bonus_rules: bonusRules, meetings_per_pair: meetingsPerPair, platform: leaguePlatform, third_place_match: thirdPlaceEnabled, lucky_loser: luckyLoserEnabled, max_players: maxPlayers, exclusive_platform: exclusivePlatform });
       if (result?.error) {
         console.error("League creation error:", result.error);
-        toast({ title: "Błąd", description: result.error.message || "Nie udało się utworzyć ligi.", variant: "destructive" });
+        toast({ title: "Błąd", description: translateError(result.error.message) || "Nie udało się utworzyć ligi.", variant: "destructive" });
         return;
       }
       toast({ title: "Utworzono!", description: `${name} została utworzona.` });
@@ -1566,7 +1567,7 @@ const PlayersTab = ({ players, leagues, pendingPlayers, approvePlayer, updatePla
                     dartsmind_id: ids.dartsmind_id.trim() || null,
                   } as any).eq("id", p.id);
                   if (error) {
-                    toast({ title: "Błąd zapisu", description: error.message, variant: "destructive" });
+                    toast({ title: "Błąd zapisu", description: translateError(error.message), variant: "destructive" });
                   } else {
                     toast({ title: "✅ ID zapisane!", description: `Zaktualizowano ID platform dla ${p.name}` });
                   }

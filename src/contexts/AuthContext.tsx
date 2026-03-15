@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    return { error: error ? translateError(error.message) : null };
   };
 
   const register = async (name: string, email: string, password: string, nicks?: { autodarts?: string; dartcounter?: string; dartsmind?: string }) => {
@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }, 1000);
     }
     
-    return { error: error?.message ?? null };
+    return { error: error ? translateError(error.message) : null };
   };
 
   const logout = async () => {
@@ -162,12 +162,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    return { error: error?.message ?? null };
+    return { error: error ? translateError(error.message) : null };
   };
 
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
-    return { error: error?.message ?? null };
+    return { error: error ? translateError(error.message) : null };
   };
 
 

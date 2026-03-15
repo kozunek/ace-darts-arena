@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague, MatchResultData } from "@/contexts/LeagueContext";
 import { supabase } from "@/integrations/supabase/client";
+import { translateError } from "@/lib/translateError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -614,7 +615,7 @@ const SubmitMatchPage = () => {
       if (fnError || !fnData?.success) {
         toast({
           title: "Błąd pobierania danych",
-          description: (fnData?.error || fnError?.message || "Nie udało się pobrać danych") +
+          description: (translateError(fnData?.error || fnError?.message) || "Nie udało się pobrać danych") +
             "\n\n⚠️ Prawdopodobnie wygasł token Autodarts. Odśwież stronę play.autodarts.io i spróbuj ponownie.",
           variant: "destructive",
         });

@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLeague } from "@/contexts/LeagueContext";
+import { translateError } from "@/lib/translateError";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +93,7 @@ const RulesPage = () => {
     if (editingRule) {
       const { error } = await supabase.from("league_rules" as any).update(payload).eq("id", editingRule.id);
       if (error) {
-        toast({ title: "Błąd", description: error.message, variant: "destructive" });
+        toast({ title: "Błąd", description: translateError(error.message), variant: "destructive" });
         return;
       }
       toast({ title: "Zaktualizowano regulamin" });
@@ -106,7 +107,7 @@ const RulesPage = () => {
     } else {
       const { error } = await supabase.from("league_rules" as any).insert(payload);
       if (error) {
-        toast({ title: "Błąd", description: error.message, variant: "destructive" });
+        toast({ title: "Błąd", description: translateError(error.message), variant: "destructive" });
         return;
       }
       toast({ title: "Dodano regulamin" });

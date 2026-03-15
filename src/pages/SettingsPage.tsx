@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { translateError } from "@/lib/translateError";
 import { useLeague } from "@/contexts/LeagueContext";
 import AvatarUpload from "@/components/AvatarUpload";
 import PageHeader from "@/components/PageHeader";
@@ -274,7 +275,7 @@ const SettingsPage = () => {
                     await supabase.auth.signOut({ scope: "local" });
                     window.location.href = "/";
                   } catch (err: any) {
-                    toast({ title: "Błąd", description: err?.message || "Nie udało się usunąć konta.", variant: "destructive" });
+                    toast({ title: "Błąd", description: translateError(err?.message) || "Nie udało się usunąć konta.", variant: "destructive" });
                   }
                 }}
               >

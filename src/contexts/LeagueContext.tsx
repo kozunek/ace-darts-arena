@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { supabase } from "@/integrations/supabase/client";
 import { calculateLeagueStandings } from "@/lib/leagueRanking";
 import { advanceBracketWinner } from "@/lib/bracketAdvancement";
+import { translateError } from "@/lib/translateError";
 import {
   Player, Match, League, PlayerLeagueStats, Achievement,
   achievements, BonusRules, DEFAULT_BONUS_RULES, LeaguePlatform,
@@ -1007,7 +1008,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       .from("player_leagues")
       .insert({ player_id: player.id, league_id: leagueId });
 
-    if (error) return { error: error.message };
+    if (error) return { error: translateError(error.message) };
 
     // Update local state
     setPlayerList((prev) => prev.map((p) =>
