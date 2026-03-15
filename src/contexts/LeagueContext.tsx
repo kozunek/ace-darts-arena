@@ -291,6 +291,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       id: p.id, name: p.name, avatar: p.avatar, approved: p.approved,
       phone: p.phone ?? null, discord: p.discord ?? null,
       avatar_url: p.avatar_url ?? null,
+      user_id: p.user_id ?? null,
       autodarts_user_id: p.autodarts_user_id ?? null,
       dartcounter_id: p.dartcounter_id ?? null,
       dartsmind_id: p.dartsmind_id ?? null,

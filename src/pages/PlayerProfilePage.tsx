@@ -1,7 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap, Percent } from "lucide-react";
+import { ArrowLeft, Target, Trophy, TrendingUp, Crosshair, BarChart3, Zap, Percent, MessageCircle } from "lucide-react";
 import { achievements } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import PlayerProgressChart from "@/components/PlayerProgressChart";
@@ -32,8 +32,11 @@ const PlayerProfilePage = () => {
   const { players, matches, getPlayerAllLeagueStats, getPlayerAchievements } = useLeague();
   const allMatches = matches;
   const { user } = useAuth();
+  const navigate = useNavigate();
   const player = players.find((p) => p.id === id);
   const isLoggedIn = !!user;
+  const isOwnProfile = user && player?.user_id === user.id;
+  const canChat = isLoggedIn && player?.user_id && !isOwnProfile;
 
   if (!player) {
     return (
@@ -97,6 +100,16 @@ const PlayerProfilePage = () => {
               Aktywny w {allLeagueStats.length} {allLeagueStats.length === 1 ? "lidze" : "ligach"}
             </p>
           </div>
+          {canChat && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-display uppercase tracking-wider text-xs gap-1.5"
+              onClick={() => navigate(`/chat?with=${player.user_id}`)}
+            >
+              <MessageCircle className="h-4 w-4" /> Napisz wiadomość
+            </Button>
+          )}
         </div>
       </div>
 
