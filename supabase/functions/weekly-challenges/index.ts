@@ -9,7 +9,7 @@ const corsHeaders = {
 const CHALLENGE_POOL = [
   { type: "highest_avg", title: "Najwyższa średnia", desc: "Gracz z najwyższą średnią z meczów tego tygodnia", icon: "📊", field: "avg", agg: "max" },
   { type: "most_180s", title: "Król 180-tek", desc: "Najwięcej rzutów 180 w tym tygodniu", icon: "💯", field: "one_eighties", agg: "sum" },
-  { type: "most_tons", title: "Maszyna wysokich wizyt", desc: "Najwięcej wysokich wizyt (60-99, 100-139, 140-169, 170-180) w tygodniu", icon: "🎪", field: "tons", agg: "sum" },
+  { type: "most_tons", title: "Maszyna wysokich podejść", desc: "Najwięcej wysokich podejść (60-99, 100-139, 140-169, 170-180) w tygodniu", icon: "🎪", field: "tons", agg: "sum" },
   { type: "best_checkout", title: "Najwyższy checkout", desc: "Najwyższy checkout tygodnia", icon: "🎯", field: "high_checkout", agg: "max" },
   { type: "most_wins", title: "Seria zwycięstw", desc: "Najwięcej wygranych meczów w tygodniu", icon: "🔥", field: "wins", agg: "sum" },
 ];

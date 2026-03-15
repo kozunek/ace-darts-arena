@@ -34,7 +34,7 @@ const HeroSection = () => {
     { icon: <Trophy className="h-5 w-5" />, label: "Aktywne ligi", value: activeLeagues.length.toString(), desc: "Trwających rozgrywek w sezonie" },
     { icon: <Target className="h-5 w-5" />, label: "Rozegrane mecze", value: totalCompleted.toString(), desc: "Zakończonych spotkań w sezonie" },
     { icon: <Crosshair className="h-5 w-5" />, label: "Rzutów lotką", value: totalDartsThrown > 0 ? formatNumber(totalDartsThrown) : "0", desc: "Łączna liczba rzutów w sezonie" },
-    { icon: <Flame className="h-5 w-5" />, label: "Maksów 180", value: total180s.toString(), desc: "Perfekcyjnych wizyt przy tablicy" },
+    { icon: <Flame className="h-5 w-5" />, label: "Maksów 180", value: total180s.toString(), desc: "Perfekcyjnych podejść przy tablicy" },
     { icon: <Crosshair className="h-5 w-5" />, label: "Najwyższy checkout", value: bestCheckout > 0 ? bestCheckout.toString() : "—", desc: "Rekordowe zamknięcie w sezonie" },
     { icon: <Users className="h-5 w-5" />, label: "Najwyższa średnia", value: bestAvg > 0 ? bestAvg.toFixed(1) : "—", desc: "Rekordowa średnia w meczu" },
   ];
