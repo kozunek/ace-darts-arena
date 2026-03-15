@@ -114,6 +114,24 @@ const RoleManagementPanel = () => {
   const [legacyUserId, setLegacyUserId] = useState("");
   const [legacyRole, setLegacyRole] = useState("moderator");
 
+  // Input validation helpers
+  const validateRoleInput = (name: string, desc: string): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    if (!name || name.trim().length === 0) {
+      errors.push("Nazwa roli jest wymagana");
+    } else if (name.trim().length < 3) {
+      errors.push("Nazwa musi mieć minimum 3 znaki");
+    } else if (name.length > 50) {
+      errors.push("Nazwa nie może być dłuższa niż 50 znaków");
+    } else if (!/^[a-zA-Z0-9_\-\s]+$/.test(name.trim())) {
+      errors.push("Nazwa może zawierać tylko litery, cyfry, podkreślenie i myślnik");
+    }
+    if (desc && desc.length > 500) {
+      errors.push("Opis nie może być dłuższy niż 500 znaków");
+    }
+    return { valid: errors.length === 0, errors };
+  };
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [rolesRes, permsRes, userRolesRes, profilesRes, legacyRes, channelsRes, channelRolesRes] = await Promise.all([
@@ -191,20 +209,25 @@ const RoleManagementPanel = () => {
   };
 
   const handleSaveRole = async () => {
-    if (!roleName.trim()) {
-      toast({ title: "Błąd", description: "Nazwa roli jest wymagana.", variant: "destructive" });
+    const { valid, errors } = validateRoleInput(roleName, roleDesc);
+    if (!valid) {
+      toast({ title: "Błąd walidacji", description: errors.join("; "), variant: "destructive" });
       return;
     }
     setSaving(true);
 
     try {
+      // Sanitize inputs
+      const cleanName = roleName.trim();
+      const cleanDesc = roleDesc.trim();
+
       let roleId: string;
 
       if (roleDialog.editing) {
         // Update
         const { error } = await supabase.from("custom_roles").update({
-          name: roleName.trim(),
-          description: roleDesc.trim(),
+          name: cleanName,
+          description: cleanDesc,
           stats_scope: roleStatsScope,
         } as any).eq("id", roleDialog.editing.id);
         if (error) throw error;
@@ -215,8 +238,8 @@ const RoleManagementPanel = () => {
       } else {
         // Create
         const { data, error } = await supabase.from("custom_roles").insert({
-          name: roleName.trim(),
-          description: roleDesc.trim(),
+          name: cleanName,
+          description: cleanDesc,
           stats_scope: roleStatsScope,
         } as any).select().single();
         if (error) throw error;
@@ -537,11 +560,23 @@ const RoleManagementPanel = () => {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label className="font-display text-xs uppercase tracking-wider text-muted-foreground">Nazwa roli</Label>
-                  <Input value={roleName} onChange={(e) => setRoleName(e.target.value)} placeholder="np. Komentator" />
+                  <Input 
+                    value={roleName} 
+                    onChange={(e) => setRoleName(e.target.value.slice(0, 50))} 
+                    placeholder="np. Komentator" 
+                    maxLength={50}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Max 50 znaków. Tylko litery, cyfry, podkreślenie, myślnik.</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="font-display text-xs uppercase tracking-wider text-muted-foreground">Opis</Label>
-                  <Input value={roleDesc} onChange={(e) => setRoleDesc(e.target.value)} placeholder="Krótki opis roli..." />
+                  <Input 
+                    value={roleDesc} 
+                    onChange={(e) => setRoleDesc(e.target.value.slice(0, 500))} 
+                    placeholder="Krótki opis roli..." 
+                    maxLength={500}
+                  />
+                  <p className="text-[10px] text-muted-foreground">{roleDesc.length}/500</p>
                 </div>
               </div>
 

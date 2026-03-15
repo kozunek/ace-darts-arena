@@ -120,6 +120,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [syncUserState]);
 
+  // Periodic role refresh every 5 minutes to detect mid-session changes
+  useEffect(() => {
+    if (!user) return;
+
+    const roleRefreshInterval = setInterval(async () => {
+      await checkRoles(user.id);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(roleRefreshInterval);
+  }, [user, checkRoles]);
+
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? translateError(error.message) : null };

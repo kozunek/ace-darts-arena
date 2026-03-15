@@ -21,6 +21,17 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Password validation helper
+  const validatePassword = (pwd: string): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    if (pwd.length < 12) errors.push("Minimum 12 znaków");
+    if (!/[A-Z]/.test(pwd)) errors.push("Minimum 1 wielka litera");
+    if (!/[a-z]/.test(pwd)) errors.push("Minimum 1 mała litera");
+    if (!/[0-9]/.test(pwd)) errors.push("Minimum 1 cyfra");
+    if (!/[!@#$%^&*-_=+]/.test(pwd)) errors.push("Minimum 1 znak specjalny");
+    return { valid: errors.length === 0, errors };
+  };
+
   // Find linked player
   const myPlayer = players.find(p => (p as any).id && user && (() => {
     // We need user_id match - but Player interface doesn't expose it
@@ -74,10 +85,17 @@ const SettingsPage = () => {
       toast({ title: "Błąd", description: "Hasła nie są identyczne.", variant: "destructive" });
       return;
     }
-    if (newPassword.length < 6) {
-      toast({ title: "Błąd", description: "Hasło musi mieć minimum 6 znaków.", variant: "destructive" });
+    
+    const { valid, errors } = validatePassword(newPassword);
+    if (!valid) {
+      toast({ 
+        title: "Hasło zbyt słabe", 
+        description: "Wymagania: " + errors.join(", "),
+        variant: "destructive"
+      });
       return;
     }
+    
     setSubmitting(true);
     const { error } = await updatePassword(newPassword);
     setSubmitting(false);
@@ -227,7 +245,7 @@ const SettingsPage = () => {
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="space-y-2">
             <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Nowe hasło</Label>
-            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min. 6 znaków" className="bg-muted/30 border-border" required />
+            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min. 12 znaków, wielkie, małe, cyfra, symbol" className="bg-muted/30 border-border" required />
           </div>
           <div className="space-y-2">
             <Label className="font-display uppercase tracking-wider text-xs text-muted-foreground">Powtórz nowe hasło</Label>

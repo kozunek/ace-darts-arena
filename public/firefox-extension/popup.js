@@ -29,10 +29,24 @@ function addLog(text, type = "info") {
 function renderLogs() {
   const container = document.getElementById("logsContainer");
   if (!container) return;
-  if (logs.length === 0) { container.innerHTML = '<div class="empty">Brak logów</div>'; return; }
-  container.innerHTML = logs.map((l) =>
-    `<div class="log-entry ${l.type}">[${l.time}] ${l.text}</div>`
-  ).join("");
+  
+  container.innerHTML = '';
+  
+  if (logs.length === 0) { 
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'empty';
+    emptyDiv.textContent = 'Brak logów';
+    container.appendChild(emptyDiv);
+    return; 
+  }
+  
+  logs.forEach((l) => {
+    const div = document.createElement('div');
+    div.className = `log-entry ${escapeHtml(l.type)}`;
+    // Use textContent to prevent XSS - it automatically escapes HTML
+    div.textContent = `[${l.time}] ${l.text}`;
+    container.appendChild(div);
+  });
 }
 
 // ─── Tab system ───

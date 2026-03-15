@@ -19,12 +19,42 @@ const AvatarUpload = ({ currentAvatarUrl, currentInitials, playerId, onUploaded 
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Verify file type from magic bytes
+  const verifyImageMagicBytes = async (file: File): Promise<boolean> => {
+    try {
+      const buffer = await file.slice(0, 12).arrayBuffer();
+      const view = new Uint8Array(buffer);
+      
+      // Check magic bytes for valid image types
+      // PNG: 89 50 4e 47
+      if (view[0] === 0x89 && view[1] === 0x50 && view[2] === 0x4e && view[3] === 0x47) return true;
+      
+      // JPEG: FF D8 FF
+      if (view[0] === 0xff && view[1] === 0xd8 && view[2] === 0xff) return true;
+      
+      // WebP: RIFF ... WEBP
+      if (view[0] === 0x52 && view[1] === 0x49 && view[2] === 0x46 && view[3] === 0x46 &&
+          view[8] === 0x57 && view[9] === 0x45 && view[10] === 0x42 && view[11] === 0x50) return true;
+      
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
     if (!file.type.startsWith("image/")) {
       toast({ title: "Błąd", description: "Wybierz plik graficzny.", variant: "destructive" });
+      return;
+    }
+
+    // Verify actual file type from magic bytes
+    const isValidImage = await verifyImageMagicBytes(file);
+    if (!isValidImage) {
+      toast({ title: "Błąd", description: "Plik nie jest prawidłowym obrazem. Dozwolone: PNG, JPEG, WebP", variant: "destructive" });
       return;
     }
 
