@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Hash, Lock, Trophy, Monitor, Trash2, Ban, Clock, Menu } from "lucide-react";
+import { Send, Hash, Lock, Trophy, Monitor, Trash2, Ban, Clock, Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -409,19 +409,34 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
         >
           <div className={`flex ${compact ? 'flex-1 min-h-0' : 'min-h-[400px]'}`}>
             {/* Channel sidebar */}
-            <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col bg-muted/10 shrink-0 h-full${isMobile ? ` fixed left-0 top-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform` : ''}`}>
-              <div className="p-2 border-b border-border">
-                <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
-              </div>
+            <div className={`${compact ? "w-36" : "w-48"} border-r border-border flex flex-col shrink-0 h-full${isMobile ? ` fixed left-0 top-0 bottom-0 z-50 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 bg-gradient-to-b from-card via-card to-background shadow-2xl border-r-2 border-primary/20` : ' bg-muted/10'}`}>
+              {isMobile && (
+                <div className="p-3 border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent flex items-center justify-between">
+                  <span className="font-display text-sm uppercase tracking-wider text-foreground font-bold">Kanały czatu</span>
+                  <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded-md hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              {!isMobile && (
+                <div className="p-2 border-b border-border">
+                  <span className="font-display text-[10px] uppercase tracking-wider text-muted-foreground">Kanały</span>
+                </div>
+              )}
               <ScrollArea className="flex-1">
                 {channels.map((ch) => (
                   <button
                     key={ch.id}
-                    onClick={() => setActiveChannel(ch.id)}
-                    className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors text-xs font-body${activeChannel === ch.id ? " bg-primary/10 text-primary border-l-2 border-primary" : " hover:bg-muted/30 text-foreground border-l-2 border-transparent"}`}
+                    onClick={() => { setActiveChannel(ch.id); if (isMobile) setIsSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-2 ${isMobile ? 'px-3 py-2.5' : 'px-2 py-1.5'} text-left transition-colors ${isMobile ? 'text-sm' : 'text-xs'} font-body${activeChannel === ch.id ? " bg-primary/10 text-primary border-l-2 border-primary" : " hover:bg-muted/30 text-foreground border-l-2 border-transparent"}`}
                   >
                     {getChannelIcon(ch)}
-                    <span className="truncate">{ch.name}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="truncate block">{ch.name}</span>
+                      {isMobile && ch.description && (
+                        <span className="text-[10px] text-muted-foreground truncate block">{ch.description}</span>
+                      )}
+                    </div>
                   </button>
                 ))}
               </ScrollArea>
@@ -543,7 +558,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
         </div>
 
       {/* Backdrop for mobile sidebar */}
-      {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />}
+      {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsSidebarOpen(false)} />}
 
       {/* Ban dialog */}
       <Dialog open={banDialog.open} onOpenChange={(open) => !open && setBanDialog({ open: false, userId: "", userName: "" })}>
