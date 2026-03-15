@@ -571,6 +571,7 @@ export type Database = {
           league_type: string
           lucky_loser: boolean
           max_legs: number | null
+          max_players: number | null
           meetings_per_pair: number
           name: string
           platform: string
@@ -590,6 +591,7 @@ export type Database = {
           league_type?: string
           lucky_loser?: boolean
           max_legs?: number | null
+          max_players?: number | null
           meetings_per_pair?: number
           name: string
           platform?: string
@@ -609,6 +611,7 @@ export type Database = {
           league_type?: string
           lucky_loser?: boolean
           max_legs?: number | null
+          max_players?: number | null
           meetings_per_pair?: number
           name?: string
           platform?: string
