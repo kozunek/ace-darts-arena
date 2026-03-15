@@ -24,6 +24,7 @@ import LeagueStatusPanel from "@/components/LeagueStatusPanel";
 import ActivityReportPanel from "@/components/ActivityReportPanel";
 import EmailConfigPanel from "@/components/EmailConfigPanel";
 import IntegrationsPanel from "@/components/IntegrationsPanel";
+import WeeklyChallengesPanel from "@/components/WeeklyChallengesPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,7 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats" | "channels" | "league-status" | "activity";
+type AdminTab = "overview" | "leagues" | "players" | "matches" | "approval" | "roles" | "integrations" | "discord" | "audit" | "export" | "bugs" | "chats" | "channels" | "league-status" | "activity" | "challenges";
 
 const LEAGUE_TYPE_LABELS: Record<LeagueType, string> = {
   league: "Liga (Round-Robin)",
@@ -95,6 +96,7 @@ const AdminPage = () => {
     { id: "export", label: "Eksport", icon: <Download className="h-4 w-4" />, adminOnly: true },
     { id: "chats", label: "Czaty", icon: <MessageCircle className="h-4 w-4" />, adminOnly: true },
     { id: "channels", label: "Kanały", icon: <MessageCircle className="h-4 w-4" />, adminOnly: true },
+    { id: "challenges", label: "Wyzwania", icon: <Trophy className="h-4 w-4" />, adminOnly: true },
     { id: "bugs", label: "Błędy", icon: <Bug className="h-4 w-4" /> },
   ];
 
@@ -142,6 +144,7 @@ const AdminPage = () => {
           {activeTab === "export" && isAdmin && <ExportPanel />}
           {activeTab === "chats" && isAdmin && <AdminChatPanel />}
           {activeTab === "channels" && isAdmin && <AdminChannelPanel />}
+          {activeTab === "challenges" && isAdmin && <WeeklyChallengesPanel />}
           {activeTab === "bugs" && <BugReportsPanel />}
         </motion.div>
       </AnimatePresence>
