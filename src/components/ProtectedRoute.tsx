@@ -2,7 +2,7 @@ import { useEffect, useState, createContext, useContext, ReactNode } from "react
 import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Lock, LogIn, UserPlus } from "lucide-react";
+import { Lock, LogIn, UserPlus, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,6 +104,11 @@ export const ProtectedRoute = ({ children, path }: { children: ReactNode; path: 
               <Link to="/login?mode=register">
                 <Button variant="outline" size="lg" className="w-full gap-2">
                   <UserPlus className="h-4 w-4" /> Załóż konto
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button variant="ghost" size="lg" className="w-full gap-2 text-muted-foreground">
+                  <Home className="h-4 w-4" /> Strona główna
                 </Button>
               </Link>
             </div>
