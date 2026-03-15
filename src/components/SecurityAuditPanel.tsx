@@ -223,7 +223,7 @@ const SecurityAuditPanel = () => {
             onClick={() => setShowDeleteConfirm(true)}
             className="text-yellow-600 hover:text-yellow-600"
           >
-            <Trash2 className="h-4 w-4 mr-1" /> Usuń logi >30 dni
+            <Trash2 className="h-4 w-4 mr-1" /> Usuń logi {'>'}30 dni
           </Button>
         </div>
 
