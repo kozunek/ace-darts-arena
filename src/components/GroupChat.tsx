@@ -315,7 +315,7 @@ const GroupChat = ({ compact = false }: GroupChatProps) => {
     return <Hash className="h-3 w-3 text-muted-foreground" />;
   };
 
-  const onDragStart = (event: PointerEvent) => {
+  const onDragStart = (event: React.PointerEvent) => {
     if (isMobile) return;
     dragRef.current = {
       startX: event.clientX,
