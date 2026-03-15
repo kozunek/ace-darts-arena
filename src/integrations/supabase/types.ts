@@ -564,6 +564,7 @@ export type Database = {
           bonus_rules: Json | null
           created_at: string
           description: string
+          exclusive_platform: boolean | null
           format: string | null
           id: string
           is_active: boolean
@@ -582,6 +583,7 @@ export type Database = {
           bonus_rules?: Json | null
           created_at?: string
           description?: string
+          exclusive_platform?: boolean | null
           format?: string | null
           id?: string
           is_active?: boolean
@@ -600,6 +602,7 @@ export type Database = {
           bonus_rules?: Json | null
           created_at?: string
           description?: string
+          exclusive_platform?: boolean | null
           format?: string | null
           id?: string
           is_active?: boolean

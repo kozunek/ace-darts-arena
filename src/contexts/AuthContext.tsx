@@ -3,6 +3,7 @@ import { supabase as defaultClient } from "@/integrations/supabase/client";
 import { useSelfHost } from "@/contexts/SelfHostContext";
 import type { User } from "@supabase/supabase-js";
 import { Skeleton } from "@/components/ui/skeleton";
+import { translateError } from "@/lib/translateError";
 
 interface AuthContextType {
   user: User | null;

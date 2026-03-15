@@ -1,0 +1,2 @@
+ALTER TABLE public.leagues ALTER COLUMN exclusive_platform TYPE boolean USING COALESCE(exclusive_platform::boolean, false);
+ALTER TABLE public.leagues ALTER COLUMN exclusive_platform SET DEFAULT false;
