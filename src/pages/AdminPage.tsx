@@ -1994,7 +1994,7 @@ const MatchesTab = ({ matches, players, leagues, addMatch, deleteMatch, toast }:
             Dyskwalifikacja oznacza przegranie wszystkich pozostałych meczów walkowerem. Gracz nie może dalej grać w tej lidze.
           </p>
           <div className="flex flex-wrap gap-2">
-            {players.filter((p: any) => p.approved).map((p: any) => (
+            {players.filter((p: any) => p.approved && p.name !== "TBD").map((p: any) => (
               <Button
                 key={p.id}
                 variant="outline"

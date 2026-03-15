@@ -296,7 +296,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       dartsmind_id: p.dartsmind_id ?? null,
       leagueIds: playerLeagues.filter((pl: any) => pl.player_id === p.id).map((pl: any) => pl.league_id),
     }));
-    const approved = allPlayers.filter(p => p.approved);
+    const approved = allPlayers.filter(p => p.approved && p.id !== TBD_PLAYER_ID);
     const pending = allPlayers.filter(p => !p.approved);
     setPlayerList(approved);
     setPendingPlayers(pending);
@@ -428,7 +428,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeagueStandings = useCallback((leagueId: string) => {
     const rules = getLeagueRules(leagueId);
-    const leaguePlayers = playerList.filter((p) => p.approved && matchList.some(
+    const leaguePlayers = playerList.filter((p) => p.approved && p.id !== TBD_PLAYER_ID && matchList.some(
       (m) => m.leagueId === leagueId && (m.player1Id === p.id || m.player2Id === p.id)
     ));
     const entries = leaguePlayers.map((p) => ({ ...p, stats: calcStats(p.id, leagueId, matchList, rules) }));
