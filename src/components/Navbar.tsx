@@ -16,21 +16,21 @@ import {
 type NavItem = { label: string; href: string; icon: React.ReactElement; authOnly?: boolean; mobileOnly?: boolean };
 
 const primaryNavItems: NavItem[] = [
-  { label: "Tabela", href: "/tables", icon: <Trophy className="h-4 w-4" /> },
+  { label: "Tabele", href: "/tables", icon: <Trophy className="h-4 w-4" /> },
   { label: "Mecze", href: "/matches", icon: <Target className="h-4 w-4" /> },
-  { label: "Gracze", href: "/players", icon: <Swords className="h-4 w-4" /> },
   { label: "Dodaj Wynik", href: "/submit", icon: <ClipboardEdit className="h-4 w-4" /> },
+  { label: "Gracze", href: "/players", icon: <Swords className="h-4 w-4" /> },
 ];
 
 const moreNavItems: NavItem[] = [
+  { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Statystyki", href: "/stats", icon: <BarChart3 className="h-3.5 w-3.5" /> },
   { label: "H2H", href: "/h2h", icon: <Swords className="h-3.5 w-3.5" /> },
-  { label: "Kalendarz", href: "/calendar", icon: <Calendar className="h-3.5 w-3.5" /> },
   { label: "Rekordy", href: "/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" /> },
-  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
-  { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
   { label: "Osiągnięcia", href: "/achievements", icon: <Zap className="h-3.5 w-3.5" /> },
   { label: "Wyzwania", href: "/challenges", icon: <Flame className="h-3.5 w-3.5" /> },
+  { label: "Ogłoszenia", href: "/announcements", icon: <Megaphone className="h-3.5 w-3.5" /> },
+  { label: "Jak grać?", href: "/how-to-play", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
   { label: "Regulamin rozgrywek", href: "/rules", icon: <BookOpen className="h-3.5 w-3.5" /> },
   { label: "Pobieranie", href: "/downloads", icon: <Download className="h-3.5 w-3.5" />, authOnly: true },
   { label: "Zgłoś błąd", href: "/report-bug", icon: <Bug className="h-3.5 w-3.5" />, authOnly: true },
