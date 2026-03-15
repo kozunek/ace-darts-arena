@@ -216,24 +216,20 @@ const FloatingChat = () => {
       <AnimatePresence>
         {isOpen && !isMobile && (
           <motion.div
-            drag={!isMaximized}
-            dragMomentum={false}
-            dragConstraints={{ left: -(window.innerWidth - chatSize.width - 20), top: -(window.innerHeight - 96 - 20), right: 0, bottom: 0 }}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{
               opacity: 1,
               scale: 1,
+              y: 0,
               width: isMaximized ? '100vw' : chatSize.width,
               height: isMaximized ? '100vh' : chatSize.height,
-              ...(isMaximized ? { x: 0, y: 0 } : {})
             }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMaximized ? 'top-0 left-0' : 'bottom-24 right-5'}`}
+            className={`fixed z-50 rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden ${isMaximized ? 'inset-0' : 'bottom-24 right-5'}`}
             style={{
               width: isMaximized ? '100vw' : chatSize.width,
               height: isMaximized ? '100vh' : chatSize.height,
-              cursor: isMaximized ? 'default' : 'move',
             }}
           >
             {/* Header with controls */}
