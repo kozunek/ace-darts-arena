@@ -22,11 +22,62 @@ interface Challenge {
 }
 
 const CHALLENGE_TYPES = [
+  // Średnia i precyzja
   { type: "highest_avg", label: "Najwyższa średnia", icon: "📊" },
+  { type: "avg_above_30", label: "Ponad 30 ppd", icon: "📈" },
+  { type: "avg_above_25", label: "Ponad 25 ppd", icon: "📉" },
+  { type: "most_consistent", label: "Najspójniejszy", icon: "🎯" },
+  { type: "high_avg_minimum", label: "Stały gracz 25+", icon: "💪" },
+  { type: "lowest_avg_loss", label: "Najgorzej i upadek", icon: "📉" },
+  { type: "most_matches_played", label: "Pracoholik", icon: "⚡" },
+  { type: "best_100_plus", label: "Profesjonalista", icon: "🏆" },
+  // 180-ki
   { type: "most_180s", label: "Król 180-tek", icon: "💯" },
-  { type: "most_tons", label: "Najwięcej wysokich podejść", icon: "🎪" },
+  { type: "most_180s_per_match", label: "180 per mecz", icon: "🎪" },
+  { type: "first_180", label: "180 na otwarcie", icon: "🎯" },
+  { type: "most_180_single", label: "Rekordowy szereg 180", icon: "🔥" },
+  { type: "180_combo", label: "Dziesiątka 180", icon: "💯💯" },
+  { type: "no_180_winner", label: "Precyzjoner", icon: "🎯" },
+  { type: "most_180_vs_best", label: "180 kontra średnia", icon: "⚖️" },
+  { type: "180_progression", label: "Progresja 180", icon: "📈💯" },
+  // Checkouty
   { type: "best_checkout", label: "Najwyższy checkout", icon: "🎯" },
+  { type: "most_cleanups", label: "Zawojownik", icon: "✨" },
+  { type: "checkout_140_plus", label: "100+ czysty", icon: "🏅" },
+  { type: "checkout_180", label: "Idealna końcówka", icon: "💯" },
+  { type: "most_50_plus", label: "Finiszer", icon: "🎯" },
+  { type: "inconsistent_checkout", label: "Loteria", icon: "🎲" },
+  { type: "early_checkout", label: "Szybki finish", icon: "⚡" },
+  { type: "double_checkout_lover", label: "Miłośnik podwójnych", icon: "2️⃣" },
+  // Duże podejścia
+  { type: "most_tons", label: "Maszyna wysokich podejść", icon: "🎪" },
+  { type: "most_160_plus", label: "High roller", icon: "💥" },
+  { type: "most_140_159", label: "Solidny gracz", icon: "💪" },
+  { type: "most_100_139", label: "Stabilny", icon: "✅" },
+  { type: "most_60_99", label: "Beginner pro", icon: "👶" },
+  { type: "tons_per_match", label: "Rytm wysokich", icon: "🎯" },
+  { type: "max_tons_single", label: "Rekord wybuchu", icon: "🌟" },
+  { type: "tons_consistency", label: "Niezawodny", icon: "🔄" },
+  // Wygrane i porażki
   { type: "most_wins", label: "Seria zwycięstw", icon: "🔥" },
+  { type: "best_win_ratio", label: "Najlepszy stosunek W/L", icon: "📊" },
+  { type: "perfect_week", label: "Idealne 5/0", icon: "⭐" },
+  { type: "comeback_king", label: "Mistrz znowelacji", icon: "🆙" },
+  { type: "most_losses", label: "Pech samotnie", icon: "💔" },
+  { type: "only_winner", label: "Solo wygrana", icon: "🏆" },
+  { type: "balanced_record", label: "W równowadze", icon: "⚖️" },
+  { type: "underdog", label: "Underdog", icon: "🐕" },
+  // Specjalne
+  { type: "combo_master", label: "Profesor 180+Checkout", icon: "🎊" },
+  { type: "big_day", label: "Gorący dzień", icon: "🔥" },
+  { type: "consistency_week", label: "Pan regularności", icon: "📊" },
+  { type: "thriller_master", label: "Mistrz dramaturgii", icon: "⚔️" },
+  { type: "dominant_week", label: "Dominacja", icon: "👑" },
+  { type: "surprise_surge", label: "Eksplozja formy", icon: "📈" },
+  { type: "tight_matches", label: "Tworzył emocje", icon: "⚡" },
+  { type: "long_grind", label: "Długa bitwa", icon: "⏱️" },
+  { type: "turnip_up", label: "Refleksja", icon: "📱" },
+  { type: "jack_of_all", label: "Uniwersalista", icon: "🌈" },
 ];
 
 const WeeklyChallengesPanel = () => {
@@ -48,6 +99,7 @@ const WeeklyChallengesPanel = () => {
   const [newIcon, setNewIcon] = useState("📊");
   const [newWeekStart, setNewWeekStart] = useState("");
   const [newWeekEnd, setNewWeekEnd] = useState("");
+  const [searchChallenge, setSearchChallenge] = useState("");
 
   // Confirm dialog
   const [confirmAction, setConfirmAction] = useState<{ type: "reset" | "delete"; challenge: Challenge } | null>(null);
@@ -111,15 +163,6 @@ const WeeklyChallengesPanel = () => {
     setNewDescription("");
     setNewIcon("📊");
     setShowCreate(true);
-  };
-
-  const handleTypeChange = (type: string) => {
-    setNewType(type);
-    const preset = CHALLENGE_TYPES.find(t => t.type === type);
-    if (preset) {
-      if (!newTitle) setNewTitle(preset.label);
-      setNewIcon(preset.icon);
-    }
   };
 
   const saveCreate = async () => {
@@ -207,15 +250,67 @@ const WeeklyChallengesPanel = () => {
   const pastChallenges = challenges.filter(c => !c.is_active);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-primary" /> Zarządzanie wyzwaniami tygodniowymi
-        </h2>
+        <div>
+          <h2 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" /> Zarządzanie wyzwaniami tygodniowymi
+          </h2>
+          <p className="text-sm text-muted-foreground font-body mt-1">Co tydzień rotuje 3 losowe wyzwania z puli 50 typów</p>
+        </div>
         <Button variant="hero" size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1" /> Nowe wyzwanie
         </Button>
       </div>
+
+      {/* Quick add templates */}
+      <section className="border border-primary/20 rounded-lg bg-primary/5 p-4">
+        <h3 className="text-sm font-display font-bold text-foreground mb-3 flex items-center gap-2">
+          ⚡ Szybko dodaj wyzwanie tego tygodnia
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          {CHALLENGE_TYPES.slice(0, 20).map(t => (
+            <button
+              key={t.type}
+              onClick={() => {
+                const preset = CHALLENGE_TYPES.find(ty => ty.type === t.type);
+                if (preset) {
+                  const now = new Date();
+                  const day = now.getUTCDay();
+                  const mondayOffset = day === 0 ? -6 : 1 - day;
+                  const monday = new Date(now);
+                  monday.setUTCDate(now.getUTCDate() + mondayOffset);
+                  const sunday = new Date(monday);
+                  sunday.setUTCDate(monday.getUTCDate() + 6);
+                  
+                  setNewType(t.type);
+                  setNewTitle(preset.label);
+                  setNewDescription("");
+                  setNewIcon(preset.icon);
+                  setNewWeekStart(monday.toISOString().split("T")[0]);
+                  setNewWeekEnd(sunday.toISOString().split("T")[0]);
+                  setShowCreate(true);
+                }
+              }}
+              className="p-3 rounded-lg border border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all text-center hover:scale-105 active:scale-95"
+              title={t.label}
+            >
+              <div className="text-2xl mb-1">{t.icon}</div>
+              <div className="text-xs font-body text-foreground line-clamp-2">{t.label}</div>
+            </button>
+          ))}
+          <button
+            onClick={() => setShowCreate(true)}
+            className="p-3 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-all text-center flex items-center justify-center"
+            title="Pokaż więcej"
+          >
+            <div className="text-center">
+              <div className="text-xl mb-1">+</div>
+              <div className="text-xs font-body text-muted-foreground">Więcej</div>
+            </div>
+          </button>
+        </div>
+      </section>
 
       {/* Active challenges */}
       <section>
@@ -287,34 +382,59 @@ const WeeklyChallengesPanel = () => {
       </Dialog>
 
       {/* ── Create Dialog ── */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md">
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) setSearchChallenge(""); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Nowe wyzwanie tygodniowe</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Search field */}
             <div>
-              <Label className="font-body">Typ wyzwania</Label>
-              <Select value={newType} onValueChange={handleTypeChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CHALLENGE_TYPES.map(t => (
-                    <SelectItem key={t.type} value={t.type}>{t.icon} {t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="font-body">Szukaj wyzwania</Label>
+              <Input 
+                placeholder="Wpisz nazwę wyzwania..." 
+                value={searchChallenge}
+                onChange={e => setSearchChallenge(e.target.value.toLowerCase())}
+              />
             </div>
+
+            {/* Type selection grid */}
+            <div>
+              <Label className="font-body mb-2 block">Wybierz typ wyzwania</Label>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-2 border border-border rounded-lg bg-muted/30">
+                {CHALLENGE_TYPES.filter(t => 
+                  searchChallenge === "" || 
+                  t.label.toLowerCase().includes(searchChallenge) || 
+                  t.type.toLowerCase().includes(searchChallenge)
+                ).map(t => (
+                  <button
+                    key={t.type}
+                    onClick={() => {
+                      setNewType(t.type);
+                      setNewTitle(t.label);
+                      setNewIcon(t.icon);
+                    }}
+                    className={`p-3 rounded-lg border-2 transition-all text-center ${
+                      newType === t.type 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border hover:border-primary/50 hover:bg-muted"
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{t.icon}</div>
+                    <div className="text-xs font-body line-clamp-2">{t.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Details */}
             <div>
               <Label className="font-body">Tytuł</Label>
               <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="np. Najwyższa średnia" />
             </div>
             <div>
-              <Label className="font-body">Opis</Label>
-              <Input value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Opis wyzwania" />
-            </div>
-            <div>
-              <Label className="font-body">Ikona (emoji)</Label>
-              <Input value={newIcon} onChange={e => setNewIcon(e.target.value)} className="w-20" />
+              <Label className="font-body">Opis (opcjonalnie)</Label>
+              <Input value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Dodatkowy opis..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
