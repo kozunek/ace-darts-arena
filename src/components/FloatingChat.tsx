@@ -196,6 +196,9 @@ const FloatingChat = () => {
   const latestPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const onDragStart = useCallback((e: React.MouseEvent) => {
+    // Don't drag from interactive elements (buttons, inputs)
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('a')) return;
     e.preventDefault();
     const pos = chatPos || getDefaultPos();
     dragRef.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
@@ -293,11 +296,12 @@ const FloatingChat = () => {
             }}
           >
             {/* Header with controls */}
-            <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2 select-none">
+            <div
+              onMouseDown={onDragStart}
+              className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2 select-none cursor-grab active:cursor-grabbing"
+            >
               <div className="flex items-center gap-1">
-                <div onMouseDown={onDragStart} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground transition-colors" title="Przeciągnij">
-                  <GripVertical className="h-4 w-4" />
-                </div>
+                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="flex">
                 <button
                   onClick={() => { setChatMode("private"); setActiveChat(null); }}
