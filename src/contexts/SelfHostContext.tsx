@@ -68,7 +68,7 @@ export const SelfHostProvider = ({ children }: { children: ReactNode }) => {
     load();
   }, []);
 
-  const isSelfHosted = Boolean(config.customSupabaseUrl && config.customSupabaseAnonKey);
+  const isSelfHosted = false; // Self-host wyłączony — zawsze używaj domyślnego Supabase
 
   const customClient = useMemo(() => {
     if (!isSelfHosted) return null;
