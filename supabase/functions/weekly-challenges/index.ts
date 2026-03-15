@@ -194,9 +194,9 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (!existing || existing.length === 0) {
-      // Pick 8 random challenges for this week (rotates through ~50 challenges)
+      // Pick 3 random challenges for this week (rotates through ~50 challenges)
       const shuffled = [...CHALLENGE_POOL].sort(() => Math.random() - 0.5);
-      const picks = shuffled.slice(0, 8);
+      const picks = shuffled.slice(0, 3);
 
       await supabase.from("weekly_challenges").insert(
         picks.map(p => ({
